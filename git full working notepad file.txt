@@ -1,0 +1,89 @@
+git config --global user.name "Ricky"
+
+git config --global user.email "kapoortoursandtravelsindore@gmail.com"
+
+
+--
+git add .			- to add files of every project 
+
+git commit -m "Initial commit - Setting up Billion Hopes website project"
+
+git status
+
+git checkout -- .		-undo previous changes
+
+
+----------------------------
+
+
+COMPLETE GUIDE TO SAVING AND UNDOING CHANGES
+
+=================== PART 1: SAVING YOUR CHANGES ===================
+
+(Do this whenever your changes are working well)
+
+STEP 1: Open PowerShell
+
+- Press Windows + X
+- Click "Windows PowerShell" or "Terminal"
+
+STEP 2: Go to your project folder
+
+- Copy and paste this EXACT command (including the quotes):
+
+cd "E:\PT\01 - Billion Hopes - Logo + Logo Gifs + fiver project files + Intro work\23 - Billion Hopes - Website\CURSOR website1"
+
+STEP 3: Check what files changed
+- Type: git status
+- You'll see red files = files that have changes
+
+STEP 4: Save all changes
+- Type: git add .
+- Type: git status
+- You'll now see green files = files ready to be saved
+
+STEP 5: Create the save point
+- Type: git commit -m "Everything is working - saving this version"
+- This creates your save point that you can return to later
+
+=================== PART 2: UNDOING CHANGES ===================
+
+(Do this when you want to go back to your last save)
+
+STEP 1: Open PowerShell
+- Press Windows + X
+- Click "Windows PowerShell" or "Terminal"
+
+STEP 2: Go to your project folder
+- Copy and paste this EXACT command (including the quotes):
+cd "E:\PT\01 - Billion Hopes - Logo + Logo Gifs + fiver project files + Intro work\23 - Billion Hopes - Website\CURSOR website1"
+
+STEP 3: Undo all changes
+- Type: git checkout -- .
+- This will undo everything back to your last save point
+
+=================== IMPORTANT TIPS ===================
+
+WHEN TO SAVE (COMMIT):
+- After making changes that work well
+- Before making big changes
+- When everything is running correctly
+
+WHEN TO UNDO (CHECKOUT):
+- When something breaks
+- When you don't like your recent changes
+- When you want to start over from your last save
+
+REMEMBER:
+- You can only go back to your last save point
+- Always test your changes before saving
+- Save (commit) frequently when things are working
+- If you close Cursor without saving, you might lose the ability to undo
+
+Think of it like a video game:
+- git commit = Creating a save point in your game
+- git checkout = Loading your last save point
+- You can only load saves that you actually made!
+
+Need help? Just follow these steps exactly as written.
+Remember: The command to undo is: git checkout -- . 
