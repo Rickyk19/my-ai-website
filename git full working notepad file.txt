@@ -51,10 +51,12 @@ STEP 5: Create the save point
 (Do this when you want to go back to your last save)
 
 STEP 1: Open PowerShell
+
 - Press Windows + X
 - Click "Windows PowerShell" or "Terminal"
 
 STEP 2: Go to your project folder
+
 - Copy and paste this EXACT command (including the quotes):
 cd "E:\PT\01 - Billion Hopes - Logo + Logo Gifs + fiver project files + Intro work\23 - Billion Hopes - Website\CURSOR website1"
 

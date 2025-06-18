@@ -16,3 +16,29 @@ To create a production build, use npm run build.
 
 webpack compiled successfully
 No issues found.
+
+
+
+---
+
+
+supbase account for data validation
+
+
+kapoortoursandtravelsindore@gmail.com
+
+
+Password - QQ2@mXf$5H7g#Z
+
+
+Database password - RA7xmjv.AE#_?pi
+
+
+
+Project URL - https://ahvxqultshujqtmbkjpy.supabase.co
+
+
+API Key - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ
+
+
+

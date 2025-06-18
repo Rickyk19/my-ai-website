@@ -1,7 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
+interface Comment {
+  id: number;
+  name: string;
+  message: string;
+  timestamp: Date;
+}
+
 const TypesOfAI: React.FC = () => {
+  const [reactions, setReactions] = useState({
+    like: 0,
+    love: 0,
+    clap: 0
+  });
+
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState({
+    name: '',
+    message: ''
+  });
+
+  const handleReaction = (type: 'like' | 'love' | 'clap') => {
+    setReactions(prev => ({
+      ...prev,
+      [type]: prev[type] + 1
+    }));
+  };
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.name.trim() || !newComment.message.trim()) return;
+
+    const comment: Comment = {
+      id: Date.now(),
+      name: newComment.name,
+      message: newComment.message,
+      timestamp: new Date()
+    };
+
+    setComments(prev => [comment, ...prev]);
+    setNewComment({ name: '', message: '' });
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -116,6 +157,94 @@ const TypesOfAI: React.FC = () => {
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      {/* Reactions Section */}
+      <section className="mt-12 mb-8 border-t pt-8">
+        <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+          <span role="img" aria-label="reactions">💭</span> Reactions
+        </h2>
+        <div className="flex gap-6 justify-center">
+          <button
+            onClick={() => handleReaction('like')}
+            className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-3xl">👍</span>
+            <span className="text-gray-600">{reactions.like}</span>
+          </button>
+          <button
+            onClick={() => handleReaction('love')}
+            className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-3xl">❤️</span>
+            <span className="text-gray-600">{reactions.love}</span>
+          </button>
+          <button
+            onClick={() => handleReaction('clap')}
+            className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-3xl">👏</span>
+            <span className="text-gray-600">{reactions.clap}</span>
+          </button>
+        </div>
+      </section>
+
+      {/* Comments Section */}
+      <section className="mt-12 border-t pt-8">
+        <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+          <span role="img" aria-label="comments">💬</span> Comments
+        </h2>
+        
+        {/* Comment Form */}
+        <form onSubmit={handleCommentSubmit} className="mb-8">
+          <div className="mb-4">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              value={newComment.name}
+              onChange={(e) => setNewComment(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+              Comment
+            </label>
+            <textarea
+              id="message"
+              value={newComment.message}
+              onChange={(e) => setNewComment(prev => ({ ...prev, message: e.target.value }))}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Post Comment
+          </button>
+        </form>
+
+        {/* Comments List */}
+        <div className="space-y-6">
+          {comments.map(comment => (
+            <div key={comment.id} className="bg-white p-6 rounded-lg shadow-md">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-semibold text-gray-900">{comment.name}</h3>
+                <span className="text-sm text-gray-500">
+                  {comment.timestamp.toLocaleDateString()}
+                </span>
+              </div>
+              <p className="text-gray-700">{comment.message}</p>
+            </div>
+          ))}
         </div>
       </section>
     </motion.div>
