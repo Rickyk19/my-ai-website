@@ -21,39 +21,7 @@ const Feedback: React.FC = () => {
   }>({ type: null, message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const testConnection = async () => {
-    try {
-      console.log('Testing connection to Supabase...');
-      
-      // Try direct fetch to Supabase REST API
-      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/feedback?select=id&limit=1', {
-        method: 'GET',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('Direct fetch successful:', data);
-      
-      setStatus({
-        type: 'success',
-        message: 'Direct API connection successful! You can now try submitting feedback.'
-      });
-    } catch (err: any) {
-      console.error('Direct fetch failed:', err);
-      setStatus({
-        type: 'error',
-        message: `Direct API test failed: ${err.message}`
-      });
-    }
-  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -121,27 +89,7 @@ const Feedback: React.FC = () => {
     <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px' }}>
       <h1 style={{ marginBottom: '20px' }}>Share Your Feedback</h1>
 
-      {/* Test Connection Button */}
-      <div style={{ marginBottom: '20px' }}>
-        <button
-          type="button"
-          onClick={testConnection}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginRight: '10px'
-          }}
-        >
-          Test Connection
-        </button>
-        <small style={{ color: '#666' }}>
-          Click this button first to test if the connection to Supabase is working
-        </small>
-      </div>
+
 
       {status.type && (
         <div
