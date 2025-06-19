@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import TypesOfAI from './pages/TypesOfAI';
 import Courses from './pages/Courses';
 import CourseContent from './pages/CourseContent';
+import Feedback from './pages/Feedback';
 import { AuthProvider } from './context/AuthContext';
 
 // Placeholder components for different routes
@@ -35,6 +36,7 @@ const App: React.FC = () => {
             <Route path="agi/*" element={<AGI />} />
             <Route path="resources/*" element={<Resources />} />
             <Route path="contact" element={<Contact />} />
+            <Route path="feedback" element={<Feedback />} />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<SignUp />} />
           </Route>

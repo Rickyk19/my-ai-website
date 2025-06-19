@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MenuItem {
@@ -83,46 +83,56 @@ const Sidebar: React.FC = () => {
 
   return (
     <aside className="w-64 bg-white shadow-lg h-screen fixed left-0 top-24 overflow-y-auto">
-      <nav className="p-4">
-        {menuSections.map((section) => (
-          <div key={section.title} className="mb-4">
-            <button
-              onClick={() => toggleSection(section.title)}
-              className="flex items-center justify-between w-full text-left text-gray-700 hover:text-blue-600 font-medium py-2"
-            >
-              <span>{section.title}</span>
-              <ChevronDownIcon
-                className={`w-5 h-5 transform transition-transform ${
-                  openSection === section.title ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
-            <AnimatePresence>
-              {openSection === section.title && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <ul className="pl-4 space-y-2 mt-2">
-                    {section.items.map((item) => (
-                      <li key={item.path}>
-                        <Link
-                          to={item.path}
-                          className="block text-gray-600 hover:text-blue-600 py-1"
-                        >
-                          {item.title}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
+      <nav className="p-4 flex flex-col min-h-[calc(100vh-6rem)]">
+        <div className="flex-grow">
+          {menuSections.map((section) => (
+            <div key={section.title} className="mb-4">
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="flex items-center justify-between w-full text-left text-gray-700 hover:text-blue-600 font-medium py-2"
+              >
+                <span>{section.title}</span>
+                <ChevronDownIcon
+                  className={`w-5 h-5 transform transition-transform ${
+                    openSection === section.title ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              <AnimatePresence>
+                {openSection === section.title && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <ul className="pl-4 space-y-2 mt-2">
+                      {section.items.map((item) => (
+                        <li key={item.path}>
+                          <Link
+                            to={item.path}
+                            className="block text-gray-600 hover:text-blue-600 py-1"
+                          >
+                            {item.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+        
+        <Link
+          to="/feedback"
+          className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium py-3 px-4 mt-4 rounded-lg hover:bg-gray-50 transition-colors border-t border-gray-200"
+        >
+          <ChatBubbleLeftIcon className="w-5 h-5" />
+          <span>Share Feedback</span>
+        </Link>
       </nav>
     </aside>
   );

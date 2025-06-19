@@ -1,28 +1,17 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { supabase } from '../utils/supabase';
 
 interface FeedbackForm {
-  fullName: string;
-  email: string;
-  occupation: string;
-  message: string;
+  Name: string;
+  Email: string;
+  Message: string;
 }
 
 const initialFormState: FeedbackForm = {
-  fullName: '',
-  email: '',
-  occupation: '',
-  message: ''
+  Name: '',
+  Email: '',
+  Message: ''
 };
-
-const occupationOptions = [
-  'Student',
-  'Researcher',
-  'Educator',
-  'Developer',
-  'Other'
-];
 
 const Feedback: React.FC = () => {
   const [formData, setFormData] = useState<FeedbackForm>(initialFormState);
@@ -32,8 +21,42 @@ const Feedback: React.FC = () => {
   }>({ type: null, message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const testConnection = async () => {
+    try {
+      console.log('Testing connection to Supabase...');
+      
+      // Try direct fetch to Supabase REST API
+      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/feedback?select=id&limit=1', {
+        method: 'GET',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Direct fetch successful:', data);
+      
+      setStatus({
+        type: 'success',
+        message: 'Direct API connection successful! You can now try submitting feedback.'
+      });
+    } catch (err: any) {
+      console.error('Direct fetch failed:', err);
+      setStatus({
+        type: 'error',
+        message: `Direct API test failed: ${err.message}`
+      });
+    }
+  };
+
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -44,146 +67,175 @@ const Feedback: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setIsSubmitting(true);
     setStatus({ type: null, message: '' });
 
     try {
-      const { error } = await supabase
-        .from('feedback')
-        .insert([
-          {
-            full_name: formData.fullName,
-            email: formData.email,
-            occupation: formData.occupation,
-            message: formData.message,
-            created_at: new Date().toISOString()
-          }
-        ]);
+      console.log('Attempting to submit feedback via direct fetch:', formData);
 
-      if (error) throw error;
+      // Use direct fetch instead of Supabase client
+      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/feedback', {
+        method: 'POST',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          Name: formData.Name,
+          Email: formData.Email,
+          Message: formData.Message,
+          created_at: new Date().toISOString()
+        })
+      });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Feedback submitted successfully via direct fetch:', data);
+      
       setStatus({
         type: 'success',
-        message: 'Thank you for your feedback! We appreciate your input.'
+        message: 'Thank you for your feedback! (Submitted via direct API)'
       });
       setFormData(initialFormState);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error submitting feedback via direct fetch:', error);
+      
       setStatus({
         type: 'error',
-        message: 'Failed to submit feedback. Please try again later.'
+        message: `Failed to submit: ${error.message}`
       });
-      console.error('Error submitting feedback:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-    >
-      <div className="bg-white shadow-lg rounded-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Share Your Feedback</h1>
-        <p className="text-gray-600 mb-8">
-          We value your input and are committed to improving based on your feedback.
-        </p>
+    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px' }}>
+      <h1 style={{ marginBottom: '20px' }}>Share Your Feedback</h1>
 
-        {status.type && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-4 rounded-md mb-6 ${
-              status.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-            }`}
-          >
-            {status.message}
-          </motion.div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Enter your full name"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email Address *
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="your.email@example.com"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="occupation" className="block text-sm font-medium text-gray-700">
-              Occupation
-            </label>
-            <select
-              id="occupation"
-              name="occupation"
-              value={formData.occupation}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            >
-              <option value="">Select your occupation</option>
-              {occupationOptions.map(option => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-              Message / Feedback *
-            </label>
-            <textarea
-              id="message"
-              name="message"
-              value={formData.message}
-              onChange={handleChange}
-              required
-              rows={5}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Share your thoughts, suggestions, or feedback..."
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-              isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
-            }`}
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-          </button>
-        </form>
+      {/* Test Connection Button */}
+      <div style={{ marginBottom: '20px' }}>
+        <button
+          type="button"
+          onClick={testConnection}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginRight: '10px'
+          }}
+        >
+          Test Connection
+        </button>
+        <small style={{ color: '#666' }}>
+          Click this button first to test if the connection to Supabase is working
+        </small>
       </div>
-    </motion.div>
+
+      {status.type && (
+        <div
+          style={{
+            padding: '10px',
+            marginBottom: '20px',
+            backgroundColor: status.type === 'success' ? '#e6ffe6' : '#ffe6e6',
+            border: `1px solid ${status.type === 'success' ? '#00cc00' : '#ff0000'}`,
+            borderRadius: '4px'
+          }}
+        >
+          {status.message}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div>
+          <label htmlFor="Name" style={{ display: 'block', marginBottom: '5px' }}>
+            Name *
+          </label>
+          <input
+            type="text"
+            id="Name"
+            name="Name"
+            value={formData.Name}
+            onChange={handleChange}
+            required
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ccc',
+              borderRadius: '4px'
+            }}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="Email" style={{ display: 'block', marginBottom: '5px' }}>
+            Email *
+          </label>
+          <input
+            type="email"
+            id="Email"
+            name="Email"
+            value={formData.Email}
+            onChange={handleChange}
+            required
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ccc',
+              borderRadius: '4px'
+            }}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="Message" style={{ display: 'block', marginBottom: '5px' }}>
+            Message *
+          </label>
+          <textarea
+            id="Message"
+            name="Message"
+            value={formData.Message}
+            onChange={handleChange}
+            required
+            rows={5}
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              resize: 'vertical'
+            }}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            opacity: isSubmitting ? 0.7 : 1
+          }}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+        </button>
+      </form>
+    </div>
   );
 };
 
