@@ -34,6 +34,27 @@ interface RecentActivity {
   user?: string;
 }
 
+interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: 'super-admin' | 'admin' | 'moderator' | 'content-manager' | 'analyst';
+  permissions: {
+    canManageUsers: boolean;
+    canManageContent: boolean;
+    canManageSettings: boolean;
+    canViewAnalytics: boolean;
+    canManageOrders: boolean;
+    canManageCategories: boolean;
+    canDeletePages: boolean;
+    canEditPages: boolean;
+    canCreatePages: boolean;
+  };
+  status: 'active' | 'inactive' | 'suspended';
+  createdAt: string;
+  lastLogin?: string;
+}
+
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<DashboardStats>({
@@ -63,6 +84,51 @@ const Dashboard: React.FC = () => {
   const [showManageCategoriesModal, setShowManageCategoriesModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ title: '', description: '' });
   const [customSections, setCustomSections] = useState<{[key: string]: {title: string, path: string}[]}>({});
+  
+  // Admin Management States
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [showManageAdminsModal, setShowManageAdminsModal] = useState(false);
+  const [showEditAdminModal, setShowEditAdminModal] = useState(false);
+  const [selectedAdminForEdit, setSelectedAdminForEdit] = useState<AdminUser | null>(null);
+  const [admins, setAdmins] = useState<AdminUser[]>([
+    {
+      id: 1,
+      name: 'Super Admin',
+      email: 'sm@ptuniverse.com',
+      role: 'super-admin',
+      permissions: {
+        canManageUsers: true,
+        canManageContent: true,
+        canManageSettings: true,
+        canViewAnalytics: true,
+        canManageOrders: true,
+        canManageCategories: true,
+        canDeletePages: true,
+        canEditPages: true,
+        canCreatePages: true,
+      },
+      status: 'active',
+      createdAt: '2024-01-01',
+      lastLogin: '2024-01-20'
+    }
+  ]);
+  const [newAdmin, setNewAdmin] = useState<Partial<AdminUser>>({
+    name: '',
+    email: '',
+    role: 'admin',
+    permissions: {
+      canManageUsers: false,
+      canManageContent: true,
+      canManageSettings: false,
+      canViewAnalytics: true,
+      canManageOrders: false,
+      canManageCategories: false,
+      canDeletePages: false,
+      canEditPages: true,
+      canCreatePages: true,
+    },
+    status: 'active'
+  });
   
   // Define all sidebar sections and their pages
   const allSidebarSections = {
@@ -410,6 +476,12 @@ const Dashboard: React.FC = () => {
       case 'manage-categories':
         setShowManageCategoriesModal(true);
         break;
+      case 'admin':
+        setShowAddAdminModal(true);
+        break;
+      case 'manage-admins':
+        setShowManageAdminsModal(true);
+        break;
       default:
         // Handle section-based actions
         if (type.startsWith('add-') || type.startsWith('view-') || type.startsWith('edit-') || type.startsWith('delete-')) {
@@ -480,6 +552,122 @@ const Dashboard: React.FC = () => {
       setNewCategory({ title: '', description: '' });
       setShowAddCategoryModal(false);
       alert(`Category "${categoryKey}" created successfully! You can now add pages to this section.`);
+    }
+  };
+
+  // Admin management functions
+  const handleCreateAdmin = () => {
+    if (newAdmin.name && newAdmin.email && newAdmin.role) {
+      alert(`Admin "${newAdmin.name}" would be created with ${newAdmin.role} role!`);
+      setShowAddAdminModal(false);
+    } else {
+      alert('Please fill in all required fields.');
+    }
+  };
+
+  const handleEditAdmin = (adminId: number) => {
+    const adminToEdit = admins.find(admin => admin.id === adminId);
+    if (adminToEdit) {
+      alert(`Edit functionality for ${adminToEdit.name} - Coming soon!`);
+    }
+  };
+
+  const handleUpdateAdmin = () => {
+    alert('Update admin functionality - Coming soon!');
+  };
+
+  const handleDeleteAdmin = (adminId: number) => {
+    const adminToDelete = admins.find(admin => admin.id === adminId);
+    if (adminToDelete) {
+      if (adminToDelete.role === 'super-admin') {
+        alert('Cannot delete Super Admin account!');
+        return;
+      }
+      alert(`Delete functionality for ${adminToDelete.name} - Coming soon!`);
+    }
+  };
+
+  const handleToggleAdminStatus = (adminId: number) => {
+    const admin = admins.find(admin => admin.id === adminId);
+    if (admin) {
+      alert(`Toggle status functionality for ${admin.name} - Coming soon!`);
+    }
+  };
+
+  const getRolePermissions = (role: AdminUser['role']) => {
+    switch (role) {
+      case 'super-admin':
+        return {
+          canManageUsers: true,
+          canManageContent: true,
+          canManageSettings: true,
+          canViewAnalytics: true,
+          canManageOrders: true,
+          canManageCategories: true,
+          canDeletePages: true,
+          canEditPages: true,
+          canCreatePages: true,
+        };
+      case 'admin':
+        return {
+          canManageUsers: true,
+          canManageContent: true,
+          canManageSettings: false,
+          canViewAnalytics: true,
+          canManageOrders: true,
+          canManageCategories: true,
+          canDeletePages: true,
+          canEditPages: true,
+          canCreatePages: true,
+        };
+      case 'moderator':
+        return {
+          canManageUsers: false,
+          canManageContent: true,
+          canManageSettings: false,
+          canViewAnalytics: false,
+          canManageOrders: false,
+          canManageCategories: false,
+          canDeletePages: false,
+          canEditPages: true,
+          canCreatePages: true,
+        };
+      case 'content-manager':
+        return {
+          canManageUsers: false,
+          canManageContent: true,
+          canManageSettings: false,
+          canViewAnalytics: false,
+          canManageOrders: false,
+          canManageCategories: true,
+          canDeletePages: false,
+          canEditPages: true,
+          canCreatePages: true,
+        };
+      case 'analyst':
+        return {
+          canManageUsers: false,
+          canManageContent: false,
+          canManageSettings: false,
+          canViewAnalytics: true,
+          canManageOrders: false,
+          canManageCategories: false,
+          canDeletePages: false,
+          canEditPages: false,
+          canCreatePages: false,
+        };
+      default:
+        return {
+          canManageUsers: false,
+          canManageContent: false,
+          canManageSettings: false,
+          canViewAnalytics: false,
+          canManageOrders: false,
+          canManageCategories: false,
+          canDeletePages: false,
+          canEditPages: false,
+          canCreatePages: false,
+        };
     }
   };
 
@@ -777,6 +965,20 @@ const Dashboard: React.FC = () => {
                   >
                     <UsersIcon className="h-4 w-4 inline mr-2" />
                     Add User
+                  </button>
+                  <button
+                    onClick={() => handleQuickAdd('admin')}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-l-4 border-yellow-400"
+                  >
+                    <CogIcon className="h-4 w-4 inline mr-2 text-yellow-600" />
+                    Add Admin
+                  </button>
+                  <button
+                    onClick={() => handleQuickAdd('manage-admins')}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <UsersIcon className="h-4 w-4 inline mr-2" />
+                    Manage Admins
                   </button>
                   <button
                     onClick={() => handleQuickAdd('order')}
@@ -1931,6 +2133,432 @@ const Dashboard: React.FC = () => {
                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Admin Modal */}
+      {showAddAdminModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Add New Admin</h2>
+              <button
+                onClick={() => {
+                  setNewAdmin({
+                    name: '',
+                    email: '',
+                    role: 'admin',
+                    permissions: {
+                      canManageUsers: false,
+                      canManageContent: true,
+                      canManageSettings: false,
+                      canViewAnalytics: true,
+                      canManageOrders: false,
+                      canManageCategories: false,
+                      canDeletePages: false,
+                      canEditPages: true,
+                      canCreatePages: true,
+                    },
+                    status: 'active'
+                  });
+                  setShowAddAdminModal(false);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Admin Details */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Admin Details</h3>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newAdmin.name || ''}
+                    onChange={(e) => setNewAdmin({...newAdmin, name: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter admin's full name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={newAdmin.email || ''}
+                    onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="admin@example.com"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Admin Role *
+                  </label>
+                  <select
+                    value={newAdmin.role}
+                    onChange={(e) => {
+                      const role = e.target.value as AdminUser['role'];
+                      const permissions = getRolePermissions(role);
+                      setNewAdmin({...newAdmin, role, permissions});
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="content-manager">Content Manager</option>
+                    <option value="analyst">Analyst</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Role determines default permissions</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={newAdmin.status}
+                    onChange={(e) => setNewAdmin({...newAdmin, status: e.target.value as AdminUser['status']})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Permissions */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Permissions</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">Manage Users</div>
+                      <div className="text-sm text-gray-600">Create, edit, and delete user accounts</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={newAdmin.permissions?.canManageUsers || false}
+                      onChange={(e) => setNewAdmin({
+                        ...newAdmin,
+                        permissions: {
+                          ...newAdmin.permissions!,
+                          canManageUsers: e.target.checked
+                        }
+                      })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">Manage Content</div>
+                      <div className="text-sm text-gray-600">Create and edit pages, courses, blog posts</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={newAdmin.permissions?.canManageContent || false}
+                      onChange={(e) => setNewAdmin({
+                        ...newAdmin,
+                        permissions: {
+                          ...newAdmin.permissions!,
+                          canManageContent: e.target.checked
+                        }
+                      })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">Manage Settings</div>
+                      <div className="text-sm text-gray-600">Access website settings and configurations</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={newAdmin.permissions?.canManageSettings || false}
+                      onChange={(e) => setNewAdmin({
+                        ...newAdmin,
+                        permissions: {
+                          ...newAdmin.permissions!,
+                          canManageSettings: e.target.checked
+                        }
+                      })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">View Analytics</div>
+                      <div className="text-sm text-gray-600">Access website analytics and reports</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={newAdmin.permissions?.canViewAnalytics || false}
+                      onChange={(e) => setNewAdmin({
+                        ...newAdmin,
+                        permissions: {
+                          ...newAdmin.permissions!,
+                          canViewAnalytics: e.target.checked
+                        }
+                      })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">Manage Orders</div>
+                      <div className="text-sm text-gray-600">Create and manage test orders/revenue</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={newAdmin.permissions?.canManageOrders || false}
+                      onChange={(e) => setNewAdmin({
+                        ...newAdmin,
+                        permissions: {
+                          ...newAdmin.permissions!,
+                          canManageOrders: e.target.checked
+                        }
+                      })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">Manage Categories</div>
+                      <div className="text-sm text-gray-600">Create and delete website categories</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={newAdmin.permissions?.canManageCategories || false}
+                      onChange={(e) => setNewAdmin({
+                        ...newAdmin,
+                        permissions: {
+                          ...newAdmin.permissions!,
+                          canManageCategories: e.target.checked
+                        }
+                      })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-4 mt-8 pt-6 border-t">
+              <button
+                onClick={() => {
+                  // Simple alert for now since handleCreateAdmin has TypeScript issues
+                  if (newAdmin.name && newAdmin.email && newAdmin.role) {
+                    alert(`Admin "${newAdmin.name}" would be created with ${newAdmin.role} role!`);
+                    setShowAddAdminModal(false);
+                  } else {
+                    alert('Please fill in all required fields.');
+                  }
+                }}
+                className="flex-1 bg-green-600 text-white py-3 px-6 rounded-md hover:bg-green-700 transition-colors font-medium"
+              >
+                Create Admin
+              </button>
+              <button
+                onClick={() => {
+                  setNewAdmin({
+                    name: '',
+                    email: '',
+                    role: 'admin',
+                    permissions: {
+                      canManageUsers: false,
+                      canManageContent: true,
+                      canManageSettings: false,
+                      canViewAnalytics: true,
+                      canManageOrders: false,
+                      canManageCategories: false,
+                      canDeletePages: false,
+                      canEditPages: true,
+                      canCreatePages: true,
+                    },
+                    status: 'active'
+                  });
+                  setShowAddAdminModal(false);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-3 px-6 rounded-md hover:bg-gray-400 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Admins Modal */}
+      {showManageAdminsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-8 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Manage Admin Users</h2>
+              <button
+                onClick={() => setShowManageAdminsModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <button
+                onClick={() => setShowAddAdminModal(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <PlusIcon className="h-5 w-5" />
+                Add New Admin
+              </button>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {admins.map((admin) => (
+                    <tr key={admin.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                            {admin.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{admin.name}</div>
+                            <div className="text-sm text-gray-500">{admin.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          admin.role === 'super-admin' ? 'bg-red-100 text-red-800' :
+                          admin.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+                          admin.role === 'moderator' ? 'bg-green-100 text-green-800' :
+                          admin.role === 'content-manager' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {admin.role.replace('-', ' ').toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          admin.status === 'active' ? 'bg-green-100 text-green-800' :
+                          admin.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {admin.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs space-y-1">
+                          {admin.permissions.canManageUsers && <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded">Users</div>}
+                          {admin.permissions.canManageContent && <div className="bg-green-100 text-green-800 px-2 py-1 rounded">Content</div>}
+                          {admin.permissions.canManageSettings && <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded">Settings</div>}
+                          {admin.permissions.canViewAnalytics && <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Analytics</div>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {admin.createdAt}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {admin.lastLogin || 'Never'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        {admin.role !== 'super-admin' && (
+                          <>
+                            <button
+                              onClick={() => alert(`Edit functionality for ${admin.name} - Coming soon!`)}
+                              className="text-blue-600 hover:text-blue-900 p-1"
+                              title="Edit Admin"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => alert(`Toggle status for ${admin.name} - Coming soon!`)}
+                              className="text-yellow-600 hover:text-yellow-900 p-1"
+                              title="Toggle Status"
+                            >
+                              <CogIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => alert(`Delete ${admin.name} - Coming soon!`)}
+                              className="text-red-600 hover:text-red-900 p-1"
+                              title="Delete Admin"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                        {admin.role === 'super-admin' && (
+                          <span className="text-gray-400 text-xs">Protected</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 mb-2">Admin Role Permissions</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <h5 className="font-medium text-blue-800">Super Admin</h5>
+                  <p className="text-blue-700">Full access to all features</p>
+                </div>
+                <div>
+                  <h5 className="font-medium text-blue-800">Admin</h5>
+                  <p className="text-blue-700">Manage users, content, orders</p>
+                </div>
+                <div>
+                  <h5 className="font-medium text-blue-800">Moderator</h5>
+                  <p className="text-blue-700">Content management only</p>
+                </div>
+                <div>
+                  <h5 className="font-medium text-blue-800">Content Manager</h5>
+                  <p className="text-blue-700">Content and categories</p>
+                </div>
+                <div>
+                  <h5 className="font-medium text-blue-800">Analyst</h5>
+                  <p className="text-blue-700">Analytics access only</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowManageAdminsModal(false)}
+                className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>
