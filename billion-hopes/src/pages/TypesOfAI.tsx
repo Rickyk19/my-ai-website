@@ -6,6 +6,9 @@ interface Comment {
   Name: string;
   Comment: string;
   created_at: string;
+  likes?: number;
+  hearts?: number;
+  claps?: number;
 }
 
 const TypesOfAI: React.FC = () => {
@@ -59,6 +62,43 @@ const TypesOfAI: React.FC = () => {
     loadComments();
   }, []);
 
+  // Handle comment reactions
+  const handleCommentReaction = async (commentId: number, reactionType: 'likes' | 'hearts' | 'claps') => {
+    try {
+      // Get current comment data
+      const currentComment = comments.find(c => c.id === commentId);
+      if (!currentComment) return;
+
+      const currentCount = currentComment[reactionType] || 0;
+      const newCount = currentCount + 1;
+
+      // Update in database
+      const response = await fetch(`https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/comments?id=eq.${commentId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          [reactionType]: newCount
+        })
+      });
+
+      if (response.ok) {
+        // Update local state
+        setComments(prev => prev.map(comment => 
+          comment.id === commentId 
+            ? { ...comment, [reactionType]: newCount }
+            : comment
+        ));
+      }
+    } catch (error) {
+      console.error('Error updating reaction:', error);
+    }
+  };
+
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -79,7 +119,10 @@ const TypesOfAI: React.FC = () => {
         body: JSON.stringify({
           Name: newComment.name,
           Comment: newComment.comments,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          likes: 0,
+          hearts: 0,
+          claps: 0
         })
       });
 
@@ -325,7 +368,32 @@ const TypesOfAI: React.FC = () => {
                       {new Date(comment.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-gray-700">{comment.Comment}</p>
+                  <p className="text-gray-700 mb-4">{comment.Comment}</p>
+                  
+                  {/* Reaction buttons for each comment */}
+                  <div className="flex gap-4 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => handleCommentReaction(comment.id, 'likes')}
+                      className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-blue-50 transition-colors text-sm"
+                    >
+                      <span className="text-lg">👍</span>
+                      <span className="text-gray-600">{comment.likes || 0}</span>
+                    </button>
+                    <button
+                      onClick={() => handleCommentReaction(comment.id, 'hearts')}
+                      className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-red-50 transition-colors text-sm"
+                    >
+                      <span className="text-lg">❤️</span>
+                      <span className="text-gray-600">{comment.hearts || 0}</span>
+                    </button>
+                    <button
+                      onClick={() => handleCommentReaction(comment.id, 'claps')}
+                      className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-yellow-50 transition-colors text-sm"
+                    >
+                      <span className="text-lg">👏</span>
+                      <span className="text-gray-600">{comment.claps || 0}</span>
+                    </button>
+                  </div>
                 </div>
             ))
           ) : (

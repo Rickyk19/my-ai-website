@@ -109,6 +109,14 @@ const Home: React.FC = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  
+  // Newsletter subscription state
+  const [email, setEmail] = useState('');
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   const handleExploreClick = () => {
     if (isAuthenticated) {
@@ -121,6 +129,51 @@ const Home: React.FC = () => {
   const handleLoginSuccess = () => {
     setIsLoginModalOpen(false);
     navigate('/courses');
+  };
+
+  // Handle newsletter subscription
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubscribing) return;
+    if (!email.trim()) return;
+
+    setIsSubscribing(true);
+    setSubscriptionStatus({ type: null, message: '' });
+
+    try {
+      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/newsletter%20subscribers', {
+        method: 'POST',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          created_at: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      setSubscriptionStatus({
+        type: 'success',
+        message: 'Successfully subscribed to our newsletter!'
+      });
+      setEmail('');
+    } catch (error: any) {
+      console.error('Error subscribing to newsletter:', error);
+      setSubscriptionStatus({
+        type: 'error',
+        message: `Failed to subscribe: ${error.message}`
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
   };
 
   return (
@@ -202,17 +255,39 @@ const Home: React.FC = () => {
         <p className="text-gray-600 mb-6">
           Subscribe to our newsletter for the latest updates in AI and technology.
         </p>
-        <form className="max-w-md mx-auto flex gap-4">
+        
+        {/* Status Message */}
+        {subscriptionStatus.type && (
+          <div
+            className={`mb-4 p-3 rounded-md max-w-md mx-auto ${
+              subscriptionStatus.type === 'success' 
+                ? 'bg-green-100 border border-green-400 text-green-700' 
+                : 'bg-red-100 border border-red-400 text-red-700'
+            }`}
+          >
+            {subscriptionStatus.message}
+          </div>
+        )}
+        
+        <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex gap-4">
           <input
             type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
             className="flex-1 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
           />
           <button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={isSubscribing}
+            className={`px-6 py-2 rounded-md transition-colors ${
+              isSubscribing 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            } text-white`}
           >
-            Subscribe
+            {isSubscribing ? 'Subscribing...' : 'Subscribe'}
           </button>
         </form>
       </section>
