@@ -6,6 +6,8 @@ import TypesOfAI from './pages/TypesOfAI';
 import Courses from './pages/Courses';
 import CourseContent from './pages/CourseContent';
 import Feedback from './pages/Feedback';
+import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
 // Placeholder components for different routes
@@ -37,6 +39,11 @@ const App: React.FC = () => {
             <Route path="resources/*" element={<Resources />} />
             <Route path="contact" element={<Contact />} />
             <Route path="feedback" element={<Feedback />} />
+            <Route path="dashboard" element={
+              <ProtectedRoute adminOnly={true}>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<SignUp />} />
           </Route>

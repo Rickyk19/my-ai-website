@@ -2,8 +2,36 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import logo from '../assets/logo.png';
+import { useAuth } from '../context/AuthContext';
 
 const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const success = await login(username, password);
+      if (success) {
+        setUsername('');
+        setPassword('');
+        onClose();
+      } else {
+        setError('Invalid credentials. Only admin access is allowed.');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -16,18 +44,27 @@ const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
           <XMarkIcon className="h-6 w-6" />
         </button>
         
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Login to Your Account</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h2>
         
-        <form className="space-y-4">
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              Username
+              Email
             </label>
             <input
-              type="text"
+              type="email"
               id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Enter your username"
+              placeholder="Enter admin email"
+              required
             />
           </div>
           
@@ -38,16 +75,20 @@ const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
             <input
               type="password"
               id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Enter your password"
+              placeholder="Enter admin password"
+              required
             />
           </div>
           
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400"
           >
-            Login
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>
@@ -57,6 +98,11 @@ const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
 
 export const Navbar: React.FC = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { isAuthenticated, isAdmin, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <>
@@ -82,15 +128,29 @@ export const Navbar: React.FC = () => {
               <Link to="/data-lab" className="text-white hover:text-blue-100 transition-colors text-lg">
                 Data Lab
               </Link>
+              {isAdmin && (
+                <Link to="/dashboard" className="text-white hover:text-blue-100 transition-colors text-lg">
+                  Dashboard
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setIsLoginModalOpen(true)}
-                className="text-white hover:text-blue-100 transition-colors text-lg"
-              >
-                Login
-              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="text-white hover:text-blue-100 transition-colors text-lg"
+                >
+                  Logout
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="text-white hover:text-blue-100 transition-colors text-lg"
+                >
+                  Login
+                </button>
+              )}
               <Link
                 to="/signup"
                 className="bg-white text-blue-600 px-6 py-3 rounded-full hover:bg-blue-50 transition-colors text-lg font-medium"

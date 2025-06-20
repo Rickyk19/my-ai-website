@@ -20,12 +20,42 @@ const loadRazorpayScript = (): Promise<boolean> => {
   });
 };
 
-// Mock function to save purchase in localStorage
-const savePurchase = (courseId: number) => {
+// Save purchase to database and localStorage
+const savePurchase = async (courseId: number, amount: number, courseName: string, paymentId: string) => {
+  try {
+    // Save to Supabase orders table
+    const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/orders', {
+      method: 'POST',
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        course_id: courseId,
+        course_name: courseName,
+        amount: amount,
+        payment_id: paymentId,
+        status: 'completed',
+        created_at: new Date().toISOString()
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Failed to save order to database');
+    }
+  } catch (error) {
+    console.error('Error saving order:', error);
+  }
+
+  // Also save to localStorage as backup
   const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
   purchases.push({
     courseId,
     purchaseDate: new Date().toISOString(),
+    amount,
+    paymentId
   });
   localStorage.setItem('purchases', JSON.stringify(purchases));
 };
@@ -50,9 +80,9 @@ export const initializePayment = async ({ courseId, amount, courseName }: Paymen
     currency: 'INR',
     name: 'Billion Hopes',
     description: `Purchase ${courseName}`,
-    handler: function (response: any) {
+    handler: async function (response: any) {
       // Handle successful payment
-      savePurchase(courseId);
+      await savePurchase(courseId, amount, courseName, response.razorpay_payment_id);
       alert('Payment successful! You now have access to the course.');
       window.location.href = `/course/${courseId}`;
     },
