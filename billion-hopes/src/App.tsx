@@ -14,6 +14,7 @@ import MembersLoginDebug from './pages/MembersLoginDebug';
 import SupabaseTestPage from './pages/SupabaseTestPage';
 import SupabaseConnectionTest from './pages/SupabaseConnectionTest';
 import MembersDashboard from './pages/MembersDashboard';
+import ShowcasePage from './pages/ShowcasePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
@@ -46,6 +47,7 @@ const App: React.FC = () => {
             <Route path="resources/*" element={<Resources />} />
             <Route path="contact" element={<Contact />} />
             <Route path="feedback" element={<Feedback />} />
+            <Route path="showcase" element={<ShowcasePage />} />
             <Route path="dashboard" element={
               <ProtectedRoute adminOnly={true}>
                 <Dashboard />

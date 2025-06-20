@@ -21,17 +21,26 @@ export const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
+            <Link to="/showcase" className="text-white hover:text-blue-100 transition-colors text-lg">
+              🚀 Platform Guide
+            </Link>
             <Link to="/solutions" className="text-white hover:text-blue-100 transition-colors text-lg">
               Solutions
             </Link>
             <Link to="/ai-explained" className="text-white hover:text-blue-100 transition-colors text-lg">
               AI Explained
             </Link>
+            <Link to="/agi" className="text-white hover:text-blue-100 transition-colors text-lg">
+              AGI
+            </Link>
             <Link to="/trends" className="text-white hover:text-blue-100 transition-colors text-lg">
               Trends
             </Link>
             <Link to="/data-lab" className="text-white hover:text-blue-100 transition-colors text-lg">
               Data Lab
+            </Link>
+            <Link to="/resources" className="text-white hover:text-blue-100 transition-colors text-lg">
+              AI Resources
             </Link>
             {isAdmin && (
               <Link to="/dashboard" className="text-white hover:text-blue-100 transition-colors text-lg">

@@ -62,7 +62,7 @@ const TypesOfAI: React.FC = () => {
     loadComments();
   }, []);
 
-  // Handle comment reactions
+  // Handle comment reactions - with error handling for missing columns
   const handleCommentReaction = async (commentId: number, reactionType: 'likes' | 'hearts' | 'claps') => {
     try {
       // Get current comment data
@@ -72,22 +72,40 @@ const TypesOfAI: React.FC = () => {
       const currentCount = currentComment[reactionType] || 0;
       const newCount = currentCount + 1;
 
-      // Update in database
-      const response = await fetch(`https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/comments?id=eq.${commentId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
-          [reactionType]: newCount
-        })
-      });
+      // Try to update in database - if column doesn't exist, just update locally
+      try {
+        const response = await fetch(`https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/comments?id=eq.${commentId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            [reactionType]: newCount
+          })
+        });
 
-      if (response.ok) {
-        // Update local state
+        if (response.ok) {
+          // Update local state
+          setComments(prev => prev.map(comment => 
+            comment.id === commentId 
+              ? { ...comment, [reactionType]: newCount }
+              : comment
+          ));
+        } else {
+          // If database update fails, still update locally for user feedback
+          console.warn(`Database update failed for ${reactionType}, updating locally only`);
+          setComments(prev => prev.map(comment => 
+            comment.id === commentId 
+              ? { ...comment, [reactionType]: newCount }
+              : comment
+          ));
+        }
+      } catch (dbError) {
+        // If database update fails, still update locally
+        console.warn(`Database error for ${reactionType}:`, dbError);
         setComments(prev => prev.map(comment => 
           comment.id === commentId 
             ? { ...comment, [reactionType]: newCount }
@@ -108,6 +126,16 @@ const TypesOfAI: React.FC = () => {
     setStatus({ type: null, message: '' });
 
     try {
+      // Try to submit with reaction fields, fall back to basic fields if needed
+      let requestBody = {
+        Name: newComment.name,
+        Comment: newComment.comments,
+        created_at: new Date().toISOString(),
+        likes: 0,
+        hearts: 0,
+        claps: 0
+      };
+
       const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/comments', {
         method: 'POST',
         headers: {
@@ -116,19 +144,32 @@ const TypesOfAI: React.FC = () => {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify({
-          Name: newComment.name,
-          Comment: newComment.comments,
-          created_at: new Date().toISOString(),
-          likes: 0,
-          hearts: 0,
-          claps: 0
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        // If full request fails, try with basic fields only
+        const basicRequestBody = {
+          Name: newComment.name,
+          Comment: newComment.comments,
+          created_at: new Date().toISOString()
+        };
+
+        const fallbackResponse = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/comments', {
+          method: 'POST',
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(basicRequestBody)
+        });
+
+        if (!fallbackResponse.ok) {
+          const errorText = await fallbackResponse.text();
+          throw new Error(`HTTP ${fallbackResponse.status}: ${errorText}`);
+        }
       }
 
       setStatus({
@@ -381,7 +422,7 @@ const TypesOfAI: React.FC = () => {
                     </button>
                     <button
                       onClick={() => handleCommentReaction(comment.id, 'hearts')}
-                      className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-red-50 transition-colors text-sm"
+                      className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-pink-50 transition-colors text-sm"
                     >
                       <span className="text-lg">❤️</span>
                       <span className="text-gray-600">{comment.hearts || 0}</span>

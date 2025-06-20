@@ -18,6 +18,7 @@ import {
 } from '@heroicons/react/24/solid';
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
+import FeatureCards from '../components/FeatureCards';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -656,46 +657,9 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Featured Sections */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="bg-white p-6 rounded-lg shadow-md"
-        >
-          <h2 className="text-2xl font-semibold mb-4">AI Explained</h2>
-          <p className="text-gray-600 mb-4">
-            Discover the fundamentals of artificial intelligence and its applications.
-          </p>
-          <Link to="/ai-explained" className="text-blue-600 hover:text-blue-800">
-            Learn More →
-          </Link>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="bg-white p-6 rounded-lg shadow-md"
-        >
-          <h2 className="text-2xl font-semibold mb-4">Latest Trends</h2>
-          <p className="text-gray-600 mb-4">
-            Stay updated with the latest developments in AI and technology.
-          </p>
-          <Link to="/trends" className="text-blue-600 hover:text-blue-800">
-            Explore Trends →
-          </Link>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="bg-white p-6 rounded-lg shadow-md"
-        >
-          <h2 className="text-2xl font-semibold mb-4">Data Lab</h2>
-          <p className="text-gray-600 mb-4">
-            Access datasets and resources for your AI projects.
-          </p>
-          <Link to="/data-lab" className="text-blue-600 hover:text-blue-800">
-            Visit Data Lab →
-          </Link>
-        </motion.div>
+      {/* Feature Cards Section */}
+      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+        <FeatureCards />
       </section>
 
       {/* Newsletter Section */}
