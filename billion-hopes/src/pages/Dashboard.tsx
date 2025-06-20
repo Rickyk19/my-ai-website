@@ -15,6 +15,7 @@ import {
   AcademicCapIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import RichTextEditor from '../components/RichTextEditor';
 
 interface DashboardStats {
   totalUsers: number;
@@ -55,14 +56,67 @@ const Dashboard: React.FC = () => {
   const [newUser, setNewUser] = useState({ name: '', email: '', role: 'user' });
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [newOrder, setNewOrder] = useState({ courseName: '', amount: '', customerName: '', customerEmail: '' });
+  const [showSectionModal, setShowSectionModal] = useState(false);
+  const [selectedSection, setSelectedSection] = useState('');
+  const [sectionAction, setSectionAction] = useState('');
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [showManageCategoriesModal, setShowManageCategoriesModal] = useState(false);
+  const [newCategory, setNewCategory] = useState({ title: '', description: '' });
+  const [customSections, setCustomSections] = useState<{[key: string]: {title: string, path: string}[]}>({});
+  
+  // Define all sidebar sections and their pages
+  const allSidebarSections = {
+    ...customSections,
+    'AI Explained': [
+      { title: 'Types of AI', path: '/ai-explained/types' },
+      { title: 'ML', path: '/ai-explained/ml' },
+      { title: 'DL & NNs', path: '/ai-explained/dl-nn' },
+      { title: 'Agents', path: '/ai-explained/agents' },
+      { title: 'RL', path: '/ai-explained/rl' },
+      { title: 'Robotics', path: '/ai-explained/robotics' },
+      { title: 'AI in Industry', path: '/ai-explained/industry' },
+      { title: 'Ethics & Governance', path: '/ai-explained/ethics' },
+      { title: 'YT Lectures', path: '/ai-explained/lectures' },
+      { title: 'Resources', path: '/ai-explained/resources' },
+    ],
+    'Solutions': [
+      { title: 'Enroll in Courses', path: '/solutions/courses' },
+      { title: 'Great Game AI', path: '/solutions/game-ai' },
+      { title: 'National AI Roadmap', path: '/solutions/roadmap' },
+    ],
+    'Trends': [
+      { title: 'News', path: '/trends/news' },
+      { title: 'Debates', path: '/trends/debates' },
+      { title: 'Innovations', path: '/trends/innovations' },
+      { title: 'AI in Industry', path: '/trends/industry' },
+      { title: 'Resources', path: '/trends/resources' },
+    ],
+    'Data Lab': [
+      { title: 'Learn About Data', path: '/data-lab/learn' },
+      { title: 'Datasets', path: '/data-lab/datasets' },
+      { title: 'Sources', path: '/data-lab/sources' },
+    ],
+    'AGI': [
+      { title: 'What is AGI', path: '/agi/what-is-agi' },
+      { title: 'Brain & AI', path: '/agi/brain-ai' },
+      { title: 'Future of Intelligence', path: '/agi/future' },
+    ],
+    'AI Resources': [
+      { title: 'Books', path: '/resources/books' },
+      { title: 'Papers', path: '/resources/papers' },
+      { title: 'Lectures', path: '/resources/lectures' },
+      { title: 'OGs', path: '/resources/ogs' },
+    ],
+  };
+  
   const [pages, setPages] = useState([
-    { id: 1, title: 'Home', path: '/', status: 'published', lastModified: '2024-01-15', content: 'Welcome to Billion Hopes homepage', image: null as string | null },
-    { id: 2, title: 'Courses', path: '/courses', status: 'published', lastModified: '2024-01-14', content: 'AI and ML courses for everyone', image: null as string | null },
-    { id: 3, title: 'Types of AI', path: '/types-of-ai', status: 'published', lastModified: '2024-01-13', content: 'Learn about different types of AI', image: null as string | null },
-    { id: 4, title: 'Feedback', path: '/feedback', status: 'published', lastModified: '2024-01-12', content: 'Share your feedback with us', image: null as string | null },
-    { id: 5, title: 'Dashboard', path: '/dashboard', status: 'published', lastModified: '2024-01-11', content: 'Admin dashboard for website management', image: null as string | null }
+    { id: 1, title: 'Home', path: '/', status: 'published', lastModified: '2024-01-15', content: 'Welcome to Billion Hopes homepage', image: null as string | null, section: 'Main' },
+    { id: 2, title: 'Courses', path: '/courses', status: 'published', lastModified: '2024-01-14', content: 'AI and ML courses for everyone', image: null as string | null, section: 'Main' },
+    { id: 3, title: 'Types of AI', path: '/ai-explained/types', status: 'published', lastModified: '2024-01-13', content: 'Learn about different types of AI', image: null as string | null, section: 'AI Explained' },
+    { id: 4, title: 'Feedback', path: '/feedback', status: 'published', lastModified: '2024-01-12', content: 'Share your feedback with us', image: null as string | null, section: 'Main' },
+    { id: 5, title: 'Dashboard', path: '/dashboard', status: 'published', lastModified: '2024-01-11', content: 'Admin dashboard for website management', image: null as string | null, section: 'Main' }
   ]);
-  const [newPage, setNewPage] = useState({ title: '', path: '', content: '', image: null as File | null, imagePreview: '' });
+  const [newPage, setNewPage] = useState({ title: '', path: '', content: '', image: null as File | null, imagePreview: '', section: '' });
   const quickAddRef = useRef<HTMLDivElement>(null);
 
   // Load dashboard data
@@ -350,8 +404,96 @@ const Dashboard: React.FC = () => {
       case 'order':
         setShowAddOrderModal(true);
         break;
-      default:
+      case 'add-category':
+        setShowAddCategoryModal(true);
         break;
+      case 'manage-categories':
+        setShowManageCategoriesModal(true);
+        break;
+      default:
+        // Handle section-based actions
+        if (type.startsWith('add-') || type.startsWith('view-') || type.startsWith('edit-') || type.startsWith('delete-')) {
+          const [action, section] = type.split('-', 2);
+          setSelectedSection(section);
+          setSectionAction(action);
+          setShowSectionModal(true);
+        }
+        break;
+    }
+  };
+
+  // Section management functions
+  const handleSectionAction = (action: string, section: string, pageTitle?: string) => {
+    switch (action) {
+      case 'add':
+        setNewPage({
+          title: '',
+          path: '',
+          content: '',
+          image: null,
+          imagePreview: '',
+          section: section
+        });
+        setShowPageModal(true);
+        setShowSectionModal(false);
+        break;
+      case 'view':
+        // Show pages for this section
+        const sectionPages = pages.filter(page => page.section === section);
+        alert(`${section} pages:\n${sectionPages.map(p => `• ${p.title} (${p.path})`).join('\n') || 'No pages found'}`);
+        setShowSectionModal(false);
+        break;
+      case 'edit':
+        // Show page selection for editing
+        const editablePages = pages.filter(page => page.section === section);
+        if (editablePages.length === 0) {
+          alert(`No pages found in ${section} section`);
+          setShowSectionModal(false);
+          return;
+        }
+        setShowEditPageModal(true);
+        setShowSectionModal(false);
+        break;
+      case 'delete':
+        // Show page selection for deletion
+        const deletablePages = pages.filter(page => page.section === section);
+        if (deletablePages.length === 0) {
+          alert(`No pages found in ${section} section`);
+          setShowSectionModal(false);
+          return;
+        }
+        setShowDeletePageModal(true);
+        setShowSectionModal(false);
+        break;
+    }
+  };
+
+  // Category management functions
+  const handleCreateCategory = () => {
+    if (newCategory.title.trim()) {
+      const categoryKey = newCategory.title;
+      const newSections = {
+        ...customSections,
+        [categoryKey]: []
+      };
+      setCustomSections(newSections);
+      setNewCategory({ title: '', description: '' });
+      setShowAddCategoryModal(false);
+      alert(`Category "${categoryKey}" created successfully! You can now add pages to this section.`);
+    }
+  };
+
+  const handleDeleteCategory = (categoryName: string) => {
+    if (window.confirm(`Are you sure you want to delete the "${categoryName}" category? This will also remove all pages in this category.`)) {
+      const updatedSections = { ...customSections };
+      delete updatedSections[categoryName];
+      setCustomSections(updatedSections);
+      
+      // Remove pages from this category
+      const updatedPages = pages.filter(page => page.section !== categoryName);
+      setPages(updatedPages);
+      
+      alert(`Category "${categoryName}" deleted successfully!`);
     }
   };
 
@@ -365,7 +507,8 @@ const Dashboard: React.FC = () => {
         status: 'published',
         lastModified: new Date().toISOString().split('T')[0],
         image: newPage.image ? newPage.image.name : null,
-        content: newPage.content
+        content: newPage.content,
+        section: newPage.section || 'Main'
       };
       setPages([...pages, page]);
       
@@ -374,7 +517,7 @@ const Dashboard: React.FC = () => {
         URL.revokeObjectURL(newPage.imagePreview);
       }
       
-      setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '' });
+      setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '', section: '' });
       setShowPageModal(false);
       
       let successMessage = `Page "${page.title}" created successfully!`;
@@ -401,7 +544,8 @@ const Dashboard: React.FC = () => {
         path: pageToEdit.path,
         content: pageToEdit.content || '',
         image: null,
-        imagePreview: ''
+        imagePreview: '',
+        section: pageToEdit.section || 'Main'
       });
       setShowEditPageModal(true);
     }
@@ -429,7 +573,7 @@ const Dashboard: React.FC = () => {
         URL.revokeObjectURL(newPage.imagePreview);
       }
       
-      setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '' });
+      setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '', section: '' });
       setSelectedPageForEdit(null);
       setShowEditPageModal(false);
       alert(`Page "${newPage.title}" updated successfully!`);
@@ -614,28 +758,18 @@ const Dashboard: React.FC = () => {
             </button>
             
             {showQuickAddMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
+              <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg border z-50 max-h-96 overflow-y-auto">
                 <div className="py-1">
+                  {/* General Actions */}
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b">
+                    General
+                  </div>
                   <button
                     onClick={() => handleQuickAdd('course')}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <AcademicCapIcon className="h-4 w-4 inline mr-2" />
                     Add Course
-                  </button>
-                  <button
-                    onClick={() => handleQuickAdd('page')}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <DocumentTextIcon className="h-4 w-4 inline mr-2" />
-                    Add Page
-                  </button>
-                  <button
-                    onClick={() => handleQuickAdd('post')}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <PencilIcon className="h-4 w-4 inline mr-2" />
-                    Add Blog Post
                   </button>
                   <button
                     onClick={() => handleQuickAdd('user')}
@@ -645,14 +779,6 @@ const Dashboard: React.FC = () => {
                     Add User
                   </button>
                   <button
-                    onClick={() => handleQuickAdd('announcement')}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <BellIcon className="h-4 w-4 inline mr-2" />
-                    Add Announcement
-                  </button>
-                  
-                  <button
                     onClick={() => handleQuickAdd('order')}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
@@ -660,23 +786,61 @@ const Dashboard: React.FC = () => {
                     Add Order (Test Revenue)
                   </button>
                   
-                  <div className="border-t border-gray-100 my-1"></div>
-                  
+                  {/* Category Management */}
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b mt-2">
+                    Category Management
+                  </div>
                   <button
-                    onClick={() => handleQuickAdd('edit-page')}
+                    onClick={() => handleQuickAdd('add-category')}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
-                    <PencilIcon className="h-4 w-4 inline mr-2" />
-                    Edit Page
+                    <PlusIcon className="h-4 w-4 inline mr-2" />
+                    Create New Category
                   </button>
-                  
                   <button
-                    onClick={() => handleQuickAdd('delete-page')}
+                    onClick={() => handleQuickAdd('manage-categories')}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
-                    <TrashIcon className="h-4 w-4 inline mr-2" />
-                    Delete Page
+                    <CogIcon className="h-4 w-4 inline mr-2" />
+                    Manage Categories
                   </button>
+                  
+                  {/* Sidebar Sections */}
+                  {Object.keys(allSidebarSections).map((section) => (
+                    <div key={section}>
+                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b mt-2">
+                        {section}
+                      </div>
+                      <button
+                        onClick={() => handleQuickAdd(`add-${section}`)}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <PlusIcon className="h-4 w-4 inline mr-2" />
+                        Add Page to {section}
+                      </button>
+                      <button
+                        onClick={() => handleQuickAdd(`view-${section}`)}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <EyeIcon className="h-4 w-4 inline mr-2" />
+                        View {section} Pages
+                      </button>
+                      <button
+                        onClick={() => handleQuickAdd(`edit-${section}`)}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <PencilIcon className="h-4 w-4 inline mr-2" />
+                        Edit {section} Pages
+                      </button>
+                      <button
+                        onClick={() => handleQuickAdd(`delete-${section}`)}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <TrashIcon className="h-4 w-4 inline mr-2" />
+                        Delete {section} Pages
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -915,8 +1079,8 @@ const Dashboard: React.FC = () => {
 
       {/* Page Creation Modal */}
       {showPageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Create New Page</h2>
               <button
@@ -924,7 +1088,7 @@ const Dashboard: React.FC = () => {
                   if (newPage.imagePreview) {
                     URL.revokeObjectURL(newPage.imagePreview);
                   }
-                  setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '' });
+                  setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '', section: '' });
                   setShowPageModal(false);
                 }}
                 className="text-gray-500 hover:text-gray-700"
@@ -964,12 +1128,11 @@ const Dashboard: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Page Content (Optional)
                 </label>
-                <textarea
+                <RichTextEditor
                   value={newPage.content}
-                  onChange={(e) => setNewPage({...newPage, content: e.target.value})}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={4}
-                  placeholder="Enter page content..."
+                  onChange={(content) => setNewPage({...newPage, content})}
+                  placeholder="Enter page content with full formatting options..."
+                  height={300}
                 />
               </div>
               
@@ -1037,7 +1200,7 @@ const Dashboard: React.FC = () => {
                   if (newPage.imagePreview) {
                     URL.revokeObjectURL(newPage.imagePreview);
                   }
-                  setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '' });
+                  setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '', section: '' });
                   setShowPageModal(false);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
@@ -1130,8 +1293,8 @@ const Dashboard: React.FC = () => {
 
       {/* Edit Page Modal */}
       {showEditPageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
                 {selectedPageForEdit ? `Edit "${selectedPageForEdit.title}"` : 'Edit Page'}
@@ -1141,7 +1304,7 @@ const Dashboard: React.FC = () => {
                   if (newPage.imagePreview) {
                     URL.revokeObjectURL(newPage.imagePreview);
                   }
-                  setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '' });
+                  setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '', section: '' });
                   setSelectedPageForEdit(null);
                   setShowEditPageModal(false);
                 }}
@@ -1182,12 +1345,11 @@ const Dashboard: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Page Content
                 </label>
-                <textarea
+                <RichTextEditor
                   value={newPage.content}
-                  onChange={(e) => setNewPage({...newPage, content: e.target.value})}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={4}
-                  placeholder="Enter page content..."
+                  onChange={(content) => setNewPage({...newPage, content})}
+                  placeholder="Edit page content with full formatting options..."
+                  height={300}
                 />
               </div>
               
@@ -1255,7 +1417,7 @@ const Dashboard: React.FC = () => {
                   if (newPage.imagePreview) {
                     URL.revokeObjectURL(newPage.imagePreview);
                   }
-                  setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '' });
+                  setNewPage({ title: '', path: '', content: '', image: null, imagePreview: '', section: '' });
                   setSelectedPageForEdit(null);
                   setShowEditPageModal(false);
                 }}
@@ -1538,6 +1700,235 @@ const Dashboard: React.FC = () => {
                   setShowAddOrderModal(false);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Category Modal */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Create New Category</h2>
+              <button
+                onClick={() => {
+                  setNewCategory({ title: '', description: '' });
+                  setShowAddCategoryModal(false);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category Title *
+                </label>
+                <input
+                  type="text"
+                  value={newCategory.title}
+                  onChange={(e) => setNewCategory({...newCategory, title: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Blockchain, Quantum Computing, Robotics"
+                />
+                <p className="text-xs text-gray-500 mt-1">This will appear in the sidebar navigation</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={newCategory.description}
+                  onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Brief description of this category..."
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={handleCreateCategory}
+                className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
+              >
+                Create Category
+              </button>
+              <button
+                onClick={() => {
+                  setNewCategory({ title: '', description: '' });
+                  setShowAddCategoryModal(false);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Categories Modal */}
+      {showManageCategoriesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-96 overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Manage Categories</h2>
+              <button
+                onClick={() => setShowManageCategoriesModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Default Categories</h3>
+                <p className="text-sm text-blue-700 mb-3">These are built-in categories that cannot be deleted:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {['AI Explained', 'Solutions', 'Trends', 'Data Lab', 'AGI', 'AI Resources'].map((category) => (
+                    <div key={category} className="bg-white px-3 py-2 rounded border text-sm font-medium">
+                      {category}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {Object.keys(customSections).length > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">Custom Categories</h3>
+                  <p className="text-sm text-gray-600 mb-3">Categories you've created:</p>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {Object.keys(customSections).map((category) => (
+                      <div key={category} className="flex items-center justify-between bg-white px-3 py-2 rounded border">
+                        <span className="font-medium">{category}</span>
+                        <button
+                          onClick={() => handleDeleteCategory(category)}
+                          className="text-red-600 hover:text-red-800 p-1"
+                          title="Delete Category"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {Object.keys(customSections).length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <CogIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p>No custom categories created yet.</p>
+                  <p className="text-sm">Click "Create New Category" to get started!</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-between items-center mt-6">
+              <button
+                onClick={() => setShowAddCategoryModal(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Create New Category
+              </button>
+              <button
+                onClick={() => setShowManageCategoriesModal(false)}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section Action Modal */}
+      {showSectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">{selectedSection} Management</h2>
+              <button
+                onClick={() => setShowSectionModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-gray-600 mb-4">
+                What would you like to do with the {selectedSection} section?
+              </p>
+              
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleSectionAction('add', selectedSection)}
+                  className="w-full text-left bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <PlusIcon className="h-5 w-5 text-green-600 mr-3" />
+                    <div>
+                      <div className="font-medium text-green-900">Add New Page</div>
+                      <div className="text-sm text-green-700">Create a new page in {selectedSection} section</div>
+                    </div>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={() => handleSectionAction('view', selectedSection)}
+                  className="w-full text-left bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <EyeIcon className="h-5 w-5 text-blue-600 mr-3" />
+                    <div>
+                      <div className="font-medium text-blue-900">View Pages</div>
+                      <div className="text-sm text-blue-700">See all pages in {selectedSection} section</div>
+                    </div>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={() => handleSectionAction('edit', selectedSection)}
+                  className="w-full text-left bg-yellow-50 border border-yellow-200 rounded-lg p-4 hover:bg-yellow-100 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <PencilIcon className="h-5 w-5 text-yellow-600 mr-3" />
+                    <div>
+                      <div className="font-medium text-yellow-900">Edit Pages</div>
+                      <div className="text-sm text-yellow-700">Modify existing pages in {selectedSection} section</div>
+                    </div>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={() => handleSectionAction('delete', selectedSection)}
+                  className="w-full text-left bg-red-50 border border-red-200 rounded-lg p-4 hover:bg-red-100 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <TrashIcon className="h-5 w-5 text-red-600 mr-3" />
+                    <div>
+                      <div className="font-medium text-red-900">Delete Pages</div>
+                      <div className="text-sm text-red-700">Remove pages from {selectedSection} section</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowSectionModal(false)}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
               >
                 Cancel
               </button>

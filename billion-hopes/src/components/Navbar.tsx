@@ -9,7 +9,26 @@ const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [formKey, setFormKey] = useState(0);
   const { login } = useAuth();
+
+  // Clear form fields when modal opens or closes
+  React.useEffect(() => {
+    if (isOpen) {
+      setUsername('');
+      setPassword('');
+      setError('');
+      setFormKey(prev => prev + 1); // Force form remount
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setUsername('');
+    setPassword('');
+    setError('');
+    setFormKey(prev => prev + 1); // Force form remount
+    onClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,9 +40,9 @@ const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
       if (success) {
         setUsername('');
         setPassword('');
-        onClose();
+        handleClose();
       } else {
-        setError('Invalid credentials. Only admin access is allowed.');
+        setError('Invalid email or password. Please try again.');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
@@ -38,13 +57,13 @@ const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full relative">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
         >
           <XMarkIcon className="h-6 w-6" />
         </button>
         
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Login to Your Account</h2>
         
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -52,33 +71,43 @@ const LoginModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form key={formKey} onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+            <label htmlFor={`username-${formKey}`} className="block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
               type="email"
-              id="username"
+              id={`username-${formKey}`}
+              name={`username-${formKey}`}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Enter admin email"
+              placeholder="Enter your email"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
               required
             />
           </div>
           
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor={`password-${formKey}`} className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <input
               type="password"
-              id="password"
+              id={`password-${formKey}`}
+              name={`password-${formKey}`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Enter admin password"
+              placeholder="Enter your password"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
               required
             />
           </div>
