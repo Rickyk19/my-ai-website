@@ -8,9 +8,18 @@ import {
   CurrencyDollarIcon,
   ShoppingCartIcon,
   XMarkIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  PlayIcon,
+  FireIcon,
+  SparklesIcon,
+  RocketLaunchIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline';
-import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
+import { 
+  StarIcon as StarSolidIcon,
+  FireIcon as FireSolidIcon,
+  SparklesIcon as SparklesSolidIcon 
+} from '@heroicons/react/24/solid';
 
 interface Course {
   id: number;
@@ -181,17 +190,187 @@ const Courses: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Amazing Header Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white py-16">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            animate={{ 
+              rotate: 360,
+              scale: [1, 1.2, 1],
+            }}
+            transition={{ 
+              duration: 20,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            className="absolute -top-10 -left-10 w-40 h-40 bg-yellow-400 opacity-20 rounded-full"
+          />
+          <motion.div
+            animate={{ 
+              rotate: -360,
+              scale: [1.2, 1, 1.2],
+            }}
+            transition={{ 
+              duration: 15,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            className="absolute -bottom-20 -right-20 w-60 h-60 bg-blue-400 opacity-20 rounded-full"
+          />
+          <motion.div
+            animate={{ 
+              y: [-20, 20, -20],
+              x: [-10, 10, -10],
+            }}
+            transition={{ 
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute top-1/2 left-1/4 w-20 h-20 bg-green-400 opacity-30 rounded-full"
+          />
+          <motion.div
+            animate={{ 
+              scale: [1, 1.3, 1],
+              opacity: [0.3, 0.6, 0.3]
+            }}
+            transition={{ 
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute top-1/3 right-1/3 w-16 h-16 bg-pink-400 opacity-40 rounded-full"
+          />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Explore Our Courses</h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover professional courses designed to advance your career. Purchase any course and get lifetime access in your Members Area.
-            </p>
+            {/* Main Heading with Animation */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="mb-8"
+            >
+              <div className="flex justify-center items-center gap-3 mb-6">
+                <motion.div
+                  animate={{ rotate: [0, 15, -15, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <AcademicCapIcon className="h-16 w-16 text-yellow-300" />
+                </motion.div>
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-yellow-200 via-pink-200 to-purple-200 bg-clip-text text-transparent">
+                  EXPLORE OUR COURSES
+                </h1>
+                <motion.div
+                  animate={{ rotate: [0, -15, 15, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                >
+                  <StarSolidIcon className="h-16 w-16 text-pink-300" />
+                </motion.div>
+              </div>
+              
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="text-2xl md:text-3xl font-bold text-yellow-100 mb-4"
+              >
+                🎓 Professional Courses to Advance Your Career!
+              </motion.p>
+              
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7, duration: 0.8 }}
+                className="text-lg md:text-xl text-white/90 max-w-4xl mx-auto"
+              >
+                Discover premium courses designed by industry experts. Purchase any course and get lifetime access in your Members Area with certificates, projects, and community support!
+              </motion.p>
+            </motion.div>
+
+            {/* Enhanced Stats Row */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9, duration: 0.8 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"
+            >
+              <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <AcademicCapIcon className="h-8 w-8 text-yellow-300" />
+                  </motion.div>
+                  <span className="text-3xl font-bold text-white">20+</span>
+                </div>
+                <p className="text-white/90 font-semibold">Expert Courses</p>
+              </div>
+              
+              <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2.5, repeat: Infinity }}
+                  >
+                    <PlayIcon className="h-8 w-8 text-pink-300" />
+                  </motion.div>
+                  <span className="text-3xl font-bold text-white">200+</span>
+                </div>
+                <p className="text-white/90 font-semibold">HD Videos</p>
+              </div>
+              
+              <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                      >
+                        <StarSolidIcon className="h-6 w-6 text-yellow-400" />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-white/90 font-semibold">5-Star Rated</p>
+              </div>
+              
+              <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  >
+                    <CheckCircleIcon className="h-8 w-8 text-green-300" />
+                  </motion.div>
+                  <span className="text-3xl font-bold text-white">∞</span>
+                </div>
+                <p className="text-white/90 font-semibold">Lifetime Access</p>
+              </div>
+            </motion.div>
+
+            {/* Investment Value */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.1, duration: 0.8 }}
+              className="p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 max-w-2xl mx-auto"
+            >
+              <p className="text-white font-bold text-2xl mb-2">
+                💎 Total Course Library Value: ₹1,25,976
+              </p>
+              <p className="text-white/90 text-lg">
+                Individual courses starting from ₹2,499 - Invest in your future today!
+              </p>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}

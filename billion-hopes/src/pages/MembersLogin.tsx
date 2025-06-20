@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { authenticateMember } from '../utils/supabase';
+import { useAuth } from '../context/AuthContext';
 
 interface LoginFormData {
   email: string;
@@ -19,6 +20,7 @@ interface LoginFormData {
 
 const MembersLogin: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
@@ -61,7 +63,27 @@ const MembersLogin: React.FC = () => {
     setMessage(null);
 
     try {
-      // Use the CORS-friendly authentication function
+      // First check if this is an admin login attempt
+      const isAdminAttempt = formData.email.toLowerCase() === 'sm@ptuniverse.com';
+      
+      if (isAdminAttempt) {
+        console.log('🔑 Admin login attempt detected');
+        const adminLoginSuccess = await login(formData.email, formData.password);
+        
+        if (adminLoginSuccess) {
+          setMessage({type: 'success', text: 'Admin login successful! Redirecting to dashboard...'});
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 2000);
+          return;
+        } else {
+          setMessage({type: 'error', text: 'Invalid admin credentials. Please check your email and password.'});
+          return;
+        }
+      }
+
+      // For non-admin users, use the member authentication
+      console.log('👨‍🎓 Student/Member login attempt');
       const authResult = await authenticateMember(formData.email.toLowerCase(), formData.password);
 
       if (!authResult.success) {
@@ -69,7 +91,7 @@ const MembersLogin: React.FC = () => {
         return;
       }
 
-      // Store user session (simple version - in production use proper auth)
+      // Store user session for members
       localStorage.setItem('memberData', JSON.stringify({
         id: authResult.user.id,
         email: authResult.user.email,
@@ -115,6 +137,9 @@ const MembersLogin: React.FC = () => {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Access your purchased courses and learning materials
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Admin can also login here using: sm@ptuniverse.com
           </p>
         </div>
 
@@ -209,7 +234,7 @@ const MembersLogin: React.FC = () => {
                   Signing In...
                 </div>
               ) : (
-                'Access My Courses'
+                'Access Dashboard'
               )}
             </button>
           </form>
