@@ -439,9 +439,9 @@ const Courses: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow h-full flex flex-col"
             >
-              <div className="p-6">
+              <div className="p-6 flex flex-col h-full">
                 <div className="flex items-center justify-between mb-4">
                   <AcademicCapIcon className="h-8 w-8 text-blue-600" />
                   <span className="text-sm font-semibold text-purple-600 bg-purple-100 px-2 py-1 rounded">
@@ -473,14 +473,21 @@ const Courses: React.FC = () => {
                   </div>
                 </div>
 
-                {course.certificate_available && (
-                  <div className="flex items-center text-sm text-green-600 mb-4">
-                    <CheckCircleIcon className="h-4 w-4 mr-1" />
-                    Certificate Included
-                  </div>
-                )}
+                {/* Certificate badge with consistent spacing */}
+                <div className="mb-4 h-6 flex items-center">
+                  {course.certificate_available && (
+                    <div className="flex items-center text-sm text-green-600">
+                      <CheckCircleIcon className="h-4 w-4 mr-1" />
+                      Certificate Included
+                    </div>
+                  )}
+                </div>
                 
-                <div className="border-t pt-4">
+                {/* Spacer to push content to bottom */}
+                <div className="flex-grow"></div>
+                
+                {/* Price and Purchase Button - Always at bottom */}
+                <div className="border-t pt-4 mt-auto">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <span className="text-2xl font-bold text-gray-900">₹{course.price.toLocaleString()}</span>

@@ -285,10 +285,10 @@ const MembersDashboard: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col"
                   onClick={() => openCourseModal(course)}
                 >
-                  <div className="p-6">
+                  <div className="p-6 flex flex-col h-full">
                     <div className="flex items-center justify-between mb-4">
                       <AcademicCapIcon className="h-8 w-8 text-blue-600" />
                       <span className="text-sm font-semibold text-green-600 bg-green-100 px-2 py-1 rounded">
@@ -300,30 +300,38 @@ const MembersDashboard: React.FC = () => {
                       {course.course_name}
                     </h4>
                     
-                    {course.course_details && (
-                      <>
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                          {course.course_details.description}
-                        </p>
-                        
-                        <div className="space-y-2 text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <UserIcon className="h-4 w-4 mr-2" />
-                            {course.course_details.instructor}
+                    {/* Course details with consistent spacing */}
+                    <div className="flex-grow">
+                      {course.course_details ? (
+                        <>
+                          <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+                            {course.course_details.description}
+                          </p>
+                          
+                          <div className="space-y-2 text-sm text-gray-500">
+                            <div className="flex items-center">
+                              <UserIcon className="h-4 w-4 mr-2" />
+                              {course.course_details.instructor}
+                            </div>
+                            <div className="flex items-center">
+                              <ClockIcon className="h-4 w-4 mr-2" />
+                              {course.course_details.duration}
+                            </div>
+                            <div className="flex items-center">
+                              <StarIcon className="h-4 w-4 mr-2" />
+                              {course.course_details.level}
+                            </div>
                           </div>
-                          <div className="flex items-center">
-                            <ClockIcon className="h-4 w-4 mr-2" />
-                            {course.course_details.duration}
-                          </div>
-                          <div className="flex items-center">
-                            <StarIcon className="h-4 w-4 mr-2" />
-                            {course.course_details.level}
-                          </div>
+                        </>
+                      ) : (
+                        <div className="text-gray-500 text-sm mb-3">
+                          Course details loading...
                         </div>
-                      </>
-                    )}
+                      )}
+                    </div>
                     
-                    <div className="mt-4 pt-4 border-t border-gray-200">
+                    {/* Access Course Button - Always at bottom */}
+                    <div className="mt-4 pt-4 border-t border-gray-200 mt-auto">
                       <button className="w-full bg-blue-600 text-white py-2 px-4 rounded font-medium hover:bg-blue-700 transition-colors">
                         Access Course
                       </button>
