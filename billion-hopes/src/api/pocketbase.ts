@@ -3,7 +3,7 @@ export function isAuthenticated() {
 }
 
 export function login(username: string, password: string) {
-  if (username === 'admin' && password === 'billion123') {
+  if (username === 'sm@ptuniverse.com' && password === 'billion123') {
     localStorage.setItem('auth', 'true');
     return true;
   }

@@ -59,15 +59,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSuccess }) =
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              Username
+              Email
             </label>
             <input
-              type="text"
+              type="email"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Enter your username"
+              placeholder="Enter your email"
               required
             />
           </div>
@@ -97,7 +97,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSuccess }) =
 
         <div className="mt-4 text-sm text-gray-600 text-center">
           <p>Use the following credentials:</p>
-          <p>Username: admin</p>
+          <p>Email: sm@ptuniverse.com</p>
           <p>Password: billion123</p>
         </div>
       </div>
@@ -119,11 +119,7 @@ const Home: React.FC = () => {
   const [isSubscribing, setIsSubscribing] = useState(false);
 
   const handleExploreClick = () => {
-    if (isAuthenticated) {
-      navigate('/courses');
-    } else {
-      setIsLoginModalOpen(true);
-    }
+    navigate('/courses');
   };
 
   const handleLoginSuccess = () => {

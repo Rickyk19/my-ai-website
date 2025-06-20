@@ -1,53 +1,67 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
+  AcademicCapIcon, 
   PlayIcon,
-  DocumentIcon,
-  ClockIcon,
-  CheckCircleIcon,
+  DocumentArrowDownIcon,
   StarIcon,
-  ArrowRightOnRectangleIcon,
+  ClockIcon,
   UserIcon,
-  AcademicCapIcon,
-  ArrowDownTrayIcon,
-  CalendarIcon
+  CalendarIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ChatBubbleLeftRightIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../utils/supabase';
+import { getMemberPurchases } from '../utils/supabase';
 
-interface MemberData {
-  id: number;
-  email: string;
-  name: string;
-  courses: PurchasedCourse[];
-  loginTime: string;
-}
-
-interface PurchasedCourse {
+interface Course {
   id: number;
   course_name: string;
   amount: number;
+  course_details?: {
+    id: number;
+    name: string;
+    description: string;
+    instructor: string;
+    duration: string;
+    level: string;
+    certificate_available: boolean;
+    demo_pdf_url: string;
+  };
 }
 
-interface CourseDetails {
+interface CourseClass {
   id: number;
-  name: string;
+  class_number: number;
+  title: string;
   description: string;
-  video_link?: string;
-  instructor: string;
-  duration: string;
-  level: string;
-  prerequisites?: string;
-  learning_outcomes?: string;
+  video_url: string;
+  duration_minutes: number;
+}
+
+interface Comment {
+  id: number;
+  user_name: string;
+  comment: string;
+  rating: number;
+  created_at: string;
 }
 
 const MembersDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [memberData, setMemberData] = useState<MemberData | null>(null);
-  const [courseDetails, setCourseDetails] = useState<CourseDetails[]>([]);
+  const [memberData, setMemberData] = useState<any>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [expandedCourse, setExpandedCourse] = useState<number | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [courseClasses, setCourseClasses] = useState<CourseClass[]>([]);
+  const [courseComments, setCourseComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCourse, setSelectedCourse] = useState<CourseDetails | null>(null);
-  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [newRating, setNewRating] = useState(5);
 
   useEffect(() => {
     loadMemberData();
@@ -55,36 +69,69 @@ const MembersDashboard: React.FC = () => {
 
   const loadMemberData = async () => {
     try {
-      const memberDataString = localStorage.getItem('memberData');
-      if (!memberDataString) {
+      const stored = localStorage.getItem('memberData');
+      if (!stored) {
         navigate('/members-login');
         return;
       }
 
-      const member: MemberData = JSON.parse(memberDataString);
-      setMemberData(member);
+      const data = JSON.parse(stored);
+      setMemberData(data);
 
-      // Load detailed course information
-      if (member.courses.length > 0) {
-        const courseNames = member.courses.map(course => course.course_name);
-        
-        const { data: courses, error } = await supabase
-          .from('courses')
-          .select('*')
-          .in('name', courseNames);
-
-        if (error) {
-          console.error('Error loading course details:', error);
-        } else {
-          setCourseDetails(courses || []);
-        }
+      // Get fresh purchases data with course details
+      const result = await getMemberPurchases(data.email);
+      if (result.success) {
+        setCourses(result.purchases);
       }
     } catch (error) {
       console.error('Error loading member data:', error);
-      navigate('/members-login');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadCourseDetails = async (courseId: number) => {
+    try {
+      // Load course classes
+      const classesResponse = await fetch(`https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/course_classes?select=*&course_id=eq.${courseId}&order=class_number`, {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+        }
+      });
+      
+      if (classesResponse.ok) {
+        const classes = await classesResponse.json();
+        setCourseClasses(classes);
+      }
+
+      // Load course comments
+      const commentsResponse = await fetch(`https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/course_comments?select=*&course_id=eq.${courseId}&order=created_at.desc`, {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+        }
+      });
+      
+      if (commentsResponse.ok) {
+        const comments = await commentsResponse.json();
+        setCourseComments(comments);
+      }
+    } catch (error) {
+      console.error('Error loading course details:', error);
+    }
+  };
+
+  const openCourseModal = async (course: Course) => {
+    setSelectedCourse(course);
+    setShowModal(true);
+    if (course.course_details?.id) {
+      await loadCourseDetails(course.course_details.id);
+    }
+  };
+
+  const toggleCourseExpansion = (courseId: number) => {
+    setExpandedCourse(expandedCourse === courseId ? null : courseId);
   };
 
   const handleLogout = () => {
@@ -92,271 +139,351 @@ const MembersDashboard: React.FC = () => {
     navigate('/');
   };
 
-  const handleCourseAccess = (course: CourseDetails) => {
-    setSelectedCourse(course);
-    setShowCourseModal(true);
+  const downloadPDF = (pdfUrl: string, courseName: string) => {
+    // In a real app, this would download the actual PDF
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    link.download = `${courseName}-guide.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // For demo, show alert
+    alert(`Downloading ${courseName} PDF guide...`);
   };
 
-  const formatPrerequisites = (prerequisites?: string) => {
-    if (!prerequisites) return [];
-    return prerequisites.split('|').filter(p => p.trim());
+  const downloadCertificate = (courseName: string) => {
+    // For demo, show alert
+    alert(`Downloading certificate for ${courseName}...`);
   };
 
-  const formatLearningOutcomes = (outcomes?: string) => {
-    if (!outcomes) return [];
-    return outcomes.split('|').filter(o => o.trim());
+  const submitComment = async () => {
+    if (!newComment.trim() || !selectedCourse || !memberData) return;
+
+    try {
+      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/course_comments', {
+        method: 'POST',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          course_id: selectedCourse.course_details?.id,
+          user_email: memberData.email,
+          user_name: memberData.name,
+          comment: newComment,
+          rating: newRating
+        })
+      });
+
+      if (response.ok) {
+        setNewComment('');
+        setNewRating(5);
+        // Reload comments
+        if (selectedCourse.course_details?.id) {
+          await loadCourseDetails(selectedCourse.course_details.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    }
+  };
+
+  const renderStars = (rating: number, interactive = false, onClick?: (rating: number) => void) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onClick={() => interactive && onClick?.(star)}
+            className={interactive ? 'cursor-pointer' : ''}
+            disabled={!interactive}
+          >
+            {star <= rating ? (
+              <StarSolidIcon className="h-5 w-5 text-yellow-400" />
+            ) : (
+              <StarIcon className="h-5 w-5 text-gray-300" />
+            )}
+          </button>
+        ))}
+      </div>
+    );
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your courses...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (!memberData) {
-    return null;
-  }
+  const totalInvestment = courses.reduce((sum, course) => sum + course.amount, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <AcademicCapIcon className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-bold text-gray-900">Members Area</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Members Area</h1>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <UserIcon className="h-5 w-5 text-gray-400" />
-                <span className="text-gray-700">{memberData.name || memberData.email}</span>
-              </div>
+            <div className="flex items-center gap-4">
+              <span className="text-gray-700">👤 {memberData?.name}</span>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-1 text-gray-600 hover:text-red-600 transition-colors"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                <span>Logout</span>
+                Logout
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-lg p-8 mb-8"
+          className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 mb-8 text-white"
         >
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Welcome back, {memberData.name || 'Student'}! 🎓
-          </h2>
+          <h2 className="text-3xl font-bold mb-4">Welcome back, {memberData?.name}! 🎓</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-blue-900">Enrolled Courses</h3>
-              <p className="text-2xl font-bold text-blue-600">{memberData.courses.length}</p>
+            <div className="bg-white/20 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Enrolled Courses</h3>
+              <p className="text-2xl font-bold">{courses.length}</p>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-green-900">Total Investment</h3>
-              <p className="text-2xl font-bold text-green-600">
-                ₹{memberData.courses.reduce((sum, course) => sum + course.amount, 0).toLocaleString()}
-              </p>
+            <div className="bg-white/20 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Total Investment</h3>
+              <p className="text-2xl font-bold">₹{totalInvestment.toLocaleString()}</p>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-purple-900">Member Since</h3>
-              <p className="text-lg font-bold text-purple-600">
-                {new Date(memberData.loginTime).toLocaleDateString()}
-              </p>
+            <div className="bg-white/20 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Member Since</h3>
+              <p className="text-2xl font-bold">{new Date().toLocaleDateString()}</p>
             </div>
           </div>
         </motion.div>
 
-        {/* Courses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courseDetails.map((course, index) => (
-            <motion.div
-              key={course.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <AcademicCapIcon className="h-6 w-6 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-600">{course.level}</span>
-                  </div>
-                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                    Purchased
-                  </span>
-                </div>
-                
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{course.name}</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{course.description}</p>
-                
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <div className="flex items-center space-x-1">
-                    <UserIcon className="h-4 w-4" />
-                    <span>{course.instructor}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <ClockIcon className="h-4 w-4" />
-                    <span>{course.duration}</span>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => handleCourseAccess(course)}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+        {/* Course Library */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">Your Course Library</h3>
+          
+          {courses.length === 0 ? (
+            <div className="text-center py-8">
+              <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-500">No courses found. Please check your purchases.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course, index) => (
+                <motion.div
+                  key={course.id || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => openCourseModal(course)}
                 >
-                  <PlayIcon className="h-5 w-5" />
-                  <span>Access Course</span>
-                </button>
-              </div>
-            </motion.div>
-          ))}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <AcademicCapIcon className="h-8 w-8 text-blue-600" />
+                      <span className="text-sm font-semibold text-green-600 bg-green-100 px-2 py-1 rounded">
+                        ₹{course.amount.toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    <h4 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">
+                      {course.course_name}
+                    </h4>
+                    
+                    {course.course_details && (
+                      <>
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+                          {course.course_details.description}
+                        </p>
+                        
+                        <div className="space-y-2 text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <UserIcon className="h-4 w-4 mr-2" />
+                            {course.course_details.instructor}
+                          </div>
+                          <div className="flex items-center">
+                            <ClockIcon className="h-4 w-4 mr-2" />
+                            {course.course_details.duration}
+                          </div>
+                          <div className="flex items-center">
+                            <StarIcon className="h-4 w-4 mr-2" />
+                            {course.course_details.level}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <button className="w-full bg-blue-600 text-white py-2 px-4 rounded font-medium hover:bg-blue-700 transition-colors">
+                        Access Course
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
-
-        {courseDetails.length === 0 && (
-          <div className="text-center py-12">
-            <AcademicCapIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No Course Details Found</h3>
-            <p className="text-gray-600">
-              Course information is being updated. Please contact support if this persists.
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* Course Details Modal */}
-      {showCourseModal && selectedCourse && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      {/* Course Modal */}
+      <AnimatePresence>
+        {showModal && selectedCourse && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowModal(false)}
           >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">{selectedCourse.name}</h2>
-              <button
-                onClick={() => setShowCourseModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Course Info */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Course Information</h3>
-                <div className="space-y-3">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                {/* Modal Header */}
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <span className="font-medium text-gray-700">Instructor:</span>
-                    <span className="ml-2">{selectedCourse.instructor}</span>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      {selectedCourse.course_name}
+                    </h2>
+                    {selectedCourse.course_details && (
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                        <span>👨‍🏫 {selectedCourse.course_details.instructor}</span>
+                        <span>⏱️ {selectedCourse.course_details.duration}</span>
+                        <span>📊 {selectedCourse.course_details.level}</span>
+                        <span>💰 ₹{selectedCourse.amount.toLocaleString()}</span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Duration:</span>
-                    <span className="ml-2">{selectedCourse.duration}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Level:</span>
-                    <span className="ml-2">{selectedCourse.level}</span>
-                  </div>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
                 </div>
-                
-                <div className="mt-6">
-                  <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedCourse.description}</p>
-                </div>
-              </div>
 
-              {/* Course Content */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Course Content</h3>
-                
-                {selectedCourse.video_link && (
-                  <div className="mb-6">
-                    <a
-                      href={selectedCourse.video_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-2 bg-blue-100 text-blue-700 p-4 rounded-lg hover:bg-blue-200 transition-colors"
+                {/* Action Buttons */}
+                <div className="flex gap-4 mb-6">
+                  {selectedCourse.course_details?.demo_pdf_url && (
+                    <button
+                      onClick={() => downloadPDF(selectedCourse.course_details!.demo_pdf_url, selectedCourse.course_name)}
+                      className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                     >
-                      <PlayIcon className="h-6 w-6" />
-                      <span className="font-medium">Watch Course Video</span>
-                    </a>
-                  </div>
-                )}
+                      <DocumentArrowDownIcon className="h-5 w-5" />
+                      Download PDF
+                    </button>
+                  )}
+                  {selectedCourse.course_details?.certificate_available && (
+                    <button
+                      onClick={() => downloadCertificate(selectedCourse.course_name)}
+                      className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                    >
+                      <AcademicCapIcon className="h-5 w-5" />
+                      Get Certificate
+                    </button>
+                  )}
+                </div>
 
-                <div className="space-y-3">
-                  <button className="w-full flex items-center space-x-2 bg-green-100 text-green-700 p-3 rounded-lg hover:bg-green-200 transition-colors">
-                    <DocumentIcon className="h-5 w-5" />
-                    <span>Download Study Materials</span>
-                    <ArrowDownTrayIcon className="h-4 w-4 ml-auto" />
-                  </button>
+                {/* Course Classes */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold mb-4">Course Content</h3>
+                  <div className="space-y-3">
+                    {courseClasses.map((classItem) => (
+                      <div key={classItem.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900">
+                              Class {classItem.class_number}: {classItem.title}
+                            </h4>
+                            <p className="text-gray-600 text-sm mt-1">{classItem.description}</p>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                              <span>⏱️ {classItem.duration_minutes} minutes</span>
+                            </div>
+                          </div>
+                          <a
+                            href={classItem.video_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 ml-4"
+                          >
+                            <PlayIcon className="h-5 w-5" />
+                            Watch
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comments Section */}
+                <div className="border-t pt-6">
+                  <h3 className="text-xl font-bold mb-4">Student Reviews</h3>
                   
-                  <button className="w-full flex items-center space-x-2 bg-purple-100 text-purple-700 p-3 rounded-lg hover:bg-purple-200 transition-colors">
-                    <CheckCircleIcon className="h-5 w-5" />
-                    <span>View Certificate</span>
-                  </button>
+                  {/* Add Comment */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h4 className="font-semibold mb-3">Share Your Experience</h4>
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                      {renderStars(newRating, true, setNewRating)}
+                    </div>
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Write your review..."
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows={3}
+                    />
+                    <button
+                      onClick={submitComment}
+                      className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    >
+                      Submit Review
+                    </button>
+                  </div>
+
+                  {/* Comments List */}
+                  <div className="space-y-4">
+                    {courseComments.map((comment) => (
+                      <div key={comment.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                              {comment.user_name.charAt(0)}
+                            </div>
+                            <span className="font-semibold">{comment.user_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {renderStars(comment.rating)}
+                            <span className="text-sm text-gray-500">
+                              {new Date(comment.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-gray-700">{comment.comment}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Prerequisites & Learning Outcomes */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h4 className="font-semibold mb-3">Prerequisites</h4>
-                {formatPrerequisites(selectedCourse.prerequisites).length > 0 ? (
-                  <ul className="list-disc list-inside space-y-1 text-gray-700">
-                    {formatPrerequisites(selectedCourse.prerequisites).map((prereq, index) => (
-                      <li key={index}>{prereq}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-500">No specific prerequisites</p>
-                )}
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3">Learning Outcomes</h4>
-                {formatLearningOutcomes(selectedCourse.learning_outcomes).length > 0 ? (
-                  <ul className="list-disc list-inside space-y-1 text-gray-700">
-                    {formatLearningOutcomes(selectedCourse.learning_outcomes).map((outcome, index) => (
-                      <li key={index}>{outcome}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-500">Learning outcomes will be updated soon</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-8">
-              <button
-                onClick={() => setShowCourseModal(false)}
-                className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Close
-              </button>
-            </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

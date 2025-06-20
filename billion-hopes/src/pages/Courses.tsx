@@ -1,148 +1,466 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { initializePayment, isPurchased } from '../utils/payment';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  AcademicCapIcon, 
+  StarIcon,
+  ClockIcon,
+  UserIcon,
+  CurrencyDollarIcon,
+  ShoppingCartIcon,
+  XMarkIcon,
+  CheckCircleIcon
+} from '@heroicons/react/24/outline';
+import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 
 interface Course {
   id: number;
-  title: string;
+  name: string;
   description: string;
   price: number;
+  instructor: string;
   duration: string;
   level: string;
-  image: string;
+  certificate_available: boolean;
+  image_url?: string;
 }
 
-const courses: Course[] = [
-  {
-    id: 1,
-    title: "AI Fundamentals Masterclass",
-    description: "Master the basics of artificial intelligence, including machine learning, neural networks, and deep learning concepts.",
-    price: 199.99,
-    duration: "12 weeks",
-    level: "Beginner",
-    image: "/course-ai-basics.jpg"
-  },
-  {
-    id: 2,
-    title: "Deep Learning Specialization",
-    description: "Advanced deep learning techniques, neural network architectures, and practical implementation using PyTorch.",
-    price: 299.99,
-    duration: "16 weeks",
-    level: "Advanced",
-    image: "/course-deep-learning.jpg"
-  },
-  {
-    id: 3,
-    title: "Natural Language Processing",
-    description: "Learn to build and train models that can understand, analyze, and generate human language.",
-    price: 249.99,
-    duration: "14 weeks",
-    level: "Intermediate",
-    image: "/course-nlp.jpg"
-  },
-  {
-    id: 4,
-    title: "Computer Vision Expert",
-    description: "Master image processing, object detection, and visual recognition using modern AI techniques.",
-    price: 279.99,
-    duration: "15 weeks",
-    level: "Advanced",
-    image: "/course-cv.jpg"
-  },
-  {
-    id: 5,
-    title: "AI Ethics & Governance",
-    description: "Understanding ethical implications, bias in AI, and responsible AI development practices.",
-    price: 149.99,
-    duration: "8 weeks",
-    level: "All Levels",
-    image: "/course-ethics.jpg"
-  },
-  {
-    id: 6,
-    title: "Reinforcement Learning",
-    description: "Learn to train agents that can make decisions and improve from experience using modern RL algorithms.",
-    price: 259.99,
-    duration: "14 weeks",
-    level: "Intermediate",
-    image: "/course-rl.jpg"
-  }
-];
-
 const Courses: React.FC = () => {
-  const handlePurchase = (course: Course) => {
-    if (isPurchased(course.id)) {
-      window.location.href = `/course/${course.id}`;
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('All');
+  const [priceRange, setPriceRange] = useState('All');
+
+  // Purchase form state
+  const [purchaseForm, setPurchaseForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    paymentMethod: 'card'
+  });
+  const [purchaseStatus, setPurchaseStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
+
+  useEffect(() => {
+    loadCourses();
+  }, []);
+
+  const loadCourses = async () => {
+    try {
+      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/courses?select=*&order=price.asc', {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCourses(data);
+      }
+    } catch (error) {
+      console.error('Error loading courses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openPurchaseModal = (course: Course) => {
+    setSelectedCourse(course);
+    setShowPurchaseModal(true);
+    setPurchaseStatus({ type: null, message: '' });
+  };
+
+  const handlePurchase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse || !purchaseForm.name || !purchaseForm.email) {
+      setPurchaseStatus({ type: 'error', message: 'Please fill in all required fields.' });
       return;
     }
 
-    initializePayment({
-      courseId: course.id,
-      amount: course.price,
-      courseName: course.title,
-    });
+    try {
+      // Create order record
+      const orderResponse = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/orders', {
+        method: 'POST',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          course_name: selectedCourse.name,
+          course_id: selectedCourse.id,
+          amount: selectedCourse.price,
+          customer_name: purchaseForm.name,
+          customer_email: purchaseForm.email,
+          status: 'completed', // In real app, this would be 'pending' until payment confirmation
+          transaction_id: `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        })
+      });
+
+      if (!orderResponse.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      // Create or update user record
+      const userResponse = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/users', {
+        method: 'POST',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=ignore-duplicates'
+        },
+        body: JSON.stringify({
+          name: purchaseForm.name,
+          email: purchaseForm.email
+        })
+      });
+
+      setPurchaseStatus({
+        type: 'success',
+        message: `🎉 Purchase successful! You can now access "${selectedCourse.name}" in your Members Area. Login with email: ${purchaseForm.email}`
+      });
+
+      // Reset form
+      setPurchaseForm({
+        name: '',
+        email: '',
+        phone: '',
+        paymentMethod: 'card'
+      });
+
+    } catch (error: any) {
+      setPurchaseStatus({
+        type: 'error',
+        message: `Purchase failed: ${error.message}`
+      });
+    }
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-    >
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">Our Courses</h1>
-      <p className="text-xl text-gray-600 mb-12">
-        Transform your career with our comprehensive AI courses. Learn from industry experts and get hands-on experience.
-      </p>
+  // Filter courses based on search and filters
+  const filteredCourses = courses.filter(course => {
+    const matchesSearch = course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLevel = selectedLevel === 'All' || course.level === selectedLevel;
+    const matchesPrice = priceRange === 'All' || 
+                        (priceRange === 'Under 5000' && course.price < 5000) ||
+                        (priceRange === '5000-7000' && course.price >= 5000 && course.price <= 7000) ||
+                        (priceRange === 'Above 7000' && course.price > 7000);
+    
+    return matchesSearch && matchesLevel && matchesPrice;
+  });
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {courses.map((course) => (
-          <motion.div
-            key={course.id}
-            whileHover={{ scale: 1.02 }}
-            className="bg-white rounded-xl shadow-lg overflow-hidden"
-          >
-            <div className="h-48 bg-blue-100">
-              {/* Course image placeholder */}
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600">
-                <span className="text-white text-xl font-semibold">{course.title.split(' ')[0]}</span>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-bold text-gray-900">{course.title}</h2>
-                <span className="text-2xl font-bold text-blue-600">₹{Math.round(course.price * 82)}</span>
-              </div>
-              <div className="flex gap-4 mb-4">
-                <span className="text-sm text-gray-600 flex items-center">
-                  <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {course.duration}
-                </span>
-                <span className="text-sm text-gray-600 flex items-center">
-                  <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  {course.level}
-                </span>
-              </div>
-              <p className="text-gray-600 mb-6">{course.description}</p>
-              <button 
-                className={`w-full ${
-                  isPurchased(course.id)
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                } text-white py-3 px-6 rounded-lg font-semibold transition-colors`}
-                onClick={() => handlePurchase(course)}
-              >
-                {isPurchased(course.id) ? 'Access Course' : 'Buy Now'}
-              </button>
-            </div>
-          </motion.div>
+  const renderStars = (rating: number = 5) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <StarSolidIcon
+            key={star}
+            className={`h-4 w-4 ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+          />
         ))}
       </div>
-    </motion.div>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading courses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Explore Our Courses</h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Discover professional courses designed to advance your career. Purchase any course and get lifetime access in your Members Area.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Filters */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search Courses</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by course or instructor..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Level</label>
+              <select
+                value={selectedLevel}
+                onChange={(e) => setSelectedLevel(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="All">All Levels</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+                <option value="Beginner to Advanced">Beginner to Advanced</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+              <select
+                value={priceRange}
+                onChange={(e) => setPriceRange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="All">All Prices</option>
+                <option value="Under 5000">Under ₹5,000</option>
+                <option value="5000-7000">₹5,000 - ₹7,000</option>
+                <option value="Above 7000">Above ₹7,000</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedLevel('All');
+                  setPriceRange('All');
+                }}
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 text-sm text-gray-600">
+            Showing {filteredCourses.length} of {courses.length} courses
+          </div>
+        </div>
+
+        {/* Courses Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredCourses.map((course, index) => (
+            <motion.div
+              key={course.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <AcademicCapIcon className="h-8 w-8 text-blue-600" />
+                  <span className="text-sm font-semibold text-purple-600 bg-purple-100 px-2 py-1 rounded">
+                    {course.level}
+                  </span>
+                </div>
+                
+                <h3 className="font-bold text-xl text-gray-900 mb-3 line-clamp-2">
+                  {course.name}
+                </h3>
+                
+                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                  {course.description}
+                </p>
+                
+                <div className="space-y-2 text-sm text-gray-500 mb-4">
+                  <div className="flex items-center">
+                    <UserIcon className="h-4 w-4 mr-2" />
+                    {course.instructor}
+                  </div>
+                  <div className="flex items-center">
+                    <ClockIcon className="h-4 w-4 mr-2" />
+                    {course.duration}
+                  </div>
+                  <div className="flex items-center">
+                    <StarIcon className="h-4 w-4 mr-2" />
+                    {renderStars()}
+                    <span className="ml-2 text-xs">(4.8/5)</span>
+                  </div>
+                </div>
+
+                {course.certificate_available && (
+                  <div className="flex items-center text-sm text-green-600 mb-4">
+                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                    Certificate Included
+                  </div>
+                )}
+                
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <span className="text-2xl font-bold text-gray-900">₹{course.price.toLocaleString()}</span>
+                      <span className="text-sm text-gray-500 ml-2">One-time payment</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => openPurchaseModal(course)}
+                    className="w-full bg-blue-600 text-white py-3 px-4 rounded font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <ShoppingCartIcon className="h-5 w-5" />
+                    Purchase Course
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {filteredCourses.length === 0 && (
+          <div className="text-center py-12">
+            <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <p className="text-gray-500">No courses match your search criteria.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Purchase Modal */}
+      <AnimatePresence>
+        {showPurchaseModal && selectedCourse && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowPurchaseModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Purchase Course</h2>
+                    <h3 className="text-lg text-gray-700">{selectedCourse.name}</h3>
+                    <p className="text-xl font-bold text-blue-600 mt-2">₹{selectedCourse.price.toLocaleString()}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowPurchaseModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+
+                {purchaseStatus.type && (
+                  <div
+                    className={`mb-6 p-4 rounded-lg ${
+                      purchaseStatus.type === 'success'
+                        ? 'bg-green-100 border border-green-400 text-green-700'
+                        : 'bg-red-100 border border-red-400 text-red-700'
+                    }`}
+                  >
+                    {purchaseStatus.message}
+                  </div>
+                )}
+
+                <form onSubmit={handlePurchase} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={purchaseForm.name}
+                      onChange={(e) => setPurchaseForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={purchaseForm.email}
+                      onChange={(e) => setPurchaseForm(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your email (for Members Area access)"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={purchaseForm.phone}
+                      onChange={(e) => setPurchaseForm(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Method
+                    </label>
+                    <select
+                      value={purchaseForm.paymentMethod}
+                      onChange={(e) => setPurchaseForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="card">Credit/Debit Card</option>
+                      <option value="upi">UPI</option>
+                      <option value="netbanking">Net Banking</option>
+                      <option value="wallet">Digital Wallet</option>
+                    </select>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2">What You'll Get:</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>✅ Lifetime access to course content</li>
+                      <li>✅ Video lectures by expert instructors</li>
+                      <li>✅ Downloadable resources and materials</li>
+                      <li>✅ Certificate of completion</li>
+                      <li>✅ Access to student community</li>
+                    </ul>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-green-600 text-white py-3 px-4 rounded font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CurrencyDollarIcon className="h-5 w-5" />
+                    Complete Purchase - ₹{selectedCourse.price.toLocaleString()}
+                  </button>
+
+                  <p className="text-xs text-gray-500 text-center">
+                    By purchasing, you agree to our Terms of Service and Privacy Policy.
+                    You'll receive login details via email to access your Members Area.
+                  </p>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
