@@ -42,25 +42,20 @@ export const Navbar: React.FC = () => {
             <Link to="/resources" className="text-white hover:text-blue-100 transition-colors text-lg">
               AI Resources
             </Link>
-            {isAdmin && (
-              <Link to="/dashboard" className="text-white hover:text-blue-100 transition-colors text-lg">
-                Dashboard
-              </Link>
-            )}
           </div>
 
           <div className="flex items-center space-x-4">
             {isAuthenticated && (
               <button
                 onClick={handleLogout}
-                className="text-white hover:text-blue-100 transition-colors text-lg"
+                className="text-white hover:text-blue-100 transition-colors text-lg px-2"
               >
                 Logout
               </button>
             )}
             <Link
               to="/members-login"
-              className="bg-white text-blue-600 px-6 py-3 rounded-full hover:bg-blue-50 transition-colors text-lg font-medium"
+              className="bg-white text-blue-600 px-6 py-3 rounded-full hover:bg-blue-50 transition-colors text-lg font-medium whitespace-nowrap"
             >
               Members Login Area
             </Link>

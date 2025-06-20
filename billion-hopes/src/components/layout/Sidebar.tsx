@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDownIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChatBubbleLeftIcon, Cog8ToothIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 
 interface MenuItem {
   title: string;
@@ -76,6 +77,7 @@ const menuSections: MenuSection[] = [
 
 const Sidebar: React.FC = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const { isAdmin } = useAuth();
 
   const toggleSection = (title: string) => {
     setOpenSection(openSection === title ? null : title);
@@ -126,13 +128,25 @@ const Sidebar: React.FC = () => {
           ))}
         </div>
         
-        <Link
-          to="/feedback"
-          className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium py-3 px-4 mt-4 rounded-lg hover:bg-gray-50 transition-colors border-t border-gray-200"
-        >
-          <ChatBubbleLeftIcon className="w-5 h-5" />
-          <span>Share Feedback</span>
-        </Link>
+        <div className="mt-auto border-t border-gray-200 pt-4 space-y-2">
+          {isAdmin && (
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Cog8ToothIcon className="w-5 h-5" />
+              <span>Admin Dashboard</span>
+            </Link>
+          )}
+          
+          <Link
+            to="/feedback"
+            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <ChatBubbleLeftIcon className="w-5 h-5" />
+            <span>Share Feedback</span>
+          </Link>
+        </div>
       </nav>
     </aside>
   );
