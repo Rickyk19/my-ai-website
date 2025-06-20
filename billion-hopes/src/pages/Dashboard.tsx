@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   ChartBarIcon, 
   UsersIcon, 
@@ -16,6 +17,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import RichTextEditor from '../components/RichTextEditor';
+import { supabase } from '../utils/supabase';
 
 interface DashboardStats {
   totalUsers: number;
@@ -56,6 +58,7 @@ interface AdminUser {
 }
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -84,6 +87,12 @@ const Dashboard: React.FC = () => {
   const [showManageCategoriesModal, setShowManageCategoriesModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ title: '', description: '' });
   const [customSections, setCustomSections] = useState<{[key: string]: {title: string, path: string}[]}>({});
+  
+  // Delete Course States
+  const [showDeleteCourseModal, setShowDeleteCourseModal] = useState(false);
+  const [availableCourses, setAvailableCourses] = useState<any[]>([]);
+  const [selectedCourseToDelete, setSelectedCourseToDelete] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   // Admin Management States
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
@@ -447,7 +456,7 @@ const Dashboard: React.FC = () => {
     setShowQuickAddMenu(false);
     switch (type) {
       case 'course':
-        alert('Navigate to Course Creation - Feature coming soon!');
+        navigate('/add-course');
         break;
       case 'page':
         setShowPageModal(true);
@@ -481,6 +490,10 @@ const Dashboard: React.FC = () => {
         break;
       case 'manage-admins':
         setShowManageAdminsModal(true);
+        break;
+      case 'delete-course':
+        loadAvailableCourses();
+        setShowDeleteCourseModal(true);
         break;
       default:
         // Handle section-based actions
@@ -591,6 +604,76 @@ const Dashboard: React.FC = () => {
     const admin = admins.find(admin => admin.id === adminId);
     if (admin) {
       alert(`Toggle status functionality for ${admin.name} - Coming soon!`);
+    }
+  };
+
+  // Course deletion functions
+  const loadAvailableCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, name, status, instructor, fees')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading courses:', error);
+        alert('Failed to load courses. Please try again.');
+        return;
+      }
+
+      setAvailableCourses(data || []);
+    } catch (error) {
+      console.error('Error loading courses:', error);
+      alert('Failed to load courses. Please check your connection.');
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!selectedCourseToDelete) {
+      alert('Please select a course to delete.');
+      return;
+    }
+
+    const courseToDelete = availableCourses.find(course => course.id.toString() === selectedCourseToDelete);
+    if (!courseToDelete) {
+      alert('Selected course not found.');
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete the course "${courseToDelete.name}"?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', selectedCourseToDelete);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      alert(`Course "${courseToDelete.name}" has been deleted successfully!`);
+      
+      // Reset and close modal
+      setSelectedCourseToDelete('');
+      setShowDeleteCourseModal(false);
+      
+      // Reload dashboard data to update stats
+      loadDashboardData();
+      
+    } catch (error: any) {
+      console.error('Error deleting course:', error);
+      alert(`Failed to delete course: ${error.message}`);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -960,6 +1043,13 @@ const Dashboard: React.FC = () => {
                     Add Course
                   </button>
                   <button
+                    onClick={() => handleQuickAdd('delete-course')}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 border-l-4 border-red-400"
+                  >
+                    <TrashIcon className="h-4 w-4 inline mr-2 text-red-600" />
+                    Delete Course
+                  </button>
+                  <button
                     onClick={() => handleQuickAdd('user')}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
@@ -1143,8 +1233,18 @@ const Dashboard: React.FC = () => {
                 <h3 className="font-semibold mb-2">Courses</h3>
                 <p className="text-gray-600 mb-4">Manage AI courses and content</p>
                 <div className="flex gap-2">
-                  <button className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm">Edit</button>
-                  <button className="bg-green-100 text-green-700 px-3 py-1 rounded text-sm">Add New</button>
+                  <button 
+                    onClick={() => navigate('/manage-courses')}
+                    className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200 transition-colors"
+                  >
+                    Manage Courses
+                  </button>
+                  <button 
+                    onClick={() => navigate('/add-course')}
+                    className="bg-green-100 text-green-700 px-3 py-1 rounded text-sm hover:bg-green-200 transition-colors"
+                  >
+                    Add New
+                  </button>
                 </div>
               </div>
               
@@ -2559,6 +2659,88 @@ const Dashboard: React.FC = () => {
                 className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Course Modal */}
+      {showDeleteCourseModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <div className="flex items-center mb-6">
+              <TrashIcon className="h-6 w-6 text-red-600 mr-3" />
+              <h2 className="text-xl font-bold text-gray-900">Delete Course</h2>
+              <button
+                onClick={() => {
+                  setShowDeleteCourseModal(false);
+                  setSelectedCourseToDelete('');
+                }}
+                className="ml-auto text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Course to Delete
+              </label>
+              <select
+                value={selectedCourseToDelete}
+                onChange={(e) => setSelectedCourseToDelete(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                disabled={deleteLoading}
+              >
+                <option value="">Choose a course...</option>
+                {availableCourses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.name} - {course.instructor} (₹{course.fees}) [{course.status}]
+                  </option>
+                ))}
+              </select>
+              
+              {availableCourses.length === 0 && (
+                <p className="text-gray-500 text-sm mt-2">
+                  No courses available to delete.
+                </p>
+              )}
+            </div>
+
+            {selectedCourseToDelete && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center">
+                  <TrashIcon className="h-5 w-5 text-red-600 mr-2" />
+                  <span className="text-red-800 font-medium">Warning</span>
+                </div>
+                <p className="text-red-700 text-sm mt-1">
+                  This action will permanently delete the selected course and all associated data. This cannot be undone.
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <button
+                onClick={handleDeleteCourse}
+                disabled={!selectedCourseToDelete || deleteLoading}
+                className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
+                  !selectedCourseToDelete || deleteLoading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete Course'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteCourseModal(false);
+                  setSelectedCourseToDelete('');
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                disabled={deleteLoading}
+              >
+                Cancel
               </button>
             </div>
           </div>

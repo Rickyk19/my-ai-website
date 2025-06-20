@@ -7,6 +7,13 @@ import Courses from './pages/Courses';
 import CourseContent from './pages/CourseContent';
 import Feedback from './pages/Feedback';
 import Dashboard from './pages/Dashboard';
+import AddCourse from './pages/AddCourse';
+import ManageCourses from './pages/ManageCourses';
+import MembersLogin from './pages/MembersLogin';
+import MembersLoginDebug from './pages/MembersLoginDebug';
+import SupabaseTestPage from './pages/SupabaseTestPage';
+import SupabaseConnectionTest from './pages/SupabaseConnectionTest';
+import MembersDashboard from './pages/MembersDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
@@ -44,8 +51,23 @@ const App: React.FC = () => {
                 <Dashboard />
               </ProtectedRoute>
             } />
+            <Route path="add-course" element={
+              <ProtectedRoute adminOnly={true}>
+                <AddCourse />
+              </ProtectedRoute>
+            } />
+            <Route path="manage-courses" element={
+              <ProtectedRoute adminOnly={true}>
+                <ManageCourses />
+              </ProtectedRoute>
+            } />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<SignUp />} />
+            <Route path="members-login" element={<MembersLogin />} />
+            <Route path="members-login-debug" element={<MembersLoginDebug />} />
+            <Route path="supabase-test" element={<SupabaseTestPage />} />
+            <Route path="connection-test" element={<SupabaseConnectionTest />} />
+            <Route path="members-dashboard" element={<MembersDashboard />} />
           </Route>
         </Routes>
       </Router>

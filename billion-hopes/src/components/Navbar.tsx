@@ -181,10 +181,10 @@ export const Navbar: React.FC = () => {
                 </button>
               )}
               <Link
-                to="/signup"
+                to="/members-login"
                 className="bg-white text-blue-600 px-6 py-3 rounded-full hover:bg-blue-50 transition-colors text-lg font-medium"
               >
-                Sign Up
+                Members Login Area
               </Link>
             </div>
           </div>
