@@ -70,7 +70,7 @@ const Feedback: React.FC = () => {
       
       setStatus({
         type: 'success',
-        message: 'Thank you for your feedback! (Submitted via direct API)'
+        message: 'Thank you for your feedback!'
       });
       setFormData(initialFormState);
     } catch (error: any) {
