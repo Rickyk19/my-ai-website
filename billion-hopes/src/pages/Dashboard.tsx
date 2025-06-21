@@ -14,7 +14,8 @@ import {
   BellIcon,
   GlobeAltIcon,
   AcademicCapIcon,
-  XMarkIcon
+  XMarkIcon,
+  QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
 import RichTextEditor from '../components/RichTextEditor';
 import { supabase } from '../utils/supabase';
@@ -1041,6 +1042,13 @@ const Dashboard: React.FC = () => {
                   >
                     <AcademicCapIcon className="h-4 w-4 inline mr-2" />
                     Add Course
+                  </button>
+                  <button
+                    onClick={() => navigate('/manage-quizzes')}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-l-4 border-purple-400"
+                  >
+                    <QuestionMarkCircleIcon className="h-4 w-4 inline mr-2 text-purple-600" />
+                    Manage Quizzes
                   </button>
                   <button
                     onClick={() => handleQuickAdd('delete-course')}

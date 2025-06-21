@@ -9,6 +9,7 @@ import Feedback from './pages/Feedback';
 import Dashboard from './pages/Dashboard';
 import AddCourse from './pages/AddCourse';
 import ManageCourses from './pages/ManageCourses';
+import ManageQuizzes from './pages/ManageQuizzes';
 import MembersLogin from './pages/MembersLogin';
 import MembersLoginDebug from './pages/MembersLoginDebug';
 import SupabaseTestPage from './pages/SupabaseTestPage';
@@ -76,6 +77,11 @@ const App: React.FC = () => {
             <Route path="manage-courses" element={
               <ProtectedRoute adminOnly={true}>
                 <ManageCourses />
+              </ProtectedRoute>
+            } />
+            <Route path="manage-quizzes" element={
+              <ProtectedRoute adminOnly={true}>
+                <ManageQuizzes />
               </ProtectedRoute>
             } />
             <Route path="login" element={<Login />} />
