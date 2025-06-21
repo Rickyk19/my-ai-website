@@ -1,0 +1,540 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ClockIcon,
+  QuestionMarkCircleIcon,
+  CheckCircleIcon,
+  XMarkIcon,
+  PlayIcon,
+  PauseIcon,
+  ForwardIcon,
+  BackwardIcon,
+  FlagIcon,
+  BookOpenIcon,
+  TrophyIcon,
+  ChartBarIcon
+} from '@heroicons/react/24/outline';
+
+interface Quiz {
+  id: number;
+  course_id: number;
+  class_id: number;
+  title: string;
+  description: string;
+  instructions: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  time_limit: number;
+  total_marks?: number;
+  questions: QuizQuestion[];
+  created_at: string;
+  is_active: boolean;
+  is_published: boolean;
+  configuration: QuizConfiguration;
+  grading_system: GradingSystem;
+}
+
+interface QuizQuestion {
+  id: number;
+  section_id: number;
+  question: string;
+  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'numerical' | 'essay';
+  options?: string[];
+  correct_answer: string | number | string[];
+  explanation?: string;
+  points: number;
+  negative_marks: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  time_limit?: number;
+  image_url?: string;
+  has_multiple_correct: boolean;
+  tags: string[];
+}
+
+interface QuizConfiguration {
+  show_question_marks: boolean;
+  negative_marking: boolean;
+  negative_marks_value: number;
+  partial_marking: boolean;
+  question_navigation: boolean;
+  review_mode: boolean;
+  show_answers_after: 'immediately' | 'after_submission' | 'never';
+  max_attempts: number;
+  quiz_pause_enabled: boolean;
+  time_per_question: boolean;
+  auto_submit: boolean;
+}
+
+interface GradingSystem {
+  passing_percentage: number;
+  grades: { name: string; min_percentage: number; max_percentage: number; color: string; }[];
+}
+
+interface StudentAnswer {
+  questionId: number;
+  answer: string | number | string[];
+  timeSpent: number;
+  isFlagged: boolean;
+}
+
+interface DemoQuestion {
+  id: number;
+  question: string;
+  type: 'multiple-choice' | 'true-false' | 'numerical' | 'fill-blank';
+  options?: string[];
+  correct: number | string | boolean;
+  points: number;
+  image_url?: string;
+}
+
+const StudentQuizInterface: React.FC = () => {
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<{[key: number]: any}>({});
+  const [timeRemaining, setTimeRemaining] = useState(1800); // 30 minutes
+  const [showResults, setShowResults] = useState(false);
+
+  const demoQuiz = {
+    title: "Python Basics - Variables and Data Types",
+    course: "Complete Python Programming Masterclass",
+    class: "Class 1: Python Fundamentals",
+    totalQuestions: 5,
+    totalMarks: 50,
+    timeLimit: 30,
+    questions: [
+      {
+        id: 1,
+        question: "What is the correct way to create a variable in Python?",
+        type: "multiple-choice" as const,
+        options: ["var x = 5", "x = 5", "int x = 5", "variable x = 5"],
+        correct: 1,
+        points: 10,
+        image_url: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmOGZmIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjMzMzIj4jIFB5dGhvbiBWYXJpYWJsZSBFeGFtcGxlczo8L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjU1IiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDA3Ij54ID0gNSAgICMgQ29ycmVjdDwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNkOTUzNGYiPnZhciB4ID0gNSAgIyBJbmNvcnJlY3Q8L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjEwMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Q5NTM0ZiI+aW50IHggPSA1ICAjIEluY29ycmVjdDwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTMwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiI+UHl0aG9uIGlzIGR5bmFtaWNhbGx5IHR5cGVkPC90ZXh0Pgo8L3N2Zz4="
+      },
+      {
+        id: 2,
+        question: "Which is NOT a valid Python data type?",
+        type: "multiple-choice" as const,
+        options: ["int", "float", "string", "char"],
+        correct: 3,
+        points: 10
+      },
+      {
+        id: 3,
+        question: "Python is case-sensitive",
+        type: "true-false" as const,
+        correct: true,
+        points: 10
+      },
+      {
+        id: 4,
+        question: "What is 10 // 3 in Python?",
+        type: "numerical" as const,
+        correct: "3",
+        points: 10
+      },
+      {
+        id: 5,
+        question: "Which function gets user input in Python?",
+        type: "fill-blank" as const,
+        correct: "input",
+        points: 10
+      }
+    ] as DemoQuestion[]
+  };
+
+  useEffect(() => {
+    if (quizStarted && timeRemaining > 0 && !showResults) {
+      const timer = setInterval(() => {
+        setTimeRemaining(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [quizStarted, timeRemaining, showResults]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleAnswer = (answer: any) => {
+    setAnswers(prev => ({ ...prev, [currentQuestion]: answer }));
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestion < demoQuiz.questions.length - 1) {
+      setCurrentQuestion(prev => prev + 1);
+    }
+  };
+
+  const prevQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(prev => prev - 1);
+    }
+  };
+
+  const submitQuiz = () => {
+    setShowResults(true);
+  };
+
+  const calculateScore = () => {
+    let score = 0;
+    let correct = 0;
+    demoQuiz.questions.forEach((q, idx) => {
+      const userAnswer = answers[idx];
+      if (userAnswer !== undefined) {
+        if (q.type === 'multiple-choice' && userAnswer === q.correct) {
+          score += q.points;
+          correct++;
+        } else if (q.type === 'true-false' && userAnswer === q.correct) {
+          score += q.points;
+          correct++;
+        } else if ((q.type === 'numerical' || q.type === 'fill-blank') && 
+                   userAnswer.toString().toLowerCase() === q.correct.toString().toLowerCase()) {
+          score += q.points;
+          correct++;
+        }
+      }
+    });
+    return { score, correct, percentage: (score / demoQuiz.totalMarks) * 100 };
+  };
+
+  if (!quizStarted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-2xl p-8">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{demoQuiz.title}</h1>
+              <p className="text-gray-600 text-lg">Test your Python fundamentals knowledge</p>
+            </div>
+
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl mb-8 border border-green-200">
+              <h3 className="text-lg font-semibold text-green-800 mb-2">📚 {demoQuiz.course}</h3>
+              <p className="text-green-700">{demoQuiz.class}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-blue-50 p-4 rounded-lg text-center">
+                <ClockIcon className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-blue-600">{demoQuiz.timeLimit}</div>
+                <div className="text-sm text-blue-800">Minutes</div>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg text-center">
+                <CheckCircleIcon className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-purple-600">{demoQuiz.totalQuestions}</div>
+                <div className="text-sm text-purple-800">Questions</div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg text-center">
+                <div className="text-2xl font-bold text-green-600">{demoQuiz.totalMarks}</div>
+                <div className="text-sm text-green-800">Total Marks</div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-xl mb-8">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">📋 Instructions</h3>
+              <ul className="list-disc list-inside space-y-2 text-gray-700">
+                <li>You have {demoQuiz.timeLimit} minutes to complete the quiz</li>
+                <li>Each question shows the marks allocated</li>
+                <li>You can navigate between questions</li>
+                <li>Some questions include images for reference</li>
+                <li>Passing percentage: 70%</li>
+              </ul>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={() => setQuizStarted(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-12 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
+              >
+                <PlayIcon className="h-6 w-6 inline mr-2" />
+                Start Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showResults) {
+    const results = calculateScore();
+    const passed = results.percentage >= 70;
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-2xl p-8">
+            <div className="text-center mb-8">
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
+                passed ? 'bg-green-500' : 'bg-red-500'
+              }`}>
+                {passed ? (
+                  <CheckCircleIcon className="h-10 w-10 text-white" />
+                ) : (
+                  <XMarkIcon className="h-10 w-10 text-white" />
+                )}
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {passed ? '🎉 Congratulations!' : '📚 Keep Learning!'}
+              </h1>
+              <p className="text-gray-600 text-lg">
+                {passed ? 'You have successfully passed the quiz!' : 'You can retake the quiz to improve your score.'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-blue-50 p-6 rounded-xl text-center border border-blue-200">
+                <div className="text-3xl font-bold text-blue-600">{results.score}</div>
+                <div className="text-sm text-blue-800">Total Score</div>
+              </div>
+              <div className="bg-green-50 p-6 rounded-xl text-center border border-green-200">
+                <div className="text-3xl font-bold text-green-600">{results.percentage.toFixed(1)}%</div>
+                <div className="text-sm text-green-800">Percentage</div>
+              </div>
+              <div className="bg-purple-50 p-6 rounded-xl text-center border border-purple-200">
+                <div className="text-3xl font-bold text-purple-600">{results.correct}/{demoQuiz.questions.length}</div>
+                <div className="text-sm text-purple-800">Correct</div>
+              </div>
+              <div className="bg-yellow-50 p-6 rounded-xl text-center border border-yellow-200">
+                <div className="text-3xl font-bold text-yellow-600">
+                  {results.percentage >= 90 ? 'A+' : results.percentage >= 80 ? 'A' : results.percentage >= 70 ? 'B+' : 'C'}
+                </div>
+                <div className="text-sm text-yellow-800">Grade</div>
+              </div>
+            </div>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
+              >
+                Retake Quiz
+              </button>
+              <button
+                onClick={() => alert('Returning to course dashboard...')}
+                className="bg-gray-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-700 transition-all"
+              >
+                Back to Course
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const question = demoQuiz.questions[currentQuestion];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold text-gray-900">{demoQuiz.title}</h1>
+              <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                Question {currentQuestion + 1} of {demoQuiz.questions.length}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
+                timeRemaining < 300 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+              }`}>
+                <ClockIcon className="h-5 w-5" />
+                <span>{formatTime(timeRemaining)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Navigation */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+              <h3 className="font-semibold text-gray-900 mb-4">Questions</h3>
+              <div className="grid grid-cols-5 gap-2">
+                {demoQuiz.questions.map((_, index) => {
+                  const hasAnswer = answers[index] !== undefined;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentQuestion(index)}
+                      className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                        index === currentQuestion
+                          ? 'bg-blue-600 text-white'
+                          : hasAnswer
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Question */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-xl shadow-sm p-8">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                    Question {currentQuestion + 1}
+                  </span>
+                  <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                    {question.points} marks
+                  </span>
+                </div>
+                <button className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">
+                  <FlagIcon className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">{question.question}</h2>
+                
+                {question.image_url && (
+                  <div className="mb-6">
+                    <img 
+                      src={question.image_url} 
+                      alt="Question illustration" 
+                      className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Answer Options */}
+              <div className="mb-8">
+                {question.type === 'multiple-choice' && question.options && (
+                  <div className="space-y-3">
+                    {question.options.map((option, index) => (
+                      <label
+                        key={index}
+                        className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:bg-gray-50 ${
+                          answers[currentQuestion] === index
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="answer"
+                          checked={answers[currentQuestion] === index}
+                          onChange={() => handleAnswer(index)}
+                          className="sr-only"
+                        />
+                        <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
+                          answers[currentQuestion] === index
+                            ? 'border-blue-500 bg-blue-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {answers[currentQuestion] === index && (
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="bg-gray-100 text-gray-700 text-sm font-medium px-2 py-1 rounded">
+                            {String.fromCharCode(65 + index)}
+                          </span>
+                          <span className="text-gray-900">{option}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {question.type === 'true-false' && (
+                  <div className="space-y-3">
+                    {[true, false].map((option) => (
+                      <label
+                        key={option.toString()}
+                        className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:bg-gray-50 ${
+                          answers[currentQuestion] === option
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="answer"
+                          checked={answers[currentQuestion] === option}
+                          onChange={() => handleAnswer(option)}
+                          className="sr-only"
+                        />
+                        <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
+                          answers[currentQuestion] === option
+                            ? 'border-blue-500 bg-blue-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {answers[currentQuestion] === option && (
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          )}
+                        </div>
+                        <span className="text-gray-900 font-medium">
+                          {option ? '✅ True' : '❌ False'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {(question.type === 'fill-blank' || question.type === 'numerical') && (
+                  <input
+                    type={question.type === 'numerical' ? 'number' : 'text'}
+                    value={answers[currentQuestion] || ''}
+                    onChange={(e) => handleAnswer(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={`Enter your ${question.type === 'numerical' ? 'numerical' : 'text'} answer...`}
+                  />
+                )}
+              </div>
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                <button
+                  onClick={prevQuestion}
+                  disabled={currentQuestion === 0}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                    currentQuestion === 0
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-600 text-white hover:bg-gray-700'
+                  }`}
+                >
+                  Previous
+                </button>
+
+                <div className="flex gap-4">
+                  {currentQuestion === demoQuiz.questions.length - 1 ? (
+                    <button
+                      onClick={submitQuiz}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all"
+                    >
+                      Submit Quiz
+                    </button>
+                  ) : (
+                    <button
+                      onClick={nextQuestion}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all"
+                    >
+                      Next
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudentQuizInterface; 

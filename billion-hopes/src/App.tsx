@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import AddCourse from './pages/AddCourse';
 import ManageCourses from './pages/ManageCourses';
 import ManageQuizzes from './pages/ManageQuizzes';
+import StudentQuizInterface from './pages/StudentQuizInterface';
 import MembersLogin from './pages/MembersLogin';
 import MembersLoginDebug from './pages/MembersLoginDebug';
 import SupabaseTestPage from './pages/SupabaseTestPage';
@@ -24,6 +25,7 @@ import SmartRecommendations from './pages/SmartRecommendations';
 import ProtectedRoute from './components/ProtectedRoute';
 import MemberProtectedRoute from './components/MemberProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import QuizDemoPage from './pages/QuizDemoPage';
 
 // Placeholder components for different routes
 const AIExplained = () => <div>AI Explained Page</div>;
@@ -84,6 +86,16 @@ const App: React.FC = () => {
                 <ManageQuizzes />
               </ProtectedRoute>
             } />
+            <Route path="student-quiz-demo" element={
+              <MemberProtectedRoute>
+                <StudentQuizInterface />
+              </MemberProtectedRoute>
+            } />
+            <Route path="quiz-integration-demo" element={
+              <MemberProtectedRoute>
+                <QuizDemoPage />
+              </MemberProtectedRoute>
+            } />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<SignUp />} />
             <Route path="members-login" element={<MembersLogin />} />
@@ -95,6 +107,7 @@ const App: React.FC = () => {
                 <MembersDashboard />
               </MemberProtectedRoute>
             } />
+            <Route path="quiz-demo" element={<QuizDemoPage />} />
           </Route>
         </Routes>
       </Router>

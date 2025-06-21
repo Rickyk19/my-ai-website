@@ -399,15 +399,20 @@ const MembersDashboard: React.FC = () => {
                   {/* Quiz Button - Always available for all courses */}
                   <button
                     onClick={() => {
-                      // Navigate to quiz page
-                      window.location.href = '/ai-quizzes';
+                      // Navigate to Python quiz demo if it's a Python course, otherwise general quiz
+                      if (selectedCourse.course_name.toLowerCase().includes('python')) {
+                        navigate('/student-quiz-demo');
+                      } else {
+                        navigate('/ai-quizzes');
+                      }
+                      setShowModal(false);
                     }}
                     className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded hover:from-purple-700 hover:to-pink-700 transition-all"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clipRule="evenodd"/>
                     </svg>
-                    🧠 Take Quiz
+                    Quiz
                   </button>
                   {selectedCourse.course_details?.certificate_available && (
                     <button
@@ -454,8 +459,13 @@ const MembersDashboard: React.FC = () => {
                             </button>
                             <button
                               onClick={() => {
-                                // Navigate to quiz for this specific class
-                                window.location.href = '/ai-quizzes';
+                                // Navigate to Python quiz demo if it's a Python course and Class 1, otherwise general quiz
+                                if (selectedCourse.course_name.toLowerCase().includes('python') && classItem.class_number === 1) {
+                                  navigate('/student-quiz-demo');
+                                } else {
+                                  navigate('/ai-quizzes');
+                                }
+                                setShowModal(false);
                               }}
                               className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-2 rounded hover:from-purple-700 hover:to-pink-700 text-sm"
                             >
