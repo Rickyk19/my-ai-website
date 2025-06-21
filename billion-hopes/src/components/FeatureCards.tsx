@@ -67,6 +67,49 @@ const FeatureCards: React.FC = () => {
       description: "Educational content and AI knowledge resources",
       cards: [
         {
+          id: "ai-playground",
+          title: "AI Playground",
+          description: "🚀 Interactive AI tools and experiments - Try AI in action!",
+          image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          path: "/ai-playground",
+          category: "learning",
+          isNew: true,
+          isPopular: true,
+          icon: "🚀"
+        },
+        {
+          id: "ai-quizzes",
+          title: "AI Quizzes",
+          description: "🧠 Test your knowledge with interactive quizzes and assessments!",
+          image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          path: "/ai-quizzes",
+          category: "learning",
+          isNew: true,
+          isPopular: true,
+          icon: "🧠"
+        },
+        {
+          id: "community-forum",
+          title: "Community Forum",
+          description: "💬 Connect with fellow learners and share your AI journey!",
+          image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          path: "/community",
+          category: "learning",
+          isNew: true,
+          icon: "💬"
+        },
+        {
+          id: "smart-recommendations",
+          title: "Smart Recommendations",
+          description: "🎯 Get AI-powered personalized learning recommendations!",
+          image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          path: "/recommendations",
+          category: "learning",
+          isNew: true,
+          isPopular: true,
+          icon: "🎯"
+        },
+        {
           id: "ai-explained",
           title: "AI Explained",
           description: "Understanding artificial intelligence fundamentals and concepts",
@@ -155,6 +198,17 @@ const FeatureCards: React.FC = () => {
           image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
           path: "/members-dashboard",
           category: "members",
+          icon: "📊"
+        },
+        {
+          id: "progress-tracker",
+          title: "Progress Tracker",
+          description: "📊 Track your course progress, earn achievements, and level up! (Members Only)",
+          image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          path: "/progress",
+          category: "members",
+          isNew: true,
+          isPopular: true,
           icon: "📊"
         }
       ]

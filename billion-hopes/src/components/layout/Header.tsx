@@ -25,15 +25,15 @@ const Header: React.FC = () => {
           </div>
 
           {/* Navigation Items */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-6">
             <Link to="/" className="text-gray-600 hover:text-blue-600">Home</Link>
+            <Link to="/ai-playground" className="text-gray-600 hover:text-blue-600 font-medium">🚀 Playground</Link>
+            <Link to="/progress" className="text-gray-600 hover:text-blue-600 font-medium">📊 Progress</Link>
+            <Link to="/ai-quizzes" className="text-gray-600 hover:text-blue-600 font-medium">🧠 Quizzes</Link>
+            <Link to="/community" className="text-gray-600 hover:text-blue-600 font-medium">💬 Community</Link>
+            <Link to="/recommendations" className="text-gray-600 hover:text-blue-600 font-medium">🎯 Recommendations</Link>
+            <Link to="/courses" className="text-gray-600 hover:text-blue-600">Courses</Link>
             <Link to="/ai-explained" className="text-gray-600 hover:text-blue-600">AI Explained</Link>
-            <Link to="/solutions" className="text-gray-600 hover:text-blue-600">Solutions</Link>
-            <Link to="/trends" className="text-gray-600 hover:text-blue-600">Trends</Link>
-            <Link to="/data-lab" className="text-gray-600 hover:text-blue-600">Data Lab</Link>
-            <Link to="/agi" className="text-gray-600 hover:text-blue-600">AGI</Link>
-            <Link to="/resources" className="text-gray-600 hover:text-blue-600">AI Resources</Link>
-            <Link to="/contact" className="text-gray-600 hover:text-blue-600">Contact</Link>
           </nav>
 
           {/* Auth Buttons */}

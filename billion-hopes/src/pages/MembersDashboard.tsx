@@ -396,6 +396,19 @@ const MembersDashboard: React.FC = () => {
                       Download PDF
                     </button>
                   )}
+                  {/* Quiz Button - Always available for all courses */}
+                  <button
+                    onClick={() => {
+                      // Navigate to quiz page
+                      window.location.href = '/ai-quizzes';
+                    }}
+                    className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded hover:from-purple-700 hover:to-pink-700 transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clipRule="evenodd"/>
+                    </svg>
+                    🧠 Take Quiz
+                  </button>
                   {selectedCourse.course_details?.certificate_available && (
                     <button
                       onClick={() => downloadCertificate(selectedCourse.course_name)}
@@ -423,15 +436,44 @@ const MembersDashboard: React.FC = () => {
                               <span>⏱️ {classItem.duration_minutes} minutes</span>
                             </div>
                           </div>
-                          <a
-                            href={classItem.video_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 ml-4"
-                          >
-                            <PlayIcon className="h-5 w-5" />
-                            Watch
-                          </a>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => {
+                                // Download PDF for this specific class
+                                const link = document.createElement('a');
+                                link.href = '/demo-course-guide.pdf';
+                                link.download = `Class-${classItem.class_number}-${classItem.title}.pdf`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }}
+                              className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm"
+                            >
+                              <DocumentArrowDownIcon className="h-4 w-4" />
+                              PDF
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Navigate to quiz for this specific class
+                                window.location.href = '/ai-quizzes';
+                              }}
+                              className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-2 rounded hover:from-purple-700 hover:to-pink-700 text-sm"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clipRule="evenodd"/>
+                              </svg>
+                              Quiz
+                            </button>
+                            <a
+                              href={classItem.video_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm"
+                            >
+                              <PlayIcon className="h-4 w-4" />
+                              Watch
+                            </a>
+                          </div>
                         </div>
                       </div>
                     ))}

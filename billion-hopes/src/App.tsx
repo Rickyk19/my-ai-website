@@ -15,7 +15,13 @@ import SupabaseTestPage from './pages/SupabaseTestPage';
 import SupabaseConnectionTest from './pages/SupabaseConnectionTest';
 import MembersDashboard from './pages/MembersDashboard';
 import ShowcasePage from './pages/ShowcasePage';
+import AIPlayground from './pages/AIPlayground';
+import ProgressTracker from './pages/ProgressTracker';
+import AIQuizzes from './pages/AIQuizzes';
+import CommunityForum from './pages/CommunityForum';
+import SmartRecommendations from './pages/SmartRecommendations';
 import ProtectedRoute from './components/ProtectedRoute';
+import MemberProtectedRoute from './components/MemberProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
 // Placeholder components for different routes
@@ -48,6 +54,15 @@ const App: React.FC = () => {
             <Route path="contact" element={<Contact />} />
             <Route path="feedback" element={<Feedback />} />
             <Route path="showcase" element={<ShowcasePage />} />
+            <Route path="ai-playground" element={<AIPlayground />} />
+            <Route path="progress" element={
+              <MemberProtectedRoute>
+                <ProgressTracker />
+              </MemberProtectedRoute>
+            } />
+            <Route path="ai-quizzes" element={<AIQuizzes />} />
+            <Route path="community" element={<CommunityForum />} />
+            <Route path="recommendations" element={<SmartRecommendations />} />
             <Route path="dashboard" element={
               <ProtectedRoute adminOnly={true}>
                 <Dashboard />
@@ -69,7 +84,11 @@ const App: React.FC = () => {
             <Route path="members-login-debug" element={<MembersLoginDebug />} />
             <Route path="supabase-test" element={<SupabaseTestPage />} />
             <Route path="connection-test" element={<SupabaseConnectionTest />} />
-            <Route path="members-dashboard" element={<MembersDashboard />} />
+            <Route path="members-dashboard" element={
+              <MemberProtectedRoute>
+                <MembersDashboard />
+              </MemberProtectedRoute>
+            } />
           </Route>
         </Routes>
       </Router>

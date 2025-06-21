@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar';
 import Sidebar from './Sidebar';
 import SocialMedia from '../SocialMedia';
 import Footer from './Footer';
+import AIChatbot from '../AIChatbot';
 
 const Layout: React.FC = () => {
   return (
@@ -23,6 +24,9 @@ const Layout: React.FC = () => {
       
       {/* Sticky Social Media Panel */}
       <SocialMedia variant="sticky" />
+      
+      {/* AI Assistant Chatbot - Available on all pages */}
+      <AIChatbot />
     </div>
   );
 };
