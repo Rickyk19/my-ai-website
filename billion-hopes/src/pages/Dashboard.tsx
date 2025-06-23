@@ -83,7 +83,6 @@ const Dashboard: React.FC = () => {
   const [newOrder, setNewOrder] = useState({ courseName: '', amount: '', customerName: '', customerEmail: '' });
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [selectedSection, setSelectedSection] = useState('');
-  const [sectionAction, setSectionAction] = useState('');
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [showManageCategoriesModal, setShowManageCategoriesModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ title: '', description: '' });
@@ -501,7 +500,6 @@ const Dashboard: React.FC = () => {
         if (type.startsWith('add-') || type.startsWith('view-') || type.startsWith('edit-') || type.startsWith('delete-')) {
           const [action, section] = type.split('-', 2);
           setSelectedSection(section);
-          setSectionAction(action);
           setShowSectionModal(true);
         }
         break;
@@ -1196,6 +1194,7 @@ const Dashboard: React.FC = () => {
       <div className="flex gap-2 flex-wrap">
         <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="h-5 w-5" />} />
         <TabButton id="content" label="Content" icon={<DocumentTextIcon className="h-5 w-5" />} />
+        <TabButton id="quizzes" label="Quizzes" icon={<QuestionMarkCircleIcon className="h-5 w-5" />} />
         <TabButton id="users" label="Users" icon={<UsersIcon className="h-5 w-5" />} />
         <TabButton id="analytics" label="Analytics" icon={<ChartBarIcon className="h-5 w-5" />} />
         <TabButton id="settings" label="Settings" icon={<CogIcon className="h-5 w-5" />} />
@@ -1320,6 +1319,117 @@ const Dashboard: React.FC = () => {
                 <h3 className="font-semibold text-purple-900">Premium Users</h3>
                 <p className="text-2xl font-bold text-purple-600">23</p>
                 <button className="text-purple-600 text-sm hover:underline">View All</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'quizzes' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Quiz Management</h2>
+              <button 
+                onClick={() => navigate('/quiz-manager')}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <QuestionMarkCircleIcon className="h-5 w-5" />
+                Open Quiz Manager
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-2 flex items-center">
+                  <QuestionMarkCircleIcon className="h-5 w-5 mr-2 text-blue-600" />
+                  Create Quizzes
+                </h3>
+                <p className="text-gray-600 mb-4">Create quizzes for each class in your courses</p>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => navigate('/quiz-manager')}
+                    className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200 transition-colors"
+                  >
+                    Manage Quizzes
+                  </button>
+                  <button 
+                    onClick={() => navigate('/quiz-manager')}
+                    className="bg-green-100 text-green-700 px-3 py-1 rounded text-sm hover:bg-green-200 transition-colors"
+                  >
+                    Create New
+                  </button>
+                </div>
+              </div>
+              
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-2 flex items-center">
+                  <AcademicCapIcon className="h-5 w-5 mr-2 text-green-600" />
+                  Quiz Analytics
+                </h3>
+                <p className="text-gray-600 mb-4">View student quiz performance and statistics</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Total Quizzes:</span>
+                    <span className="text-sm font-medium">2</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Average Score:</span>
+                    <span className="text-sm font-medium">85%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Completion Rate:</span>
+                    <span className="text-sm font-medium">92%</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-2 flex items-center">
+                  <ChartBarIcon className="h-5 w-5 mr-2 text-purple-600" />
+                  Recent Quiz Activity
+                </h3>
+                <p className="text-gray-600 mb-4">Latest quiz submissions and results</p>
+                <div className="space-y-2">
+                  <div className="text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Python Variables Quiz</span>
+                      <span className="text-green-600">95%</span>
+                    </div>
+                    <div className="text-gray-500">2 hours ago</div>
+                  </div>
+                  <div className="text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Python Basics Quiz</span>
+                      <span className="text-blue-600">78%</span>
+                    </div>
+                    <div className="text-gray-500">5 hours ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+              <h3 className="font-semibold text-yellow-800 mb-2">🚀 Quiz Management Features</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-yellow-700">
+                <div>
+                  <h4 className="font-medium mb-2">Current Features:</h4>
+                  <ul className="space-y-1">
+                    <li>• Create quizzes for any course/class</li>
+                    <li>• Multiple choice questions with explanations</li>
+                    <li>• Set time limits and difficulty levels</li>
+                    <li>• Preview quizzes before publishing</li>
+                    <li>• Edit and delete existing quizzes</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Coming Soon:</h4>
+                  <ul className="space-y-1">
+                    <li>• Database integration for persistent storage</li>
+                    <li>• Student progress tracking</li>
+                    <li>• Automated grading and certificates</li>
+                    <li>• Quiz analytics and reporting</li>
+                    <li>• Bulk question import/export</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>

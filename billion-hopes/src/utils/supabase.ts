@@ -148,4 +148,234 @@ export const getMemberPurchases = async (email: string) => {
   }
 };
 
+// Quiz Management Functions
+
 export default supabase; 
+// Quiz Management Functions
+
+interface QuizQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+}
+
+interface Quiz {
+  id?: number;
+  course_id: number;
+  class_number: number;
+  title: string;
+  description: string;
+  time_limit: number;
+  questions: QuizQuestion[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const createQuiz = async (quiz: Omit<Quiz, 'id' | 'created_at' | 'updated_at'>) => {
+  try {
+    console.log('📝 Creating quiz:', quiz.title);
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/class_quizzes`, {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      mode: 'cors',
+      credentials: 'omit',
+      body: JSON.stringify({
+        course_id: quiz.course_id,
+        class_number: quiz.class_number,
+        title: quiz.title,
+        description: quiz.description,
+        time_limit: quiz.time_limit,
+        questions: JSON.stringify(quiz.questions),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create quiz: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ Quiz created successfully');
+    
+    return {
+      success: true,
+      quiz: result[0]
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to create quiz:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+export const getQuiz = async (courseId: number, classNumber: number) => {
+  try {
+    console.log(`📚 Getting quiz for course ${courseId}, class ${classNumber}`);
+    
+    const response = await corsRequest(`class_quizzes?select=*&course_id=eq.${courseId}&class_number=eq.${classNumber}&limit=1`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch quiz: ${response.status}`);
+    }
+    
+    const quizzes = await response.json();
+    
+    if (quizzes.length === 0) {
+      return {
+        success: false,
+        error: 'No quiz found for this class'
+      };
+    }
+    
+    const quiz = quizzes[0];
+    
+    // Parse the questions JSON
+    const parsedQuiz = {
+      ...quiz,
+      questions: typeof quiz.questions === 'string' ? JSON.parse(quiz.questions) : quiz.questions
+    };
+    
+    return {
+      success: true,
+      quiz: parsedQuiz
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to get quiz:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+export const updateQuiz = async (quizId: number, updates: Partial<Quiz>) => {
+  try {
+    console.log('✏️ Updating quiz:', quizId);
+    
+    const updateData: any = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Stringify questions if provided
+    if (updates.questions) {
+      updateData.questions = JSON.stringify(updates.questions);
+    }
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/class_quizzes?id=eq.${quizId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      mode: 'cors',
+      credentials: 'omit',
+      body: JSON.stringify(updateData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update quiz: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ Quiz updated successfully');
+    
+    return {
+      success: true,
+      quiz: result[0]
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to update quiz:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+export const deleteQuiz = async (quizId: number) => {
+  try {
+    console.log('🗑️ Deleting quiz:', quizId);
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/class_quizzes?id=eq.${quizId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      mode: 'cors',
+      credentials: 'omit'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete quiz: ${response.status}`);
+    }
+    
+    console.log('✅ Quiz deleted successfully');
+    
+    return {
+      success: true
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to delete quiz:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+export const getAllQuizzes = async () => {
+  try {
+    console.log('📚 Getting all quizzes');
+    
+    const response = await corsRequest(`class_quizzes?select=*&order=course_id,class_number`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch quizzes: ${response.status}`);
+    }
+    
+    const quizzes = await response.json();
+    
+    // Parse questions for each quiz
+    const parsedQuizzes = quizzes.map((quiz: any) => ({
+      ...quiz,
+      questions: typeof quiz.questions === 'string' ? JSON.parse(quiz.questions) : quiz.questions
+    }));
+    
+    return {
+      success: true,
+      quizzes: parsedQuizzes
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to get quizzes:', error);
+    return {
+      success: false,
+      error: error.message,
+      quizzes: []
+    };
+  }
+};
+

@@ -330,48 +330,52 @@ const MembersDashboard: React.FC = () => {
               <motion.div
                 key={course.id}
                 whileHover={{ scale: 1.02, y: -5 }}
-                className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+                className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden h-full"
               >
-                <div className="p-6">
+                <div className="p-6 h-full flex flex-col">
+                  {/* Header */}
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">{course.course_name}</h3>
-                    <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">
+                    <h3 className="text-xl font-bold text-gray-900 leading-tight">{course.course_name}</h3>
+                    <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium whitespace-nowrap ml-2">
                       Purchased
                     </span>
                   </div>
                   
-                  <p className="text-gray-600 mb-4">
+                  {/* Description */}
+                  <p className="text-gray-600 mb-6 flex-grow min-h-[3rem]">
                     {course.course_details?.description || 'Complete course with comprehensive materials and certification.'}
                   </p>
                   
+                  {/* Course Details */}
                   <div className="space-y-3 mb-6">
                     <div className="flex items-center text-sm text-gray-600">
-                      <UserIcon className="h-4 w-4 mr-2" />
-                      <span>{course.course_details?.instructor || 'Expert Instructor'}</span>
+                      <UserIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{course.course_details?.instructor || 'Expert Instructor'}</span>
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
-                      <ClockIcon className="h-4 w-4 mr-2" />
-                      <span>{course.course_details?.duration || '8-12 hours'}</span>
+                      <ClockIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{course.course_details?.duration || '8-12 hours'}</span>
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
-                      <AcademicCapIcon className="h-4 w-4 mr-2" />
-                      <span>{course.course_details?.level || 'Intermediate'}</span>
+                      <AcademicCapIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{course.course_details?.level || 'Intermediate'}</span>
                     </div>
                   </div>
 
-                  <div className="flex space-x-3">
+                  {/* Action Buttons - Always at bottom */}
+                  <div className="flex space-x-3 mt-auto">
                     <button
                       onClick={() => openCourseModal(course)}
-                      className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center"
+                      className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center min-h-[48px]"
                     >
-                      <PlayIcon className="h-4 w-4 mr-2" />
-                      Start Learning
+                      <PlayIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">Start Learning</span>
                     </button>
                     
                     {course.course_details?.demo_pdf_url && (
                       <button
                         onClick={() => downloadPDF(course.course_details!.demo_pdf_url, course.course_name)}
-                        className="bg-gray-200 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+                        className="bg-gray-200 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center min-h-[48px]"
                       >
                         <DocumentArrowDownIcon className="h-4 w-4" />
                       </button>
@@ -471,13 +475,22 @@ const MembersDashboard: React.FC = () => {
                       <div key={classItem.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">
-                              Class {classItem.class_number}: {classItem.title}
-                            </h4>
-                            <p className="text-gray-600 text-sm mt-1">{classItem.description}</p>
-                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                              <span>⏱️ {classItem.duration_minutes} minutes</span>
-                            </div>
+                            <button
+                              onClick={() => {
+                                navigate(`/course/${selectedCourse.course_details?.id}/class/${classItem.class_number}`);
+                                setShowModal(false);
+                              }}
+                              className="text-left w-full group"
+                            >
+                              <h4 className="font-semibold text-blue-600 group-hover:text-blue-800 transition-colors cursor-pointer">
+                                Class {classItem.class_number}: {classItem.title}
+                              </h4>
+                              <p className="text-gray-600 text-sm mt-1">{classItem.description}</p>
+                              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                                <span>⏱️ {classItem.duration_minutes} minutes</span>
+                                <span className="text-blue-500 text-xs">👆 Click to open class</span>
+                              </div>
+                            </button>
                           </div>
                           <div className="flex gap-2 ml-4">
                             <button

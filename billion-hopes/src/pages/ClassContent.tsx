@@ -64,51 +64,244 @@ const ClassContent: React.FC = () => {
   const [rating, setRating] = useState(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
+  // Function to convert YouTube URL to embed format
+  const getYouTubeEmbedUrl = (url: string) => {
+    // Extract video ID from various YouTube URL formats
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    
+    if (match && match[2].length === 11) {
+      return `https://www.youtube.com/embed/${match[2]}`;
+    }
+    
+    // If it's already an embed URL, return as is
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
+    // Fallback to a default educational video
+    return 'https://www.youtube.com/embed/H7wd6JmTd18'; // User's specified video URL
+  };
+
   useEffect(() => {
     loadClassData();
     loadComments();
   }, [courseId, classNumber]);
 
   const loadClassData = () => {
-    // Mock class data - in production, this would come from your API
-    const mockClassData: ClassData = {
-      id: parseInt(classNumber || '1'),
-      course_id: parseInt(courseId || '1'),
-      class_number: parseInt(classNumber || '1'),
-      title: 'Python Basics & Setup',
-      description: 'Introduction to Python programming and development environment setup. Learn how to install Python, set up your IDE, and write your first Python program.',
-      video_url: 'https://www.youtube.com/watch?v=H7wd6JmTd18',
+    const courseIdNum = parseInt(courseId || '1');
+    const classNum = parseInt(classNumber || '1');
+    
+    // Enhanced mock data based on course and class
+    const courseContent: { [key: number]: { [key: number]: ClassData } } = {
+      // Python Programming Course (ID: 1)
+      1: {
+        1: {
+          id: 1,
+          course_id: 1,
+          class_number: 1,
+          title: 'Python Basics & Setup',
+          description: 'Introduction to Python programming and development environment setup. Learn how to install Python, set up your IDE, and write your first Python program.',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 45,
+          pdf_materials: [
+            'Python Installation Guide.pdf',
+            'IDE Setup Instructions.pdf',
+            'Class 1 Exercises.pdf',
+            'Python Syntax Reference.pdf'
+          ],
+          learning_objectives: [
+            'Install Python on your computer',
+            'Set up a development environment (PyCharm/VS Code)',
+            'Understand Python syntax basics',
+            'Write and run your first Python program',
+            'Use variables and basic data types'
+          ],
+          prerequisites: [
+            'Basic computer literacy',
+            'No prior programming experience required'
+          ]
+        },
+        2: {
+          id: 2,
+          course_id: 1,
+          class_number: 2,
+          title: 'Variables & Data Types',
+          description: 'Deep dive into Python variables, strings, numbers, booleans, and understanding how data types work in Python.',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 50,
+          pdf_materials: [
+            'Data Types Guide.pdf',
+            'Variable Best Practices.pdf',
+            'Class 2 Exercises.pdf',
+            'String Manipulation Cheat Sheet.pdf'
+          ],
+          learning_objectives: [
+            'Master Python variable assignment',
+            'Understand different data types (int, float, str, bool)',
+            'Perform string manipulation operations',
+            'Type conversion and casting',
+            'Input/Output operations'
+          ],
+          prerequisites: [
+            'Completed Class 1: Python Basics & Setup',
+            'Basic understanding of programming concepts'
+          ]
+        },
+        3: {
+          id: 3,
+          course_id: 1,
+          class_number: 3,
+          title: 'Control Structures',
+          description: 'Learn conditional statements, loops, and control flow in Python programming.',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 55,
+          pdf_materials: [
+            'Control Flow Guide.pdf',
+            'Loop Examples.pdf',
+            'Class 3 Exercises.pdf',
+            'Conditional Logic Reference.pdf'
+          ],
+          learning_objectives: [
+            'Master if/elif/else statements',
+            'Understand for and while loops',
+            'Learn break and continue statements',
+            'Nested loops and conditions',
+            'Boolean logic and operators'
+          ],
+          prerequisites: [
+            'Completed Class 2: Variables & Data Types',
+            'Understanding of basic Python syntax'
+          ]
+        }
+      },
+      // Machine Learning Course (ID: 2)
+      2: {
+        1: {
+          id: 4,
+          course_id: 2,
+          class_number: 1,
+          title: 'Introduction to Machine Learning',
+          description: 'Overview of machine learning concepts, types of ML, and setting up your ML environment.',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 60,
+          pdf_materials: [
+            'ML Introduction.pdf',
+            'Environment Setup Guide.pdf',
+            'Class 1 Exercises.pdf',
+            'ML Types Overview.pdf'
+          ],
+          learning_objectives: [
+            'Understand what machine learning is',
+            'Learn different types of ML (supervised, unsupervised, reinforcement)',
+            'Set up Python environment for ML',
+            'Introduction to key libraries (NumPy, Pandas, Scikit-learn)',
+            'First ML model example'
+          ],
+          prerequisites: [
+            'Basic Python programming knowledge',
+            'Understanding of basic mathematics'
+          ]
+        },
+        2: {
+          id: 5,
+          course_id: 2,
+          class_number: 2,
+          title: 'Data Preprocessing',
+          description: 'Learn how to clean, prepare, and transform data for machine learning models.',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 65,
+          pdf_materials: [
+            'Data Preprocessing Guide.pdf',
+            'Pandas Cheat Sheet.pdf',
+            'Class 2 Exercises.pdf',
+            'Data Cleaning Examples.pdf'
+          ],
+          learning_objectives: [
+            'Master data loading with Pandas',
+            'Handle missing data effectively',
+            'Feature scaling and normalization',
+            'Categorical data encoding',
+            'Data visualization basics'
+          ],
+          prerequisites: [
+            'Completed Class 1: Introduction to Machine Learning',
+            'Basic Python and NumPy knowledge'
+          ]
+        }
+      },
+      // Full Stack Development Course (ID: 3)
+      3: {
+        1: {
+          id: 6,
+          course_id: 3,
+          class_number: 1,
+          title: 'HTML & CSS Fundamentals',
+          description: 'Master the building blocks of web development with HTML structure and CSS styling.',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 50,
+          pdf_materials: [
+            'HTML Reference Guide.pdf',
+            'CSS Styling Guide.pdf',
+            'Class 1 Exercises.pdf',
+            'Web Development Setup.pdf'
+          ],
+          learning_objectives: [
+            'Create semantic HTML structure',
+            'Style elements with CSS',
+            'Understand box model and layout',
+            'Responsive design basics',
+            'Modern CSS features'
+          ],
+          prerequisites: [
+            'Basic computer skills',
+            'Text editor knowledge'
+          ]
+        }
+      }
+    };
+
+    // Get the class data or fallback to default
+    const classData = courseContent[courseIdNum]?.[classNum] || {
+      id: classNum,
+      course_id: courseIdNum,
+      class_number: classNum,
+      title: 'Course Content',
+      description: 'Learn advanced concepts and practical applications in this comprehensive class.',
+      video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
       duration_minutes: 45,
       pdf_materials: [
-        'Python Installation Guide.pdf',
-        'IDE Setup Instructions.pdf',
-        'Class 1 Exercises.pdf',
+        'Class Materials.pdf',
+        'Exercise Guide.pdf',
+        'Reference Manual.pdf',
         'Additional Resources.pdf'
       ],
       learning_objectives: [
-        'Install Python on your computer',
-        'Set up a development environment',
-        'Understand Python syntax basics',
-        'Write and run your first Python program',
-        'Use variables and basic data types'
+        'Master core concepts',
+        'Apply practical skills',
+        'Complete hands-on exercises',
+        'Understand real-world applications'
       ],
       prerequisites: [
-        'Basic computer literacy',
-        'No prior programming experience required'
+        'Previous class completion',
+        'Basic understanding of fundamentals'
       ]
     };
 
-    setClassData(mockClassData);
+    setClassData(classData);
   };
 
   const loadComments = () => {
-    // Mock comments data
+    const courseIdNum = parseInt(courseId || '1');
+    const classNum = parseInt(classNumber || '1');
+    
+    // Dynamic comments based on course and class
     const mockComments: Comment[] = [
       {
         id: 1,
         user_name: 'Priya Sharma',
         user_email: 'priya@example.com',
-        comment: 'Excellent explanation! The step-by-step installation guide was very helpful. I was able to set up everything without any issues.',
+        comment: `This class on "${classData?.title || 'the topic'}" was incredibly helpful! The explanation was clear and the examples were practical. I finally understand the concepts properly.`,
         timestamp: new Date(Date.now() - 2 * 3600000), // 2 hours ago
         likes: 5,
         isLiked: false,
@@ -116,7 +309,7 @@ const ClassContent: React.FC = () => {
           {
             id: 1,
             user_name: 'Dr. Sarah Johnson',
-            comment: 'Thank you Priya! I\'m glad the setup guide worked well for you. Feel free to ask if you have any questions.',
+            comment: 'Thank you Priya! I\'m glad the explanation worked well for you. Keep practicing and you\'ll master it in no time!',
             timestamp: new Date(Date.now() - 1 * 3600000), // 1 hour ago
             likes: 2,
             isLiked: false
@@ -127,7 +320,9 @@ const ClassContent: React.FC = () => {
         id: 2,
         user_name: 'Rahul Kumar',
         user_email: 'rahul@example.com',
-        comment: 'I had trouble with the IDE setup on Mac. Could you provide more details about the macOS installation process?',
+        comment: courseIdNum === 1 ? 
+          'I had some trouble with the Python setup initially, but following the video step-by-step helped a lot. The IDE configuration was trickier than expected.' :
+          'Great content! The practical examples really help in understanding the theoretical concepts. Looking forward to the next class.',
         timestamp: new Date(Date.now() - 4 * 3600000), // 4 hours ago
         likes: 3,
         isLiked: true,
@@ -135,7 +330,9 @@ const ClassContent: React.FC = () => {
           {
             id: 2,
             user_name: 'Anita Patel',
-            comment: 'I had the same issue! Here\'s what worked for me: make sure you have Xcode command line tools installed first.',
+            comment: courseIdNum === 1 ? 
+              'I had the same issue! Make sure you restart your computer after installing Python. That fixed it for me.' :
+              'Same here! The instructor explains complex topics in such an easy way.',
             timestamp: new Date(Date.now() - 3 * 3600000), // 3 hours ago
             likes: 4,
             isLiked: false
@@ -146,11 +343,34 @@ const ClassContent: React.FC = () => {
         id: 3,
         user_name: 'Sneha Reddy',
         user_email: 'sneha@example.com',
-        comment: 'The video quality is excellent and the pace is perfect for beginners. Looking forward to the next class!',
+        comment: `Class ${classNum} is exactly what I needed! The video quality is excellent and the pace is perfect for beginners. The downloadable materials are very helpful too.`,
         timestamp: new Date(Date.now() - 6 * 3600000), // 6 hours ago
         likes: 8,
         isLiked: false,
         replies: []
+      },
+      {
+        id: 4,
+        user_name: 'Arjun Singh',
+        user_email: 'arjun@example.com',
+        comment: courseIdNum === 2 ? 
+          'The machine learning concepts are explained brilliantly! I finally understand the math behind it.' :
+          courseIdNum === 3 ?
+          'Web development has never been this easy to understand. Great course structure!' :
+          'Python programming is becoming clearer with each class. Thank you for the detailed explanations!',
+        timestamp: new Date(Date.now() - 8 * 3600000), // 8 hours ago
+        likes: 6,
+        isLiked: false,
+        replies: [
+          {
+            id: 3,
+            user_name: 'Maya Gupta',
+            comment: 'Absolutely agree! This course is worth every penny. The practical approach is fantastic.',
+            timestamp: new Date(Date.now() - 7 * 3600000), // 7 hours ago
+            likes: 3,
+            isLiked: false
+          }
+        ]
       }
     ];
 
@@ -313,9 +533,10 @@ const ClassContent: React.FC = () => {
                 ) : (
                   <iframe
                     className="w-full h-full"
-                    src={`${classData.video_url}?autoplay=1`}
+                    src={`${getYouTubeEmbedUrl(classData.video_url)}?autoplay=0&rel=0`}
                     title={classData.title}
                     frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   />
                 )}

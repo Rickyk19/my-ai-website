@@ -5,11 +5,14 @@ import Home from './pages/Home';
 import TypesOfAI from './pages/TypesOfAI';
 import Courses from './pages/Courses';
 import CourseContent from './pages/CourseContent';
+import ClassContent from './pages/ClassContent';
+import ClassQuiz from './pages/ClassQuiz';
 import Feedback from './pages/Feedback';
 import Dashboard from './pages/Dashboard';
 import AddCourse from './pages/AddCourse';
 import ManageCourses from './pages/ManageCourses';
 import ManageQuizzes from './pages/ManageQuizzes';
+import QuizManager from './pages/QuizManager';
 import StudentQuizInterface from './pages/StudentQuizInterface';
 import MembersLogin from './pages/MembersLogin';
 import MembersLoginDebug from './pages/MembersLoginDebug';
@@ -47,6 +50,16 @@ const App: React.FC = () => {
             <Route index element={<Home />} />
             <Route path="courses" element={<Courses />} />
             <Route path="course/:id" element={<CourseContent />} />
+            <Route path="course/:courseId/class/:classNumber" element={
+              <MemberProtectedRoute>
+                <ClassContent />
+              </MemberProtectedRoute>
+            } />
+            <Route path="quiz/course/:courseId/class/:classNumber" element={
+              <MemberProtectedRoute>
+                <ClassQuiz />
+              </MemberProtectedRoute>
+            } />
             <Route path="ai-explained/types" element={<TypesOfAI />} />
             <Route path="ai-explained" element={<AIExplained />} />
             <Route path="solutions/*" element={<Solutions />} />
@@ -79,6 +92,11 @@ const App: React.FC = () => {
             <Route path="manage-courses" element={
               <ProtectedRoute adminOnly={true}>
                 <ManageCourses />
+              </ProtectedRoute>
+            } />
+            <Route path="quiz-manager" element={
+              <ProtectedRoute adminOnly={true}>
+                <QuizManager />
               </ProtectedRoute>
             } />
             <Route path="manage-quizzes" element={
