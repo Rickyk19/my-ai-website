@@ -8,10 +8,8 @@ import {
   ClockIcon,
   UserIcon,
   CalendarIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ChatBubbleLeftRightIcon,
-  XMarkIcon
+  XMarkIcon,
+  TrophyIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import { useNavigate } from 'react-router-dom';
@@ -54,7 +52,6 @@ const MembersDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [memberData, setMemberData] = useState<any>(null);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [expandedCourse, setExpandedCourse] = useState<number | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courseClasses, setCourseClasses] = useState<CourseClass[]>([]);
   const [courseComments, setCourseComments] = useState<Comment[]>([]);
@@ -62,6 +59,13 @@ const MembersDashboard: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [newRating, setNewRating] = useState(5);
+
+  // User stats for dashboard
+  const userStats = {
+    totalXP: 12500,
+    studyStreak: 7,
+    memberSince: '2024-01-15'
+  };
 
   useEffect(() => {
     loadMemberData();
@@ -130,30 +134,22 @@ const MembersDashboard: React.FC = () => {
     }
   };
 
-  const toggleCourseExpansion = (courseId: number) => {
-    setExpandedCourse(expandedCourse === courseId ? null : courseId);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('memberData');
     navigate('/');
   };
 
   const downloadPDF = (pdfUrl: string, courseName: string) => {
-    // In a real app, this would download the actual PDF
     const link = document.createElement('a');
     link.href = pdfUrl;
     link.download = `${courseName}-guide.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    // For demo, show alert
     alert(`Downloading ${courseName} PDF guide...`);
   };
 
   const downloadCertificate = (courseName: string) => {
-    // For demo, show alert
     alert(`Downloading certificate for ${courseName}...`);
   };
 
@@ -180,7 +176,6 @@ const MembersDashboard: React.FC = () => {
       if (response.ok) {
         setNewComment('');
         setNewRating(5);
-        // Reload comments
         if (selectedCourse.course_details?.id) {
           await loadCourseDetails(selectedCourse.course_details.id);
         }
@@ -213,8 +208,25 @@ const MembersDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!memberData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600 mb-4">Please log in to access your dashboard.</p>
+          <button
+            onClick={() => navigate('/members-login')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Go to Login
+          </button>
+        </div>
       </div>
     );
   }
@@ -224,125 +236,153 @@ const MembersDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow">
+      <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <AcademicCapIcon className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Members Area</h1>
+          <div className="flex justify-between items-center py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Welcome back, {memberData.name}! 🎓
+              </h1>
+              <p className="text-gray-600">Ready to continue your AI learning journey?</p>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-700">👤 {memberData?.name}</span>
+            
+            <div className="flex items-center space-x-4">
               <button
                 onClick={handleLogout}
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                className="text-gray-600 hover:text-red-600 transition-colors font-medium"
               >
                 Logout
               </button>
             </div>
           </div>
+
+          {/* Simple Navigation */}
+          <nav className="flex space-x-1 bg-gray-100 p-1 rounded-xl mb-4">
+            <div className="flex-1 flex items-center justify-center py-3 px-4 rounded-lg font-medium bg-white text-blue-600 shadow-md">
+              <AcademicCapIcon className="h-5 w-5 mr-2" />
+              My Courses Dashboard
+            </div>
+          </nav>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 mb-8 text-white"
-        >
-          <h2 className="text-3xl font-bold mb-4">Welcome back, {memberData?.name}! 🎓</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/20 rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Enrolled Courses</h3>
-              <p className="text-2xl font-bold">{courses.length}</p>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <AcademicCapIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <span className="text-2xl font-bold text-gray-900">{courses.length}</span>
             </div>
-            <div className="bg-white/20 rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Total Investment</h3>
-              <p className="text-2xl font-bold">₹{totalInvestment.toLocaleString()}</p>
-            </div>
-            <div className="bg-white/20 rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Member Since</h3>
-              <p className="text-2xl font-bold">{new Date().toLocaleDateString()}</p>
-            </div>
+            <h3 className="font-semibold text-gray-900">Enrolled Courses</h3>
+            <p className="text-gray-600 text-sm">Total courses purchased</p>
           </div>
-        </motion.div>
 
-        {/* Course Library */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Your Course Library</h3>
-          
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <TrophyIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <span className="text-2xl font-bold text-gray-900">{userStats.totalXP.toLocaleString()}</span>
+            </div>
+            <h3 className="font-semibold text-gray-900">Total XP</h3>
+            <p className="text-gray-600 text-sm">Experience points earned</p>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <ClockIcon className="h-6 w-6 text-orange-600" />
+              </div>
+              <span className="text-2xl font-bold text-gray-900">{userStats.studyStreak}</span>
+            </div>
+            <h3 className="font-semibold text-gray-900">Study Streak</h3>
+            <p className="text-gray-600 text-sm">Days in a row</p>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <CalendarIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <span className="text-sm font-bold text-gray-900">
+                ₹{totalInvestment.toLocaleString()}
+              </span>
+            </div>
+            <h3 className="font-semibold text-gray-900">Total Investment</h3>
+            <p className="text-gray-600 text-sm">Course value</p>
+          </div>
+        </div>
+
+        {/* Courses Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.length === 0 ? (
-            <div className="text-center py-8">
-              <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500">No courses found. Please check your purchases.</p>
+            <div className="col-span-full text-center py-12">
+              <AcademicCapIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
+              <p className="text-gray-600 mb-4">You haven't purchased any courses yet.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courses.map((course, index) => (
-                <motion.div
-                  key={course.id || index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col"
-                  onClick={() => openCourseModal(course)}
-                >
-                  <div className="p-6 flex flex-col h-full">
-                    <div className="flex items-center justify-between mb-4">
-                      <AcademicCapIcon className="h-8 w-8 text-blue-600" />
-                      <span className="text-sm font-semibold text-green-600 bg-green-100 px-2 py-1 rounded">
-                        ₹{course.amount.toLocaleString()}
-                      </span>
+            courses.map((course) => (
+              <motion.div
+                key={course.id}
+                whileHover={{ scale: 1.02, y: -5 }}
+                className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-gray-900">{course.course_name}</h3>
+                    <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">
+                      Purchased
+                    </span>
+                  </div>
+                  
+                  <p className="text-gray-600 mb-4">
+                    {course.course_details?.description || 'Complete course with comprehensive materials and certification.'}
+                  </p>
+                  
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      <span>{course.course_details?.instructor || 'Expert Instructor'}</span>
                     </div>
-                    
-                    <h4 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">
-                      {course.course_name}
-                    </h4>
-                    
-                    {/* Course details with consistent spacing */}
-                    <div className="flex-grow">
-                      {course.course_details ? (
-                        <>
-                          <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                            {course.course_details.description}
-                          </p>
-                          
-                          <div className="space-y-2 text-sm text-gray-500">
-                            <div className="flex items-center">
-                              <UserIcon className="h-4 w-4 mr-2" />
-                              {course.course_details.instructor}
-                            </div>
-                            <div className="flex items-center">
-                              <ClockIcon className="h-4 w-4 mr-2" />
-                              {course.course_details.duration}
-                            </div>
-                            <div className="flex items-center">
-                              <StarIcon className="h-4 w-4 mr-2" />
-                              {course.course_details.level}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-gray-500 text-sm mb-3">
-                          Course details loading...
-                        </div>
-                      )}
+                    <div className="flex items-center text-sm text-gray-600">
+                      <ClockIcon className="h-4 w-4 mr-2" />
+                      <span>{course.course_details?.duration || '8-12 hours'}</span>
                     </div>
-                    
-                    {/* Access Course Button - Always at bottom */}
-                    <div className="mt-4 pt-4 border-t border-gray-200 mt-auto">
-                      <button className="w-full bg-blue-600 text-white py-2 px-4 rounded font-medium hover:bg-blue-700 transition-colors">
-                        Access Course
-                      </button>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <AcademicCapIcon className="h-4 w-4 mr-2" />
+                      <span>{course.course_details?.level || 'Intermediate'}</span>
                     </div>
                   </div>
-                </motion.div>
-              ))}
-            </div>
+
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => openCourseModal(course)}
+                      className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center"
+                    >
+                      <PlayIcon className="h-4 w-4 mr-2" />
+                      Start Learning
+                    </button>
+                    
+                    {course.course_details?.demo_pdf_url && (
+                      <button
+                        onClick={() => downloadPDF(course.course_details!.demo_pdf_url, course.course_name)}
+                        className="bg-gray-200 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+                      >
+                        <DocumentArrowDownIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))
           )}
         </div>
-      </div>
+      </main>
 
       {/* Course Modal */}
       <AnimatePresence>
@@ -396,10 +436,8 @@ const MembersDashboard: React.FC = () => {
                       Download PDF
                     </button>
                   )}
-                  {/* Quiz Button - Always available for all courses */}
                   <button
                     onClick={() => {
-                      // Navigate to Python quiz demo if it's a Python course, otherwise general quiz
                       if (selectedCourse.course_name.toLowerCase().includes('python')) {
                         navigate('/student-quiz-demo');
                       } else {
@@ -444,7 +482,6 @@ const MembersDashboard: React.FC = () => {
                           <div className="flex gap-2 ml-4">
                             <button
                               onClick={() => {
-                                // Download PDF for this specific class
                                 const link = document.createElement('a');
                                 link.href = '/demo-course-guide.pdf';
                                 link.download = `Class-${classItem.class_number}-${classItem.title}.pdf`;
@@ -459,7 +496,6 @@ const MembersDashboard: React.FC = () => {
                             </button>
                             <button
                               onClick={() => {
-                                // Navigate to Python quiz demo if it's a Python course and Class 1, otherwise general quiz
                                 if (selectedCourse.course_name.toLowerCase().includes('python') && classItem.class_number === 1) {
                                   navigate('/student-quiz-demo');
                                 } else {
@@ -494,7 +530,6 @@ const MembersDashboard: React.FC = () => {
                 <div className="border-t pt-6">
                   <h3 className="text-xl font-bold mb-4">Student Reviews</h3>
                   
-                  {/* Add Comment */}
                   <div className="bg-gray-50 rounded-lg p-4 mb-6">
                     <h4 className="font-semibold mb-3">Share Your Experience</h4>
                     <div className="mb-3">
@@ -516,22 +551,18 @@ const MembersDashboard: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Comments List */}
                   <div className="space-y-4">
                     {courseComments.map((comment) => (
                       <div key={comment.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                              {comment.user_name.charAt(0)}
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h5 className="font-semibold text-gray-900">{comment.user_name}</h5>
+                            <div className="flex items-center gap-2">
+                              {renderStars(comment.rating)}
+                              <span className="text-sm text-gray-500">
+                                {new Date(comment.created_at).toLocaleDateString()}
+                              </span>
                             </div>
-                            <span className="font-semibold">{comment.user_name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {renderStars(comment.rating)}
-                            <span className="text-sm text-gray-500">
-                              {new Date(comment.created_at).toLocaleDateString()}
-                            </span>
                           </div>
                         </div>
                         <p className="text-gray-700">{comment.comment}</p>

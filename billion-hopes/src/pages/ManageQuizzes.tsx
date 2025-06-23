@@ -903,12 +903,6 @@ const ManageQuizzes: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">🚀 Professional Quiz Management</h1>
           <p className="text-gray-600">Create advanced quizzes with proctoring, analytics & Learnyst-level features</p>
-          
-          {/* Debug Info */}
-          <div className="mt-2 p-2 bg-yellow-100 rounded text-xs">
-            <strong>Debug:</strong> showCreateQuizModal: {showCreateQuizModal.toString()}, 
-            selectedCourse: {selectedCourse}, selectedClass: {selectedClass}
-          </div>
         </div>
         <div className="flex gap-2">
           <button

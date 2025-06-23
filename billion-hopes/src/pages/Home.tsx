@@ -113,7 +113,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSuccess }) =
         <div className="mt-4 text-sm text-gray-600 text-center">
           <p>Use the following credentials:</p>
           <p>Email: sm@ptuniverse.com</p>
-          <p>Password: billion123</p>
+          <p>Password: RA7xmjv.AE#_?pi</p>
         </div>
       </div>
     </div>
