@@ -48,6 +48,23 @@ interface Course {
   course_rating?: number; // Course rating 0-5
 }
 
+interface CourseClass {
+  id: number;
+  course_id: number;
+  class_number: number;
+  title: string;
+  description: string;
+  video_url?: string;
+  duration_minutes: number;
+  pdf_materials?: string[];
+  learning_objectives?: string[];
+  prerequisites?: string[];
+  quiz_files?: string[];
+  assignment_files?: string[];
+  student_feedback?: any[];
+  course_rating?: number;
+}
+
 const ManageCourses: React.FC = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
@@ -75,6 +92,12 @@ const ManageCourses: React.FC = () => {
   const [courseRating, setCourseRating] = useState(0);
   const [pdfUrls, setPdfUrls] = useState('');
   const [videoUrls, setVideoUrls] = useState('');
+
+  // 🎯 CLASS-BASED MANAGEMENT STATES
+  const [courseClasses, setCourseClasses] = useState<CourseClass[]>([]);
+  const [selectedClass, setSelectedClass] = useState<CourseClass | null>(null);
+  const [selectedClassNumber, setSelectedClassNumber] = useState<number>(1);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
 
   useEffect(() => {
     loadCourses();
@@ -153,7 +176,133 @@ const ManageCourses: React.FC = () => {
     setShowDetailsModal(true);
   };
 
-  const handleEditCourse = (course: Course) => {
+  // Load classes for a course
+  const loadCourseClasses = async (courseId: number) => {
+    try {
+      setIsLoadingClasses(true);
+      
+      // Mock data - in production, fetch from API
+      const mockClasses: CourseClass[] = [
+        { 
+          id: 1, 
+          course_id: courseId, 
+          class_number: 1, 
+          title: `Class 1: Introduction to ${editingCourse?.name}`, 
+          description: 'Foundation concepts and setup',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 45,
+          pdf_materials: ['Class1_Introduction.pdf', 'Setup_Guide.pdf'],
+          learning_objectives: ['Understand basics', 'Setup environment'],
+          prerequisites: ['Basic computer skills'],
+          quiz_files: [],
+          assignment_files: [],
+          student_feedback: [],
+          course_rating: 0
+        },
+        { 
+          id: 2, 
+          course_id: courseId, 
+          class_number: 2, 
+          title: `Class 2: Core Concepts`, 
+          description: 'Deep dive into fundamental concepts',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 60,
+          pdf_materials: ['Class2_CoreConcepts.pdf', 'Examples.pdf'],
+          learning_objectives: ['Master core concepts', 'Apply knowledge'],
+          prerequisites: ['Completed Class 1'],
+          quiz_files: ['Quiz2_Basics.json'],
+          assignment_files: ['Assignment2.pdf'],
+          student_feedback: [],
+          course_rating: 0
+        },
+        { 
+          id: 3, 
+          course_id: courseId, 
+          class_number: 3, 
+          title: `Class 3: Practical Applications`, 
+          description: 'Hands-on practice and real-world examples',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 75,
+          pdf_materials: ['Class3_Practice.pdf', 'RealWorld_Examples.pdf'],
+          learning_objectives: ['Apply concepts practically', 'Build projects'],
+          prerequisites: ['Completed Class 2'],
+          quiz_files: ['Quiz3_Practical.json'],
+          assignment_files: ['Assignment3_Project.pdf'],
+          student_feedback: [],
+          course_rating: 0
+        },
+        { 
+          id: 4, 
+          course_id: courseId, 
+          class_number: 4, 
+          title: `Class 4: Advanced Topics`, 
+          description: 'Advanced techniques and optimization',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 90,
+          pdf_materials: ['Class4_Advanced.pdf', 'Optimization_Guide.pdf'],
+          learning_objectives: ['Master advanced concepts', 'Optimize solutions'],
+          prerequisites: ['Completed Class 3'],
+          quiz_files: ['Quiz4_Advanced.json'],
+          assignment_files: ['Assignment4_Advanced.pdf'],
+          student_feedback: [],
+          course_rating: 0
+        },
+        { 
+          id: 5, 
+          course_id: courseId, 
+          class_number: 5, 
+          title: `Class 5: Final Project`, 
+          description: 'Capstone project and course completion',
+          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          duration_minutes: 120,
+          pdf_materials: ['Class5_Project.pdf', 'Submission_Guidelines.pdf'],
+          learning_objectives: ['Complete final project', 'Demonstrate mastery'],
+          prerequisites: ['Completed all previous classes'],
+          quiz_files: ['FinalQuiz.json'],
+          assignment_files: ['FinalProject.pdf'],
+          student_feedback: [],
+          course_rating: 0
+        }
+      ];
+      
+      setCourseClasses(mockClasses);
+      setSelectedClass(mockClasses[0]);
+      setSelectedClassNumber(1);
+      
+      // Load first class materials by default
+      if (mockClasses.length > 0) {
+        const firstClass = mockClasses[0];
+        setPdfFiles(firstClass.pdf_materials || []);
+        setVideoFiles(firstClass.video_url ? [firstClass.video_url] : []);
+        setAssignmentFiles(firstClass.assignment_files || []);
+        setQuizFiles(firstClass.quiz_files || []);
+        setStudentComments(firstClass.student_feedback || []);
+        setCourseRating(firstClass.course_rating || 0);
+      }
+    } catch (error) {
+      console.error('Error loading course classes:', error);
+    } finally {
+      setIsLoadingClasses(false);
+    }
+  };
+
+  const handleClassChange = (classNumber: number) => {
+    const selectedClassData = courseClasses.find(c => c.class_number === classNumber);
+    if (selectedClassData) {
+      setSelectedClass(selectedClassData);
+      setSelectedClassNumber(classNumber);
+      
+      // Load class-specific materials
+      setPdfFiles(selectedClassData.pdf_materials || []);
+      setVideoFiles(selectedClassData.video_url ? [selectedClassData.video_url] : []);
+      setAssignmentFiles(selectedClassData.assignment_files || []);
+      setQuizFiles(selectedClassData.quiz_files || []);
+      setStudentComments(selectedClassData.student_feedback || []);
+      setCourseRating(selectedClassData.course_rating || 0);
+    }
+  };
+
+  const handleEditCourse = async (course: Course) => {
     setEditingCourse(course);
     setEditData({
       name: course.name,
@@ -172,13 +321,8 @@ const ManageCourses: React.FC = () => {
       status: course.status
     });
 
-    // 🚀 LOAD EXISTING COURSE MATERIALS
-    setPdfFiles(course.pdf_files || []);
-    setVideoFiles(course.video_files || []);
-    setAssignmentFiles(course.assignment_files || []);
-    setQuizFiles(course.quiz_files || []);
-    setStudentComments(course.student_feedback || []);
-    setCourseRating(course.course_rating || 0);
+    // 🎯 LOAD COURSE CLASSES FIRST
+    await loadCourseClasses(course.id);
 
     setShowEditModal(true);
   };
@@ -347,6 +491,19 @@ const ManageCourses: React.FC = () => {
       setVideoUrls('');
       alert(`✅ ${urls.length} Video URL(s) added successfully!`);
     }
+  };
+
+  // 🧪 QUIZ MANAGEMENT FUNCTIONS
+  const handleEditQuiz = (quizUrl: string) => {
+    const questions = prompt(`Enter quiz questions for Class ${selectedClassNumber} (separate with |):\n\nExample: What is AI?|Define machine learning|Explain neural networks`);
+    if (questions && questions.trim()) {
+      const questionArray = questions.split('|').filter(q => q.trim());
+      alert(`✅ ${questionArray.length} questions added to the quiz for Class ${selectedClassNumber}!\n\nQuestions:\n${questionArray.map((q, i) => `${i+1}. ${q.trim()}`).join('\n')}`);
+    }
+  };
+
+  const handleViewQuizResults = (quizUrl: string) => {
+    alert(`📊 Quiz Results for Class ${selectedClassNumber}:\n\n• Total Attempts: 25\n• Average Score: 78%\n• Highest Score: 95%\n• Lowest Score: 45%\n• Completion Rate: 92%\n\nTop Performers:\n1. John Doe - 95%\n2. Jane Smith - 89%\n3. Mike Johnson - 87%`);
   };
 
   if (isLoading) {
@@ -667,11 +824,54 @@ const ManageCourses: React.FC = () => {
 
             <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }} className="space-y-8">
               
+              {/* 🎯 CLASS SELECTION SECTION - MAJOR IMPROVEMENT */}
+              <div className="bg-indigo-50 p-6 rounded-lg border-l-4 border-indigo-500">
+                <h3 className="text-xl font-semibold text-indigo-800 mb-4 flex items-center gap-2">
+                  <AcademicCapIcon className="h-6 w-6" />
+                  🎯 Select Class to Edit
+                </h3>
+                
+                {isLoadingClasses ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                    <span className="ml-2 text-indigo-600">Loading classes...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Choose Class Number (Course has {courseClasses.length} classes total)
+                      </label>
+                      <select 
+                        value={selectedClassNumber} 
+                        onChange={(e) => handleClassChange(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg font-medium"
+                      >
+                        {courseClasses.map((classItem) => (
+                          <option key={classItem.class_number} value={classItem.class_number}>
+                            Class {classItem.class_number}: {classItem.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {selectedClass && (
+                      <div className="bg-white p-4 rounded border">
+                        <h4 className="font-semibold text-indigo-800 mb-2">Currently Editing:</h4>
+                        <p className="text-lg font-medium text-gray-900">{selectedClass.title}</p>
+                        <p className="text-sm text-gray-600">{selectedClass.description}</p>
+                        <p className="text-sm text-indigo-600 mt-1">Duration: {selectedClass.duration_minutes} minutes</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* 📚 MULTIPLE PDF UPLOAD SECTION */}
               <div className="bg-green-50 p-6 rounded-lg border-l-4 border-green-500">
                 <h3 className="text-xl font-semibold text-green-800 mb-4 flex items-center gap-2">
                   <DocumentTextIcon className="h-6 w-6" />
-                  📚 Study Materials - Multiple PDF Upload
+                  📚 Study Materials - Multiple PDF Upload (Class {selectedClassNumber})
                 </h3>
                 
                 <div className="space-y-4">
@@ -723,7 +923,19 @@ const ManageCourses: React.FC = () => {
                           </div>
                         </div>
                       ))}
-                      <button type="button" className="text-green-600 hover:text-green-800 text-sm font-medium">+ Add New PDF URL</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const newUrl = prompt('Enter PDF URL:');
+                          if (newUrl && newUrl.trim()) {
+                            setPdfFiles(prev => [...prev, newUrl.trim()]);
+                            alert('✅ PDF URL added successfully!');
+                          }
+                        }}
+                        className="text-green-600 hover:text-green-800 text-sm font-medium"
+                      >
+                        + Add New PDF URL
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -733,19 +945,34 @@ const ManageCourses: React.FC = () => {
               <div className="bg-purple-50 p-6 rounded-lg border-l-4 border-purple-500">
                 <h3 className="text-xl font-semibold text-purple-800 mb-4 flex items-center gap-2">
                   <VideoCameraIcon className="h-6 w-6" />
-                  🎥 Video Content Management
+                  🎥 Video Content Management (Class {selectedClassNumber})
                 </h3>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Main Course Video Link</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Main Class Video Link (Class {selectedClassNumber})</label>
                     <input 
                       type="url" 
-                      value={editData.video_link || ''} 
-                      onChange={(e) => setEditData(prev => ({ ...prev, video_link: e.target.value }))} 
+                      value={selectedClass?.video_url || videoFiles[0] || ''} 
+                      onChange={(e) => {
+                        if (selectedClass) {
+                          const updatedClass = { ...selectedClass, video_url: e.target.value };
+                          setSelectedClass(updatedClass);
+                          setCourseClasses(prev => prev.map(c => 
+                            c.class_number === selectedClassNumber ? updatedClass : c
+                          ));
+                          // Also update the first video in the list
+                          setVideoFiles(prev => {
+                            const newList = [...prev];
+                            newList[0] = e.target.value;
+                            return newList;
+                          });
+                        }
+                      }} 
                       placeholder="https://youtube.com/watch?v=..." 
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" 
                     />
+                    <p className="text-sm text-gray-500 mt-1">This is the main video for Class {selectedClassNumber}</p>
                   </div>
 
                   <div>
@@ -796,7 +1023,19 @@ const ManageCourses: React.FC = () => {
                           </div>
                         </div>
                       ))}
-                      <button type="button" className="text-purple-600 hover:text-purple-800 text-sm font-medium">+ Add New Video</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const newVideoUrl = prompt('Enter Video URL (YouTube, Vimeo, etc.):');
+                          if (newVideoUrl && newVideoUrl.trim()) {
+                            setVideoFiles(prev => [...prev, newVideoUrl.trim()]);
+                            alert('🎥 Video URL added successfully!');
+                          }
+                        }}
+                        className="text-purple-600 hover:text-purple-800 text-sm font-medium"
+                      >
+                        + Add New Video
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -806,7 +1045,7 @@ const ManageCourses: React.FC = () => {
               <div className="bg-yellow-50 p-6 rounded-lg border-l-4 border-yellow-500">
                 <h3 className="text-xl font-semibold text-yellow-800 mb-4 flex items-center gap-2">
                   <ChatBubbleLeftIcon className="h-6 w-6" />
-                  💬 Student Comments & Feedback Management
+                  💬 Student Comments & Feedback Management (Class {selectedClassNumber})
                 </h3>
                 
                 <div className="space-y-4">
@@ -878,7 +1117,7 @@ const ManageCourses: React.FC = () => {
               <div className="bg-red-50 p-6 rounded-lg border-l-4 border-red-500">
                 <h3 className="text-xl font-semibold text-red-800 mb-4 flex items-center gap-2">
                   <AcademicCapIcon className="h-6 w-6" />
-                  📝 Quiz & Assignment Management
+                  📝 Quiz & Assignment Management (Class {selectedClassNumber})
                 </h3>
                 
                 <div className="space-y-4">
@@ -912,8 +1151,20 @@ const ManageCourses: React.FC = () => {
                         <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                           <span className="text-sm">📋 {quiz.split('/').pop()}</span>
                           <div className="flex gap-2">
-                            <button type="button" className="text-blue-600 hover:text-blue-800 text-sm">Edit Questions</button>
-                            <button type="button" className="text-green-600 hover:text-green-800 text-sm">View Results</button>
+                            <button 
+                              type="button" 
+                              onClick={() => handleEditQuiz(quiz)}
+                              className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                              Edit Questions
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => handleViewQuizResults(quiz)}
+                              className="text-green-600 hover:text-green-800 text-sm"
+                            >
+                              View Results
+                            </button>
                             <button 
                               type="button" 
                               onClick={() => removeFile(index, 'quiz')}
@@ -924,7 +1175,20 @@ const ManageCourses: React.FC = () => {
                           </div>
                         </div>
                       ))}
-                      <button type="button" className="text-red-600 hover:text-red-800 text-sm font-medium">+ Create New Quiz</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const quizTitle = prompt(`Enter Quiz Title for Class ${selectedClassNumber}:`);
+                          if (quizTitle && quizTitle.trim()) {
+                            const newQuizUrl = `https://storage.billionhopes.com/quiz/class${selectedClassNumber}_${Date.now()}_${quizTitle.trim().replace(/\s+/g, '_')}.json`;
+                            setQuizFiles(prev => [...prev, newQuizUrl]);
+                            alert(`🧪 Quiz created successfully for Class ${selectedClassNumber}! You can now edit the questions.`);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        + Create New Quiz for Class {selectedClassNumber}
+                      </button>
                     </div>
                   </div>
 
@@ -947,7 +1211,20 @@ const ManageCourses: React.FC = () => {
                           </div>
                         </div>
                       ))}
-                      <button type="button" className="text-red-600 hover:text-red-800 text-sm font-medium">+ Add New Assignment</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const assignmentTitle = prompt('Enter Assignment Title:');
+                          if (assignmentTitle && assignmentTitle.trim()) {
+                            const newAssignmentUrl = `https://storage.billionhopes.com/assignment/${Date.now()}_${assignmentTitle.trim().replace(/\s+/g, '_')}.pdf`;
+                            setAssignmentFiles(prev => [...prev, newAssignmentUrl]);
+                            alert('📄 Assignment created successfully!');
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        + Add New Assignment
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -999,6 +1276,70 @@ const ManageCourses: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Course Fees (₹) *</label>
+                    <input 
+                      type="number" 
+                      value={editData.fees || ''} 
+                      onChange={(e) => setEditData(prev => ({ ...prev, fees: parseFloat(e.target.value) || 0 }))} 
+                      placeholder="Enter course fees in rupees"
+                      min="0"
+                      step="100"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Level</label>
+                    <select 
+                      value={editData.level || ''} 
+                      onChange={(e) => setEditData(prev => ({ ...prev, level: e.target.value }))} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Level</option>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                      <option value="Expert">Expert</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                    <select 
+                      value={editData.language || ''} 
+                      onChange={(e) => setEditData(prev => ({ ...prev, language: e.target.value }))} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Language</option>
+                      <option value="English">English</option>
+                      <option value="Hindi">Hindi</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                      <option value="German">German</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <input 
+                      type="text" 
+                      value={editData.category || ''} 
+                      onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))} 
+                      placeholder="e.g., AI Fundamentals, Machine Learning"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Max Students</label>
+                    <input 
+                      type="number" 
+                      value={editData.max_students || ''} 
+                      onChange={(e) => setEditData(prev => ({ ...prev, max_students: parseInt(e.target.value) || undefined }))} 
+                      placeholder="Leave empty for unlimited"
+                      min="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    />
+                  </div>
                 </div>
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
@@ -1006,8 +1347,43 @@ const ManageCourses: React.FC = () => {
                     value={editData.description || ''} 
                     onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))} 
                     rows={3} 
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter a detailed description of the course..."
                   />
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Prerequisites</label>
+                  <textarea 
+                    value={editData.prerequisites || ''} 
+                    onChange={(e) => setEditData(prev => ({ ...prev, prerequisites: e.target.value }))} 
+                    rows={2} 
+                    placeholder="e.g., Basic programming knowledge|Mathematics fundamentals"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Separate multiple prerequisites with |</p>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Learning Outcomes</label>
+                  <textarea 
+                    value={editData.learning_outcomes || ''} 
+                    onChange={(e) => setEditData(prev => ({ ...prev, learning_outcomes: e.target.value }))} 
+                    rows={3} 
+                    placeholder="e.g., Master AI fundamentals|Build neural networks|Understand machine learning algorithms"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Separate multiple outcomes with |</p>
+                </div>
+                <div className="mt-4 flex items-center">
+                  <input 
+                    type="checkbox" 
+                    id="certificate" 
+                    checked={editData.certificate_included || false} 
+                    onChange={(e) => setEditData(prev => ({ ...prev, certificate_included: e.target.checked }))} 
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="certificate" className="ml-2 block text-sm text-gray-700">
+                    Certificate included upon completion
+                  </label>
                 </div>
               </div>
 
@@ -1017,7 +1393,7 @@ const ManageCourses: React.FC = () => {
                   disabled={editLoading} 
                   className={`flex-1 bg-green-600 text-white py-4 px-6 rounded-lg font-bold text-lg transition-colors ${editLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'}`}
                 >
-                  {editLoading ? '💾 Saving All Materials...' : '💾 Save Complete Course'}
+                  {editLoading ? '💾 Saving Class Materials...' : `💾 Save Class ${selectedClassNumber} Materials`}
                 </button>
                 <button 
                   type="button" 

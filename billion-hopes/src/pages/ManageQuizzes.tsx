@@ -212,11 +212,21 @@ const ManageQuizzes: React.FC = () => {
     tags: []
   });
 
+  // Add states for editing existing questions
+  const [isEditingQuestion, setIsEditingQuestion] = useState(false);
+  const [editingQuestionIndex, setEditingQuestionIndex] = useState<number | null>(null);
+
   useEffect(() => {
     // Load courses and quizzes from Supabase database
     loadCourses();
     loadQuizzes();
   }, []);
+
+  useEffect(() => {
+    if (courses.length > 0) {
+      loadAllCourseClasses();
+    }
+  }, [courses]);
 
   useEffect(() => {
     if (selectedCourse) {
@@ -304,16 +314,45 @@ const ManageQuizzes: React.FC = () => {
 
   const loadCourseClasses = async (courseId: number) => {
     try {
+      // Generate mock classes for the specific course with unique IDs based on courseId
       const mockClasses: CourseClass[] = [
-        { id: 1, course_id: courseId, class_number: 1, title: "Introduction to AI", description: "Basic AI concepts", duration_minutes: 45 },
-        { id: 2, course_id: courseId, class_number: 2, title: "Machine Learning Basics", description: "ML fundamentals", duration_minutes: 60 },
-        { id: 3, course_id: courseId, class_number: 3, title: "Neural Networks", description: "Understanding neural networks", duration_minutes: 75 },
-        { id: 4, course_id: courseId, class_number: 4, title: "Deep Learning", description: "Advanced deep learning", duration_minutes: 90 },
-        { id: 5, course_id: courseId, class_number: 5, title: "AI Applications", description: "Real-world AI applications", duration_minutes: 60 }
+        { id: courseId * 10 + 1, course_id: courseId, class_number: 1, title: "Introduction to AI", description: "Basic AI concepts", duration_minutes: 45 },
+        { id: courseId * 10 + 2, course_id: courseId, class_number: 2, title: "Machine Learning Basics", description: "ML fundamentals", duration_minutes: 60 },
+        { id: courseId * 10 + 3, course_id: courseId, class_number: 3, title: "Neural Networks", description: "Understanding neural networks", duration_minutes: 75 },
+        { id: courseId * 10 + 4, course_id: courseId, class_number: 4, title: "Deep Learning", description: "Advanced deep learning", duration_minutes: 90 },
+        { id: courseId * 10 + 5, course_id: courseId, class_number: 5, title: "AI Applications", description: "Real-world AI applications", duration_minutes: 60 }
       ];
-      setCourseClasses(mockClasses);
+      
+      // Add to existing classes instead of replacing them
+      setCourseClasses(prevClasses => {
+        const filteredClasses = prevClasses.filter(c => c.course_id !== courseId);
+        return [...filteredClasses, ...mockClasses];
+      });
     } catch (error) {
       console.error('Error loading course classes:', error);
+    }
+  };
+
+  // New function to load all course classes
+  const loadAllCourseClasses = async () => {
+    try {
+      const allClasses: CourseClass[] = [];
+      
+      // Load classes for all courses
+      for (const course of courses) {
+        const mockClasses: CourseClass[] = [
+          { id: course.id * 10 + 1, course_id: course.id, class_number: 1, title: "Introduction to AI", description: "Basic AI concepts", duration_minutes: 45 },
+          { id: course.id * 10 + 2, course_id: course.id, class_number: 2, title: "Machine Learning Basics", description: "ML fundamentals", duration_minutes: 60 },
+          { id: course.id * 10 + 3, course_id: course.id, class_number: 3, title: "Neural Networks", description: "Understanding neural networks", duration_minutes: 75 },
+          { id: course.id * 10 + 4, course_id: course.id, class_number: 4, title: "Deep Learning", description: "Advanced deep learning", duration_minutes: 90 },
+          { id: course.id * 10 + 5, course_id: course.id, class_number: 5, title: "AI Applications", description: "Real-world AI applications", duration_minutes: 60 }
+        ];
+        allClasses.push(...mockClasses);
+      }
+      
+      setCourseClasses(allClasses);
+    } catch (error) {
+      console.error('Error loading all course classes:', error);
     }
   };
 
@@ -330,60 +369,115 @@ const ManageQuizzes: React.FC = () => {
         console.log(`✅ Loaded ${result.quizzes.length} quizzes from database`);
         
         // Transform database quizzes to match our Quiz interface
-        const transformedQuizzes: Quiz[] = result.quizzes.map((dbQuiz: any) => ({
-          id: dbQuiz.id,
-          course_id: dbQuiz.course_id,
-          class_id: dbQuiz.class_id || 1, // Default to class 1 if not specified
-          title: dbQuiz.title,
-          description: dbQuiz.description || '',
-          instructions: dbQuiz.instructions || 'Read all questions carefully.',
-          difficulty: dbQuiz.difficulty || 'beginner',
-          time_limit: dbQuiz.time_limit || 30,
-          questions: dbQuiz.questions || [],
-          created_at: dbQuiz.created_at || new Date().toISOString(),
-          is_active: dbQuiz.is_active !== undefined ? dbQuiz.is_active : true,
-          is_published: dbQuiz.is_published !== undefined ? dbQuiz.is_published : false,
-          sections: dbQuiz.sections || [],
-          configuration: dbQuiz.configuration || {
-            mocktest_template: false,
-            show_question_marks: true,
-            difficulty_level: 'medium',
-            multichoice_label: 'A,B,C,D',
-            calculator_type: 'none',
-            window_restriction: false,
-            switch_window_warnings: 3,
-            proctoring_enabled: false,
-            max_attempts: 1,
-            leaderboard_enabled: false,
-            answer_shuffle: false,
-            section_order_selection: false,
-            quiz_pause_enabled: false,
-            percentile_ranking: false,
-            randomization_enabled: false,
-            time_per_question: false,
-            auto_submit: true,
-            show_answers_after: 'after_submission',
-            negative_marking: false,
-            negative_marks_value: 0.25,
-            partial_marking: false,
-            question_navigation: true,
-            review_mode: true,
-            full_screen_mode: false,
-            copy_paste_disabled: false,
-            right_click_disabled: false
-          },
-          grading_system: dbQuiz.grading_system || {
-            passing_percentage: 70,
-            grades: [
-              { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
-              { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
-              { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
-              { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
-              { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
-              { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
-            ]
+        const transformedQuizzes: Quiz[] = result.quizzes.map((dbQuiz: any) => {
+          // Handle questions field - it might be a string (JSON) or already an array
+          let questions: QuizQuestion[] = [];
+          if (dbQuiz.questions) {
+            if (typeof dbQuiz.questions === 'string') {
+              try {
+                questions = JSON.parse(dbQuiz.questions);
+              } catch (error) {
+                console.warn('Failed to parse questions JSON for quiz:', dbQuiz.id, error);
+                questions = [];
+              }
+            } else if (Array.isArray(dbQuiz.questions)) {
+              questions = dbQuiz.questions;
+            }
           }
-        }));
+
+          // Handle sections field - it might be a string (JSON) or already an array
+          let sections: QuizSection[] = [];
+          if (dbQuiz.sections) {
+            if (typeof dbQuiz.sections === 'string') {
+              try {
+                sections = JSON.parse(dbQuiz.sections);
+              } catch (error) {
+                console.warn('Failed to parse sections JSON for quiz:', dbQuiz.id, error);
+                sections = [];
+              }
+            } else if (Array.isArray(dbQuiz.sections)) {
+              sections = dbQuiz.sections;
+            }
+          }
+
+          // Handle configuration field - it might be a string (JSON) or already an object
+          let configuration = dbQuiz.configuration;
+          if (typeof configuration === 'string') {
+            try {
+              configuration = JSON.parse(configuration);
+            } catch (error) {
+              console.warn('Failed to parse configuration JSON for quiz:', dbQuiz.id, error);
+              configuration = null;
+            }
+          }
+
+          // Handle grading_system field - it might be a string (JSON) or already an object
+          let grading_system = dbQuiz.grading_system;
+          if (typeof grading_system === 'string') {
+            try {
+              grading_system = JSON.parse(grading_system);
+            } catch (error) {
+              console.warn('Failed to parse grading_system JSON for quiz:', dbQuiz.id, error);
+              grading_system = null;
+            }
+          }
+
+          return {
+            id: dbQuiz.id,
+            course_id: dbQuiz.course_id,
+            class_id: dbQuiz.class_id || dbQuiz.course_id * 10 + 1, // Generate proper class_id if not specified
+            title: dbQuiz.title,
+            description: dbQuiz.description || '',
+            instructions: dbQuiz.instructions || 'Read all questions carefully.',
+            difficulty: dbQuiz.difficulty || 'beginner',
+            time_limit: dbQuiz.time_limit || 30,
+            questions: questions,
+                          created_at: dbQuiz.created_at || new Date().toISOString(),
+              is_active: dbQuiz.is_active !== undefined ? dbQuiz.is_active : true,
+              is_published: dbQuiz.is_active !== undefined ? dbQuiz.is_active : false, // Map is_active from DB to is_published for UI
+            sections: sections,
+            configuration: configuration || {
+              mocktest_template: false,
+              show_question_marks: true,
+              difficulty_level: 'medium',
+              multichoice_label: 'A,B,C,D',
+              calculator_type: 'none',
+              window_restriction: false,
+              switch_window_warnings: 3,
+              proctoring_enabled: false,
+              max_attempts: 1,
+              leaderboard_enabled: false,
+              answer_shuffle: false,
+              section_order_selection: false,
+              quiz_pause_enabled: false,
+              percentile_ranking: false,
+              randomization_enabled: false,
+              time_per_question: false,
+              auto_submit: true,
+              show_answers_after: 'after_submission',
+              negative_marking: false,
+              negative_marks_value: 0.25,
+              partial_marking: false,
+              question_navigation: true,
+              review_mode: true,
+              full_screen_mode: false,
+              copy_paste_disabled: false,
+              right_click_disabled: false
+            },
+            grading_system: grading_system || {
+              passing_percentage: 70,
+              grades: [
+                { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
+                { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
+                { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
+                { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
+                { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
+                { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
+              ]
+            },
+            total_marks: dbQuiz.total_marks
+          };
+        });
         
         setQuizzes(transformedQuizzes);
       } else {
@@ -424,18 +518,74 @@ const ManageQuizzes: React.FC = () => {
       id: Date.now(),
       question: newQuestion.question!,
       type: newQuestion.type,
-      options: newQuestion.type === 'multiple-choice' ? newQuestion.options : undefined,
+      options: newQuestion.options,
       correctAnswer: newQuestion.correctAnswer!,
       explanation: newQuestion.explanation,
       points: newQuestion.points,
       image_url: newQuestion.image_url
     };
 
-    setNewQuiz({
-      ...newQuiz,
-      questions: [...(newQuiz.questions || []), question]
-    });
+    if (isEditingQuestion && editingQuestionIndex !== null) {
+      // Update existing question
+      const updatedQuestions = [...(newQuiz.questions || [])];
+      updatedQuestions[editingQuestionIndex] = question;
+      setNewQuiz({
+        ...newQuiz,
+        questions: updatedQuestions
+      });
+      
+      // Reset editing state
+      setIsEditingQuestion(false);
+      setEditingQuestionIndex(null);
+    } else {
+      // Add new question
+      setNewQuiz({
+        ...newQuiz,
+        questions: [...(newQuiz.questions || []), question]
+      });
+    }
 
+    // Reset form
+    setNewQuestion({
+      question: '',
+      type: 'multiple-choice',
+      options: ['', '', '', ''],
+      correctAnswer: 0,
+      explanation: '',
+      points: 10,
+      negative_marks: 0,
+      difficulty: 'medium',
+      has_multiple_correct: false,
+      tags: []
+    });
+  };
+
+  // Function to start editing an existing question
+  const startEditingQuestion = (index: number) => {
+    const questionToEdit = newQuiz.questions?.[index];
+    if (questionToEdit) {
+      setNewQuestion({
+        question: questionToEdit.question,
+        type: questionToEdit.type || 'multiple-choice',
+        options: questionToEdit.options || ['', '', '', ''],
+        correctAnswer: questionToEdit.correctAnswer,
+        explanation: questionToEdit.explanation || '',
+        points: questionToEdit.points || 10,
+        image_url: questionToEdit.image_url,
+        negative_marks: questionToEdit.negative_marks || 0,
+        difficulty: questionToEdit.difficulty || 'medium',
+        has_multiple_correct: questionToEdit.has_multiple_correct || false,
+        tags: questionToEdit.tags || []
+      });
+      setIsEditingQuestion(true);
+      setEditingQuestionIndex(index);
+    }
+  };
+
+  // Function to cancel editing
+  const cancelEditingQuestion = () => {
+    setIsEditingQuestion(false);
+    setEditingQuestionIndex(null);
     setNewQuestion({
       question: '',
       type: 'multiple-choice',
@@ -644,24 +794,119 @@ const ManageQuizzes: React.FC = () => {
     }
   };
 
-  const publishQuiz = (quizId: number) => {
-    setQuizzes(quizzes.map(q => 
-      q.id === quizId ? { ...q, is_published: true } : q
-    ));
-    alert('Quiz published successfully!');
+  const publishQuiz = async (quizId: number) => {
+    try {
+      console.log('📤 Publishing quiz...');
+      
+      // Find the quiz to publish
+      const quiz = quizzes.find(q => q.id === quizId);
+      if (!quiz) {
+        alert('Quiz not found!');
+        return;
+      }
+
+      // Update the database directly with is_active field (the actual column name)
+      const response = await fetch(`https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/class_quizzes?id=eq.${quizId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'omit',
+        body: JSON.stringify({ 
+          is_active: true,
+          updated_at: new Date().toISOString()
+        })
+      });
+      
+      if (response.ok) {
+        // Update local state only if database update succeeded
+        // Map is_active to is_published for UI consistency
+        setQuizzes(quizzes.map(q => 
+          q.id === quizId ? { ...q, is_published: true, is_active: true } : q
+        ));
+        alert(`✅ Quiz "${quiz.title}" published successfully! Students can now access it.`);
+        console.log('✅ Quiz published in database and local state updated');
+      } else {
+        const errorText = await response.text();
+        alert(`❌ Failed to publish quiz: ${response.status}`);
+        console.error('❌ Database publish failed:', response.status, errorText);
+      }
+    } catch (error) {
+      console.error('❌ Error publishing quiz:', error);
+      alert('❌ Error publishing quiz. Please try again.');
+    }
   };
 
-  const unpublishQuiz = (quizId: number) => {
-    setQuizzes(quizzes.map(q => 
-      q.id === quizId ? { ...q, is_published: false } : q
-    ));
-    alert('Quiz unpublished successfully! You can now edit it.');
+  const unpublishQuiz = async (quizId: number) => {
+    try {
+      console.log('📥 Unpublishing quiz...');
+      
+      // Find the quiz to unpublish
+      const quiz = quizzes.find(q => q.id === quizId);
+      if (!quiz) {
+        alert('Quiz not found!');
+        return;
+      }
+
+      // Update the database directly with is_active field (the actual column name)
+      const response = await fetch(`https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/class_quizzes?id=eq.${quizId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'omit',
+        body: JSON.stringify({ 
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+      });
+      
+      if (response.ok) {
+        // Update local state only if database update succeeded
+        // Map is_active to is_published for UI consistency
+        setQuizzes(quizzes.map(q => 
+          q.id === quizId ? { ...q, is_published: false, is_active: false } : q
+        ));
+        alert(`✅ Quiz "${quiz.title}" unpublished successfully! You can now edit it.`);
+        console.log('✅ Quiz unpublished in database and local state updated');
+      } else {
+        const errorText = await response.text();
+        alert(`❌ Failed to unpublish quiz: ${response.status}`);
+        console.error('❌ Database unpublish failed:', response.status, errorText);
+      }
+    } catch (error) {
+      console.error('❌ Error unpublishing quiz:', error);
+      alert('❌ Error unpublishing quiz. Please try again.');
+    }
   };
 
   const editQuiz = (quiz: Quiz) => {
     setEditingQuiz(quiz);
     setSelectedCourse(quiz.course_id);
     setSelectedClass(quiz.class_id);
+    
+    // Safely handle questions - ensure it's always an array
+    let safeQuestions: QuizQuestion[] = [];
+    if (quiz.questions) {
+      if (typeof quiz.questions === 'string') {
+        try {
+          safeQuestions = JSON.parse(quiz.questions);
+        } catch (error) {
+          console.warn('Failed to parse questions JSON for quiz:', quiz.id, error);
+          safeQuestions = [];
+        }
+      } else if (Array.isArray(quiz.questions)) {
+        safeQuestions = quiz.questions;
+      }
+    }
     
     // Pre-populate the form with existing quiz data
     setNewQuiz({
@@ -670,7 +915,7 @@ const ManageQuizzes: React.FC = () => {
       instructions: quiz.instructions || 'Read all questions carefully. You have limited time to complete this quiz.',
       difficulty: quiz.difficulty || 'beginner',
       time_limit: quiz.time_limit,
-      questions: quiz.questions || [],
+      questions: safeQuestions, // Use the safely processed questions array
       is_active: quiz.is_active !== undefined ? quiz.is_active : true,
       is_published: false, // Always set to false when editing
       sections: quiz.sections || [],
@@ -754,6 +999,41 @@ const ManageQuizzes: React.FC = () => {
         alert('❌ Error deleting quiz. Please try again.');
       }
     }
+  };
+
+  // Helper function to safely parse questions data
+  const safelyParseQuestions = (questions: any): QuizQuestion[] => {
+    if (!questions) return [];
+    
+    if (Array.isArray(questions)) return questions;
+    
+    if (typeof questions === 'string') {
+      try {
+        const parsed = JSON.parse(questions);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.warn('Failed to parse questions JSON:', error);
+        return [];
+      }
+    }
+    
+    return [];
+  };
+
+  // Helper function to safely parse any JSON field
+  const safelyParseJsonField = (field: any, fallback: any = null): any => {
+    if (!field) return fallback;
+    
+    if (typeof field === 'string') {
+      try {
+        return JSON.parse(field);
+      } catch (error) {
+        console.warn('Failed to parse JSON field:', error);
+        return fallback;
+      }
+    }
+    
+    return field;
   };
 
   if (isLoading) {
@@ -928,6 +1208,24 @@ const ManageQuizzes: React.FC = () => {
                     <div>
                       <div className="text-lg font-semibold text-gray-900">{quiz.title}</div>
                       <div className="text-sm text-gray-500">{quiz.description}</div>
+                      
+                      {/* Course and Class Information */}
+                      <div className="flex items-center gap-3 mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-1 text-xs text-blue-700">
+                          <span className="font-medium">📚 Course:</span>
+                          <span className="font-semibold">
+                            {courses.find(c => c.id === quiz.course_id)?.name || `Course ID: ${quiz.course_id}`}
+                          </span>
+                        </div>
+                        <div className="w-px h-3 bg-blue-300"></div>
+                        <div className="flex items-center gap-1 text-xs text-blue-700">
+                          <span className="font-medium">📖 Class:</span>
+                          <span className="font-semibold">
+                            Class {courseClasses.find(c => c.id === quiz.class_id)?.class_number || 'Unknown'}: {courseClasses.find(c => c.id === quiz.class_id)?.title || 'Unknown Class'}
+                          </span>
+                        </div>
+                      </div>
+
                       <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
                         <span>⏱️ {quiz.time_limit} min</span>
                         <span>📝 {quiz.questions.length} questions</span>
@@ -1096,6 +1394,8 @@ const ManageQuizzes: React.FC = () => {
         isOpen={showConfigModal}
         onClose={() => setShowConfigModal(false)}
         quiz={selectedQuiz}
+        courses={courses}
+        courseClasses={courseClasses}
         onSave={(config) => {
           if (selectedQuiz) {
             setQuizzes(quizzes.map(q => 
@@ -1638,7 +1938,7 @@ const ManageQuizzes: React.FC = () => {
                 <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Added Questions ({newQuiz.questions.length})</h3>
                   <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {newQuiz.questions.map((q, index) => (
+                    {(newQuiz.questions && Array.isArray(newQuiz.questions) ? newQuiz.questions : []).map((q, index) => (
                       <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -1794,7 +2094,7 @@ const ManageQuizzes: React.FC = () => {
                 <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Current Questions ({newQuiz.questions.length})</h3>
                   <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {newQuiz.questions.map((q, index) => (
+                    {(newQuiz.questions && Array.isArray(newQuiz.questions) ? newQuiz.questions : []).map((q, index) => (
                       <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -1824,16 +2124,25 @@ const ManageQuizzes: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          <button
-                            onClick={() => {
-                              const updatedQuestions = newQuiz.questions?.filter((_, i) => i !== index);
-                              setNewQuiz({...newQuiz, questions: updatedQuestions});
-                            }}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Delete Question"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => startEditingQuestion(index)}
+                              className="text-blue-500 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50 transition-colors"
+                              title="Edit Question"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                const updatedQuestions = newQuiz.questions?.filter((_, i) => i !== index);
+                                setNewQuiz({...newQuiz, questions: updatedQuestions});
+                              }}
+                              className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                              title="Delete Question"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1842,8 +2151,28 @@ const ManageQuizzes: React.FC = () => {
               )}
 
               {/* Add New Question Section - Same as Create Modal */}
-              <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">➕ Add New Question</h3>
+              <div className={`p-6 rounded-lg border ${isEditingQuestion ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {isEditingQuestion ? '✏️ Edit Question' : '➕ Add New Question'}
+                  </h3>
+                  {isEditingQuestion && (
+                    <button
+                      onClick={cancelEditingQuestion}
+                      className="text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
+                {isEditingQuestion && (
+                  <div className="mb-4 p-3 bg-orange-100 rounded-lg border border-orange-200">
+                    <p className="text-orange-800 text-sm">
+                      ✏️ You are editing Question {editingQuestionIndex !== null ? editingQuestionIndex + 1 : ''}. 
+                      Make your changes below and click "Update Question" to save.
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-4">
                   {/* Question Type Selection */}
                   <div>
@@ -1981,10 +2310,23 @@ const ManageQuizzes: React.FC = () => {
 
                   <button
                     onClick={addQuestion}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all flex items-center justify-center gap-2 font-medium"
+                    className={`w-full text-white px-6 py-3 rounded-lg transition-all flex items-center justify-center gap-2 font-medium ${
+                      isEditingQuestion 
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600' 
+                        : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                    }`}
                   >
-                    <PlusIcon className="h-5 w-5" />
-                    Add Question to Quiz
+                    {isEditingQuestion ? (
+                      <>
+                        <PencilIcon className="h-5 w-5" />
+                        Update Question
+                      </>
+                    ) : (
+                      <>
+                        <PlusIcon className="h-5 w-5" />
+                        Add Question to Quiz
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

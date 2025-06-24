@@ -18,9 +18,11 @@ interface AdvancedQuizConfigProps {
   onClose: () => void;
   quiz: any;
   onSave: (config: any) => void;
+  courses?: any[];
+  courseClasses?: any[];
 }
 
-const AdvancedQuizConfig: React.FC<AdvancedQuizConfigProps> = ({ isOpen, onClose, quiz, onSave }) => {
+const AdvancedQuizConfig: React.FC<AdvancedQuizConfigProps> = ({ isOpen, onClose, quiz, onSave, courses = [], courseClasses = [] }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [config, setConfig] = useState(quiz?.configuration || {});
 
@@ -64,6 +66,42 @@ const AdvancedQuizConfig: React.FC<AdvancedQuizConfigProps> = ({ isOpen, onClose
               <div>
                 <h2 className="text-2xl font-bold">🎯 Professional Quiz Configuration</h2>
                 <p className="text-blue-100 mt-1">Enterprise-grade settings for {quiz?.title}</p>
+                
+                {/* Course and Class Information */}
+                {quiz && (
+                  <div className="mt-3 p-3 bg-white/10 rounded-lg border border-white/20 backdrop-blur-sm">
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-200">📚 Course:</span>
+                        <span className="font-semibold text-white">
+                          {courses.find(c => c.id === quiz.course_id)?.name || `Course ID: ${quiz.course_id}`}
+                        </span>
+                      </div>
+                      <div className="w-px h-4 bg-white/30"></div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-200">📖 Class:</span>
+                        <span className="font-semibold text-white">
+                          {(() => {
+                            const foundClass = courseClasses.find(c => c.id === quiz.class_id);
+                            if (foundClass) {
+                              return `Class ${foundClass.class_number}: ${foundClass.title}`;
+                            }
+                            
+                            // Fallback: try to find by course_id and derive class info
+                            const courseClasses_forCourse = courseClasses.filter(c => c.course_id === quiz.course_id);
+                            if (courseClasses_forCourse.length > 0) {
+                              // Use first class as fallback
+                              return `Class ${courseClasses_forCourse[0].class_number}: ${courseClasses_forCourse[0].title}`;
+                            }
+                            
+                            // Last fallback: show quiz.class_id if available
+                            return quiz.class_id ? `Class ${quiz.class_id}` : 'Class 1: Introduction';
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <button
                 onClick={onClose}
