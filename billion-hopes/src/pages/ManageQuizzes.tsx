@@ -237,78 +237,41 @@ const ManageQuizzes: React.FC = () => {
   const loadCourses = async () => {
     try {
       console.log('Loading courses from Supabase...');
+      setIsLoading(true);
       
-      // Use direct fetch with proper CORS headers (same approach as corsRequest in supabase.ts)
-      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/courses?select=id,name,description,instructor,duration,level&order=id.asc', {
-        method: 'GET',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        mode: 'cors',
-        credentials: 'omit'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Courses loaded successfully:', data);
+      // Use the getCourses function from supabase.ts for consistency
+      const { getCourses } = await import('../utils/supabase');
+      const result = await getCourses();
       
-      if (data && data.length > 0) {
+      if (result.success && result.courses) {
+        console.log('Courses loaded successfully:', result.courses);
+        
         // Map the data to match our Course interface
-        const mappedCourses: Course[] = data.map((course: any) => ({
+        const mappedCourses: Course[] = result.courses.map((course: any) => ({
           id: course.id,
           name: course.name,
           description: course.description || 'No description available',
-          instructor: course.instructor,
-          duration: course.duration,
-          level: course.level
+          instructor: course.instructor || 'Unknown Instructor',
+          duration: course.duration || 'Duration not specified',
+          level: course.level || 'All Levels'
         }));
         
         setCourses(mappedCourses);
         console.log(`Successfully loaded ${mappedCourses.length} courses from database`);
       } else {
-        console.warn('No courses found in database');
+        console.warn('No courses found in database or failed to load:', result.error);
         setCourses([]);
       }
+      
+      setIsLoading(false);
     } catch (error) {
       console.error('Error loading courses from Supabase:', error);
       
-      // For demo purposes, load some fallback courses so the system still works
-      const fallbackCourses: Course[] = [
-        {
-          id: 1,
-          name: "Complete Python Programming Masterclass",
-          description: "Master Python from basics to advanced concepts",
-          instructor: "Dr. Sarah Johnson",
-          duration: "40 hours",
-          level: "Beginner to Advanced"
-        },
-        {
-          id: 2,
-          name: "Machine Learning & AI Fundamentals",
-          description: "Comprehensive introduction to ML algorithms",
-          instructor: "Prof. Michael Chen",
-          duration: "45 hours",
-          level: "Intermediate"
-        },
-        {
-          id: 3,
-          name: "Full Stack Web Development Bootcamp",
-          description: "Build modern web applications",
-          instructor: "Alex Rodriguez",
-          duration: "60 hours",
-          level: "Beginner to Advanced"
-        }
-      ];
-      setCourses(fallbackCourses);
+      // Don't use fallback courses - show real error state
+      setCourses([]);
+      setIsLoading(false);
       
-      // Don't show alert anymore, just log the error
-      console.warn('Using fallback courses due to connection issue');
+      console.error('Failed to load courses from database. Please check your database connection.');
     }
   };
 
@@ -353,6 +316,102 @@ const ManageQuizzes: React.FC = () => {
       setCourseClasses(allClasses);
     } catch (error) {
       console.error('Error loading all course classes:', error);
+    }
+  };
+
+  // Database sync function to populate courses if table is empty
+  const syncDatabaseWithSampleData = async () => {
+    try {
+      console.log('🔄 Syncing database with sample data...');
+      
+      // Insert sample courses if table is empty
+      const sampleCourses = [
+        {
+          name: 'Complete Python Programming Masterclass',
+          description: 'Master Python from basics to advanced concepts including web development, data science, and automation',
+          fees: 2999.00,
+          duration: '12 weeks',
+          level: 'Beginner',
+          instructor: 'Dr. Sarah Johnson',
+          category: 'Programming',
+          status: 'published'
+        },
+        {
+          name: 'Machine Learning & AI Fundamentals',
+          description: 'Comprehensive introduction to ML algorithms, neural networks, and practical AI applications',
+          fees: 4999.00,
+          duration: '16 weeks',
+          level: 'Intermediate',
+          instructor: 'Prof. Michael Chen',
+          category: 'AI & Machine Learning',
+          status: 'published'
+        },
+        {
+          name: 'Full Stack Web Development Bootcamp',
+          description: 'Build modern web applications using React, Node.js, MongoDB, and deploy to the cloud',
+          fees: 5999.00,
+          duration: '20 weeks',
+          level: 'Beginner',
+          instructor: 'Alex Rodriguez',
+          category: 'Web Development',
+          status: 'published'
+        },
+        {
+          name: 'Data Science with Python & R',
+          description: 'Learn data analysis, visualization, and statistical modeling with real-world projects',
+          fees: 3999.00,
+          duration: '14 weeks',
+          level: 'Intermediate',
+          instructor: 'Dr. Emily Watson',
+          category: 'Data Science',
+          status: 'published'
+        },
+        {
+          name: 'Digital Marketing Mastery',
+          description: 'Master SEO, social media marketing, Google Ads, and analytics for business growth',
+          fees: 1999.00,
+          duration: '8 weeks',
+          level: 'Beginner',
+          instructor: 'Sarah Marketing',
+          category: 'Marketing',
+          status: 'published'
+        }
+      ];
+
+      for (const course of sampleCourses) {
+        try {
+          const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/courses', {
+            method: 'POST',
+            headers: {
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            mode: 'cors',
+            credentials: 'omit',
+            body: JSON.stringify(course)
+          });
+
+          if (response.ok) {
+            console.log(`✅ Added course: ${course.name}`);
+          } else {
+            const errorText = await response.text();
+            console.warn(`⚠️ Course might already exist: ${course.name}`, errorText);
+          }
+        } catch (error) {
+          console.warn(`⚠️ Error adding course ${course.name}:`, error);
+        }
+      }
+
+      console.log('✅ Database sync completed');
+      
+      // Reload courses after sync
+      await loadCourses();
+      
+    } catch (error) {
+      console.error('❌ Database sync failed:', error);
     }
   };
 
@@ -1059,6 +1118,16 @@ const ManageQuizzes: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => {
+              loadCourses();
+              loadQuizzes();
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-all flex items-center gap-2 shadow-lg"
+          >
+            <span>🔄</span>
+            Refresh Data
+          </button>
+          <button
             onClick={handleCreateQuiz}
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all flex items-center gap-2 shadow-lg"
           >
@@ -1089,9 +1158,17 @@ const ManageQuizzes: React.FC = () => {
               ))}
             </select>
             {courses.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">
-                ⚠️ No courses found. Please add courses first.
-              </p>
+              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800 mb-2">
+                  ⚠️ No courses found. Please add courses first.
+                </p>
+                <button
+                  onClick={syncDatabaseWithSampleData}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-sm font-medium"
+                >
+                  🔄 Sync Database with Sample Courses
+                </button>
+              </div>
             )}
           </div>
           
@@ -1136,7 +1213,16 @@ const ManageQuizzes: React.FC = () => {
       </div>
 
       {/* Enhanced Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-xl shadow-md border border-indigo-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-600 text-sm font-medium">Total Courses</p>
+              <p className="text-3xl font-bold text-indigo-900">{courses.length}</p>
+            </div>
+            <span className="text-3xl">📚</span>
+          </div>
+        </div>
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl shadow-md border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
@@ -1190,19 +1276,47 @@ const ManageQuizzes: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900">🎯 Professional Quiz Suite (Learnyst-Level)</h2>
           <p className="text-gray-600 mt-1">Advanced quiz management with enterprise features & proctoring</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz Details</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🚀 Pro Features</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🔒 Security</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {quizzes.map((quiz) => (
+        {quizzes.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="bg-gray-50 rounded-lg p-8 max-w-md mx-auto">
+              <span className="text-6xl mb-4 block">📝</span>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Quizzes Found</h3>
+              <p className="text-gray-600 mb-4">
+                {courses.length === 0 
+                  ? "You need to sync the database with courses first before creating quizzes."
+                  : "Get started by creating your first professional quiz with advanced features."}
+              </p>
+              {courses.length === 0 ? (
+                <button
+                  onClick={syncDatabaseWithSampleData}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+                >
+                  🔄 Sync Database with Sample Courses
+                </button>
+              ) : (
+                <button
+                  onClick={handleCreateQuiz}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+                >
+                  📝 Create Your First Quiz
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz Details</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🚀 Pro Features</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🔒 Security</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {quizzes.map((quiz) => (
                 <tr key={quiz.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div>
@@ -1384,9 +1498,10 @@ const ManageQuizzes: React.FC = () => {
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Advanced Quiz Configuration Modal */}

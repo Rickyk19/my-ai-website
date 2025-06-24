@@ -77,7 +77,12 @@ const menuSections: MenuSection[] = [
 
 const Sidebar: React.FC = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const { isAdmin } = useAuth();
+  const { isAdmin, isStudent } = useAuth();
+
+  // Don't show sidebar for students
+  if (isStudent && !isAdmin) {
+    return null;
+  }
 
   const toggleSection = (title: string) => {
     setOpenSection(openSection === title ? null : title);

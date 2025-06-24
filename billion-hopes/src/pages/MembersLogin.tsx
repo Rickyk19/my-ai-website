@@ -20,7 +20,7 @@ interface LoginFormData {
 
 const MembersLogin: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginAsStudent } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
@@ -91,14 +91,13 @@ const MembersLogin: React.FC = () => {
         return;
       }
 
-      // Store user session for members
-      localStorage.setItem('memberData', JSON.stringify({
+      // Use the new student authentication context
+      loginAsStudent({
         id: authResult.user.id,
         email: authResult.user.email,
         name: authResult.user.name,
-        courses: authResult.purchases,
-        loginTime: new Date().toISOString()
-      }));
+        courses: authResult.purchases
+      });
 
       setMessage({type: 'success', text: 'Login successful! Redirecting to your course library...'});
       
