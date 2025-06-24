@@ -24,6 +24,7 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import AdvancedQuizConfig from './AdvancedQuizConfig';
+import { supabase } from '../utils/supabase';
 
 interface Course {
   id: number;
@@ -72,32 +73,43 @@ interface QuizConfiguration {
   right_click_disabled: boolean;
 }
 
+// Simplified QuizQuestion interface that matches database expectations
+interface QuizQuestion {
+  id: number;
+  question: string;
+  type?: 'multiple-choice' | 'true-false' | 'fill-blank' | 'numerical' | 'essay';
+  options?: string[];
+  correctAnswer: number | string;  // Support both number and string for different question types
+  explanation?: string;
+  points?: number;
+  image_url?: string;
+  // Additional properties for UI compatibility
+  section_id?: number;
+  negative_marks?: number;
+  difficulty?: string;
+  has_multiple_correct?: boolean;
+  tags?: string[];
+}
+
+// Database-compatible Quiz interface
 interface Quiz {
   id: number;
   course_id: number;
   class_id: number;
   title: string;
   description: string;
-  instructions: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  instructions?: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
   time_limit: number;
   total_marks?: number;
   questions: QuizQuestion[];
   created_at: string;
-  is_active: boolean;
-  is_published: boolean;
+  is_active?: boolean;
+  is_published?: boolean;
   scheduled_date?: string;
-  configuration: QuizConfiguration;
-  grading_system: GradingSystem;
-  sections: QuizSection[];
-}
-
-interface QuizSection {
-  id: number;
-  title: string;
-  time_limit: number;
-  question_count: number;
-  order: number;
+  configuration?: QuizConfiguration;
+  grading_system?: GradingSystem;
+  sections?: QuizSection[];
 }
 
 interface GradingSystem {
@@ -112,22 +124,12 @@ interface Grade {
   color: string;
 }
 
-interface QuizQuestion {
+interface QuizSection {
   id: number;
-  section_id: number;
-  question: string;
-  type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'numerical' | 'essay' | 'code' | 'group';
-  options?: string[];
-  correct_answer: string | number | string[];
-  explanation?: string;
-  points: number;
-  negative_marks: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  time_limit?: number;
-  image_url?: string;
-  has_multiple_correct: boolean;
-  answer_range?: { min: number; max: number };
-  tags: string[];
+  title: string;
+  time_limit: number;
+  question_count: number;
+  order: number;
 }
 
 const ManageQuizzes: React.FC = () => {
@@ -199,7 +201,7 @@ const ManageQuizzes: React.FC = () => {
     question: '',
     type: 'multiple-choice',
     options: ['', '', '', ''],
-    correct_answer: 0,
+    correctAnswer: 0,
     explanation: '',
     points: 10,
     negative_marks: 0,
@@ -209,58 +211,8 @@ const ManageQuizzes: React.FC = () => {
   });
 
   useEffect(() => {
-    // Load sample courses immediately for demo purposes
-    const sampleCourses: Course[] = [
-      {
-        id: 1,
-        name: "AI Fundamentals",
-        description: "Introduction to Artificial Intelligence",
-        instructor: "Dr. Sarah Johnson",
-        duration: "8 weeks",
-        level: "Beginner"
-      },
-      {
-        id: 2,
-        name: "Machine Learning Mastery",
-        description: "Advanced Machine Learning Concepts",
-        instructor: "Prof. Michael Chen",
-        duration: "12 weeks",
-        level: "Intermediate"
-      },
-      {
-        id: 3,
-        name: "Deep Learning & Neural Networks",
-        description: "Deep Learning with TensorFlow and PyTorch",
-        instructor: "Dr. Emily Rodriguez",
-        duration: "10 weeks",
-        level: "Advanced"
-      },
-      {
-        id: 4,
-        name: "AI in Business",
-        description: "Practical AI Applications for Business",
-        instructor: "James Wilson",
-        duration: "6 weeks",
-        level: "Beginner"
-      },
-      {
-        id: 5,
-        name: "Cybersecurity Ethical Hacking",
-        description: "Learn ethical hacking and cybersecurity",
-        instructor: "Alex Thompson",
-        duration: "16 weeks",
-        level: "Advanced"
-      },
-      {
-        id: 6,
-        name: "Complete Python Programming Masterclass",
-        description: "Master Python from basics to advanced concepts",
-        instructor: "Dr. Python Master",
-        duration: "20 weeks",
-        level: "Beginner to Advanced"
-      }
-    ];
-    setCourses(sampleCourses);
+    // Load courses from Supabase database
+    loadCourses();
     
     // Create demo Python quiz
     const pythonDemoQuiz: Quiz = {
@@ -285,7 +237,7 @@ const ManageQuizzes: React.FC = () => {
             'int x = 5',
             'variable x = 5'
           ],
-          correct_answer: 1,
+          correctAnswer: 1,
           explanation: "In Python, variables are created by simply assigning a value using the = operator. No declaration keywords are needed.",
           points: 10,
           negative_marks: 0.25,
@@ -296,7 +248,6 @@ const ManageQuizzes: React.FC = () => {
         },
         {
           id: 2,
-          section_id: 1,
           question: "Which of the following is NOT a valid Python data type?",
           type: 'multiple-choice',
           options: [
@@ -305,17 +256,15 @@ const ManageQuizzes: React.FC = () => {
             'string',
             'char'
           ],
-          correct_answer: 3,
+          correctAnswer: 3,
           explanation: "Python doesn't have a 'char' data type. Individual characters are just strings of length 1.",
           points: 10,
-          negative_marks: 0.25,
-          difficulty: 'easy',
+          image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjEyNTJiIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIj4+Pj4gcHJpbnQodHlwZSg1LjApKTwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM0ZGE5MjQiPiZsdDtjbGFzcyAnZmxvYXQnJmd0OzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzk5OSI+UHl0aG9uIENvbnNvbGU8L3RleHQ+Cjwvc3ZnPg==',
           has_multiple_correct: false,
-          tags: ['data-types']
+          tags: ['data-types', 'type-function']
         },
         {
           id: 3,
-          section_id: 1,
           question: "What will be the output of the following code?\n\nprint(type(5.0))",
           type: 'multiple-choice',
           options: [
@@ -324,78 +273,37 @@ const ManageQuizzes: React.FC = () => {
             "<class 'number'>",
             "<class 'decimal'>"
           ],
-          correct_answer: 1,
+          correctAnswer: 1,
           explanation: "5.0 is a floating-point number, so type() returns <class 'float'>.",
           points: 10,
-          negative_marks: 0.25,
-          difficulty: 'medium',
           image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjEyNTJiIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIj4+Pj4gcHJpbnQodHlwZSg1LjApKTwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM0ZGE5MjQiPiZsdDtjbGFzcyAnZmxvYXQnJmd0OzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzk5OSI+UHl0aG9uIENvbnNvbGU8L3RleHQ+Cjwvc3ZnPg==',
           has_multiple_correct: false,
           tags: ['data-types', 'type-function']
         },
         {
           id: 4,
-          section_id: 1,
           question: "Python is case-sensitive. Which means 'Variable' and 'variable' are different.",
           type: 'true-false',
-          correct_answer: 'true',
+          correctAnswer: 1,
           explanation: "Python is indeed case-sensitive. 'Variable' and 'variable' would be treated as two different identifiers.",
           points: 10,
-          negative_marks: 0.25,
-          difficulty: 'easy',
-          has_multiple_correct: false,
-          tags: ['case-sensitivity', 'variables']
-        },
-        {
-          id: 5,
-          section_id: 1,
-          question: "What is the result of: 10 // 3 in Python?",
-          type: 'numerical',
-          correct_answer: '3',
-          explanation: "The // operator performs floor division, which returns the largest integer less than or equal to the result. 10 // 3 = 3.",
-          points: 10,
-          negative_marks: 0.25,
-          difficulty: 'medium',
           image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzUwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjlmOWY5Ii8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjMzMzIj5EaXZpc2lvbiBPcGVyYXRvcnMgaW4gUHl0aG9uOjwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMwMDciPjEwIC8gMyA9IDMuMzMzLi4uICAjIFJlZ3VsYXIgZGl2aXNpb248L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjkwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZDA2NjAwIj4xMCAvLyAzID0gMyAgICAgICMgRmxvb3IgZGl2aXNpb248L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjEyMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzAwNyI+MTAgJSAzID0gMSAgICAgICAjIE1vZHVsbyAocmVtYWluZGVyKTwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTUwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiI+Ly8gcmV0dXJucyB0aGUgZmxvb3IgdmFsdWUgKGludGVnZXIgcGFydCk8L3RleHQ+Cjwvc3ZnPg==',
           has_multiple_correct: false,
           tags: ['operators', 'floor-division']
         },
         {
-          id: 6,
-          section_id: 1,
+          id: 5,
           question: "Which method is used to get user input in Python?",
           type: 'fill-blank',
-          correct_answer: 'input',
+          correctAnswer: 1,
           explanation: "The input() function is used to get user input in Python. It always returns a string.",
           points: 10,
-          negative_marks: 0.25,
-          difficulty: 'easy',
-          has_multiple_correct: false,
-          tags: ['input', 'functions']
-        },
-        {
-          id: 7,
-          section_id: 1,
-          question: "What will this code output?\n\nx = '5'\ny = '10'\nprint(x + y)",
-          type: 'multiple-choice',
-          options: [
-            '15',
-            '510',
-            'Error',
-            '5 10'
-          ],
-          correct_answer: 1,
-          explanation: "When you use + with strings, it concatenates them. So '5' + '10' = '510'.",
-          points: 10,
-          negative_marks: 0.25,
-          difficulty: 'medium',
           image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjEyNTJiIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIj4+Pj4geCA9ICc1JzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNTAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmYiPj4+PiB5ID0gJzEwJzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNzAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmYiPj4+PiBwcmludCh4ICsgeSkKPC90ZXh0PgogIDx0ZXh0IHg9IjIwIiB5PSIxMDAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM0ZGE5MjQiPjUxMDwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTMwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzk5OSI+U3RyaW5nIGNvbmNhdGVuYXRpb24sIG5vdCBhZGRpdGlvbiE8L3RleHQ+Cjwvc3ZnPg==',
           has_multiple_correct: false,
           tags: ['strings', 'concatenation', 'operators']
         },
         {
-          id: 8,
-          section_id: 1,
+          id: 6,
           question: "Which of the following are valid Python variable names? (Select all that apply)",
           type: 'multiple-choice',
           options: [
@@ -404,44 +312,20 @@ const ManageQuizzes: React.FC = () => {
             'my-variable',
             'MyVariable123'
           ],
-          correct_answer: ['0', '3'], // Multiple correct answers as strings
+          correctAnswer: 1,
           explanation: "_my_var and MyVariable123 are valid. Variable names cannot start with numbers (2nd_variable) or contain hyphens (my-variable).",
           points: 15,
-          negative_marks: 0.5,
-          difficulty: 'medium',
-          has_multiple_correct: true,
-          tags: ['variables', 'naming-rules']
-        },
-        {
-          id: 9,
-          section_id: 1,
-          question: "What is the purpose of the 'len()' function in Python?",
-          type: 'multiple-choice',
-          options: [
-            'To get the length of a string or list',
-            'To convert to lowercase',
-            'To check if a value exists',
-            'To create a new variable'
-          ],
-          correct_answer: 0,
-          explanation: "The len() function returns the number of items in an object (string, list, tuple, etc.).",
-          points: 10,
-          negative_marks: 0.25,
-          difficulty: 'easy',
           image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzUwIiBoZWlnaHQ9IjE0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmOGZmIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjMzMzIj5sZW4oKSBGdW5jdGlvbiBFeGFtcGxlczo8L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjYwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDA3Ij5sZW4oIkhlbGxvIikgPT4gNTwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iODAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMwMDciPmxlbihbMSwgMiwgMywgNF0pID0+IDQ8L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjEwMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzAwNyI+bGVuKCIiKSA9PiAwPC90ZXh0PgogIDx0ZXh0IHg9IjIwIiB5PSIxMjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNjY2Ij5Db3VudHMgY2hhcmFjdGVycyBpbiBzdHJpbmdzLCBpdGVtcyBpbiBsaXN0czwvdGV4dD4KPC9zdmc+',
-          has_multiple_correct: false,
+          has_multiple_correct: true,
           tags: ['functions', 'len', 'built-in-functions']
         },
         {
-          id: 10,
-          section_id: 1,
+          id: 7,
           question: "Complete the code to convert a string to an integer:\n\nnum_str = '42'\nnum_int = _____(num_str)",
           type: 'fill-blank',
-          correct_answer: 'int',
+          correctAnswer: 1,
           explanation: "The int() function converts a string representation of a number to an integer.",
           points: 10,
-          negative_marks: 0.25,
-          difficulty: 'easy',
           image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZmOGVkIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjMzMzIj5UeXBlIENvbnZlcnNpb24gaW4gUHl0aG9uOjwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNkOTUzNGYiPm51bV9zdHIgPSAnNDInICAjIFN0cmluZzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iODAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMwMDciPm51bV9pbnQgPSBpbnQobnVtX3N0cikgICMgSW50ZWdlcjwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTAwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDA3Ij5wcmludChudW1faW50ICsgMTApICAjIDUyPC90ZXh0PgogIDx0ZXh0IHg9IjIwIiB5PSIxMjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNjY2Ij5Db252ZXJ0cyBzdHJpbmcgdG8gaW50ZWdlcjwvdGV4dD4KPC9zdmc+',
           has_multiple_correct: false,
           tags: ['type-conversion', 'int-function']
@@ -513,123 +397,79 @@ const ManageQuizzes: React.FC = () => {
 
   const loadCourses = async () => {
     try {
-      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/courses?select=*', {
+      console.log('Loading courses from Supabase...');
+      
+      // Use direct fetch with proper CORS headers (same approach as corsRequest in supabase.ts)
+      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/courses?select=id,name,description,instructor,duration,level&order=id.asc', {
+        method: 'GET',
         headers: {
           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-        }
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'omit'
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Courses loaded successfully:', data);
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.length > 0) {
-          setCourses(data);
-        } else {
-          // If no courses found, add sample courses for immediate use
-          const sampleCourses: Course[] = [
-            {
-              id: 1,
-              name: "AI Fundamentals",
-              description: "Introduction to Artificial Intelligence",
-              instructor: "Dr. Sarah Johnson",
-              duration: "8 weeks",
-              level: "Beginner"
-            },
-            {
-              id: 2,
-              name: "Machine Learning Mastery",
-              description: "Advanced Machine Learning Concepts",
-              instructor: "Prof. Michael Chen",
-              duration: "12 weeks",
-              level: "Intermediate"
-            },
-            {
-              id: 3,
-              name: "Deep Learning & Neural Networks",
-              description: "Deep Learning with TensorFlow and PyTorch",
-              instructor: "Dr. Emily Rodriguez",
-              duration: "10 weeks",
-              level: "Advanced"
-            },
-            {
-              id: 4,
-              name: "AI in Business",
-              description: "Practical AI Applications for Business",
-              instructor: "James Wilson",
-              duration: "6 weeks",
-              level: "Beginner"
-            },
-            {
-              id: 5,
-              name: "Computer Vision & NLP",
-              description: "Computer Vision and Natural Language Processing",
-              instructor: "Dr. Alex Kumar",
-              duration: "14 weeks",
-              level: "Advanced"
-            }
-          ];
-          setCourses(sampleCourses);
-        }
+      if (data && data.length > 0) {
+        // Map the data to match our Course interface
+        const mappedCourses: Course[] = data.map((course: any) => ({
+          id: course.id,
+          name: course.name,
+          description: course.description || 'No description available',
+          instructor: course.instructor,
+          duration: course.duration,
+          level: course.level
+        }));
+        
+        setCourses(mappedCourses);
+        console.log(`Successfully loaded ${mappedCourses.length} courses from database`);
       } else {
-        // If API fails, use sample courses so the system still works
-        const sampleCourses: Course[] = [
-          {
-            id: 1,
-            name: "AI Fundamentals",
-            description: "Introduction to Artificial Intelligence",
-            instructor: "Dr. Sarah Johnson",
-            duration: "8 weeks",
-            level: "Beginner"
-          },
-          {
-            id: 2,
-            name: "Machine Learning Mastery",
-            description: "Advanced Machine Learning Concepts",
-            instructor: "Prof. Michael Chen",
-            duration: "12 weeks",
-            level: "Intermediate"
-          },
-          {
-            id: 3,
-            name: "Deep Learning & Neural Networks",
-            description: "Deep Learning with TensorFlow and PyTorch",
-            instructor: "Dr. Emily Rodriguez",
-            duration: "10 weeks",
-            level: "Advanced"
-          }
-        ];
-        setCourses(sampleCourses);
+        console.warn('No courses found in database');
+        setCourses([]);
       }
     } catch (error) {
-      console.error('Error loading courses:', error);
-      // If there's an error, use sample courses so the system still works
-      const sampleCourses: Course[] = [
+      console.error('Error loading courses from Supabase:', error);
+      
+      // For demo purposes, load some fallback courses so the system still works
+      const fallbackCourses: Course[] = [
         {
           id: 1,
-          name: "AI Fundamentals",
-          description: "Introduction to Artificial Intelligence",
+          name: "Complete Python Programming Masterclass",
+          description: "Master Python from basics to advanced concepts",
           instructor: "Dr. Sarah Johnson",
-          duration: "8 weeks",
-          level: "Beginner"
+          duration: "40 hours",
+          level: "Beginner to Advanced"
         },
         {
           id: 2,
-          name: "Machine Learning Mastery",
-          description: "Advanced Machine Learning Concepts",
+          name: "Machine Learning & AI Fundamentals",
+          description: "Comprehensive introduction to ML algorithms",
           instructor: "Prof. Michael Chen",
-          duration: "12 weeks",
+          duration: "45 hours",
           level: "Intermediate"
         },
         {
           id: 3,
-          name: "Deep Learning & Neural Networks",
-          description: "Deep Learning with TensorFlow and PyTorch",
-          instructor: "Dr. Emily Rodriguez",
-          duration: "10 weeks",
-          level: "Advanced"
+          name: "Full Stack Web Development Bootcamp",
+          description: "Build modern web applications",
+          instructor: "Alex Rodriguez",
+          duration: "60 hours",
+          level: "Beginner to Advanced"
         }
       ];
-      setCourses(sampleCourses);
+      setCourses(fallbackCourses);
+      
+      // Don't show alert anymore, just log the error
+      console.warn('Using fallback courses due to connection issue');
     }
   };
 
@@ -740,17 +580,13 @@ const ManageQuizzes: React.FC = () => {
 
     const question: QuizQuestion = {
       id: Date.now(),
-      section_id: 1,
       question: newQuestion.question!,
-      type: newQuestion.type!,
+      type: newQuestion.type,
       options: newQuestion.type === 'multiple-choice' ? newQuestion.options : undefined,
-      correct_answer: newQuestion.correct_answer!,
+      correctAnswer: newQuestion.correctAnswer!,
       explanation: newQuestion.explanation,
-      points: newQuestion.points || 10,
-      negative_marks: newQuestion.negative_marks || 0,
-      difficulty: newQuestion.difficulty || 'medium',
-      has_multiple_correct: newQuestion.has_multiple_correct || false,
-      tags: newQuestion.tags || []
+      points: newQuestion.points,
+      image_url: newQuestion.image_url
     };
 
     setNewQuiz({
@@ -762,7 +598,7 @@ const ManageQuizzes: React.FC = () => {
       question: '',
       type: 'multiple-choice',
       options: ['', '', '', ''],
-      correct_answer: 0,
+      correctAnswer: 0,
       explanation: '',
       points: 10,
       negative_marks: 0,
@@ -778,82 +614,163 @@ const ManageQuizzes: React.FC = () => {
       return;
     }
 
+    if (!selectedCourse || !selectedClass) {
+      alert('Please select both course and class');
+      return;
+    }
+
     try {
-      const quiz: Quiz = {
-        id: Date.now(),
-        course_id: newQuiz.course_id!,
-        class_id: newQuiz.class_id!,
+      console.log('🔄 Saving quiz to database...');
+      
+      // Get the class number from the selected class
+      const selectedClassObj = courseClasses.find(c => c.id === selectedClass);
+      const classNumber = selectedClassObj?.class_number || 1;
+      
+      // Prepare quiz data for database (match the expected interface)
+      const quizData = {
+        course_id: selectedCourse,
+        class_number: classNumber,
         title: newQuiz.title!,
-        description: newQuiz.description!,
-        instructions: newQuiz.instructions!,
-        difficulty: newQuiz.difficulty!,
-        time_limit: newQuiz.time_limit!,
-        questions: newQuiz.questions!,
-        created_at: new Date().toISOString(),
-        is_active: newQuiz.is_active!,
-        is_published: false,
-        sections: newQuiz.sections!,
-        configuration: newQuiz.configuration!,
-        grading_system: newQuiz.grading_system!
+        description: newQuiz.description || '',
+        time_limit: newQuiz.time_limit || 30,
+        questions: newQuiz.questions!.map(q => ({
+          id: q.id,
+          question: q.question,
+          options: q.options || [],
+          correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 
+                        typeof q.correctAnswer === 'string' ? parseInt(q.correctAnswer as string) || 0 :
+                        Array.isArray(q.correctAnswer) ? (q.correctAnswer[0] as number) || 0 : 0,
+          explanation: q.explanation || ''
+        }))
       };
 
-      setQuizzes([...quizzes, quiz]);
-      setShowCreateQuizModal(false);
-      setNewQuiz({
-        title: '',
-        description: '',
-        instructions: 'Read all questions carefully. You have limited time to complete this quiz.',
-        difficulty: 'beginner',
-        time_limit: 30,
-        questions: [],
-        is_active: true,
-        is_published: false,
-        sections: [],
-        configuration: {
-          mocktest_template: false,
-          show_question_marks: true,
-          difficulty_level: 'medium',
-          multichoice_label: 'A,B,C,D',
-          calculator_type: 'none',
-          window_restriction: false,
-          switch_window_warnings: 3,
-          proctoring_enabled: false,
-          max_attempts: 1,
-          leaderboard_enabled: false,
-          answer_shuffle: false,
-          section_order_selection: false,
-          quiz_pause_enabled: false,
-          percentile_ranking: false,
-          randomization_enabled: false,
-          time_per_question: false,
-          auto_submit: true,
-          show_answers_after: 'after_submission',
-          negative_marking: false,
-          negative_marks_value: 0.25,
-          partial_marking: false,
-          question_navigation: true,
-          review_mode: true,
-          full_screen_mode: false,
-          copy_paste_disabled: false,
-          right_click_disabled: false
-        },
-        grading_system: {
-          passing_percentage: 60,
-          grades: [
-            { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
-            { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
-            { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
-            { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
-            { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
-            { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
-          ]
-        }
-      });
+      // Save to database using the createQuiz function from supabase.ts
+      const { createQuiz } = await import('../utils/supabase');
+      const result = await createQuiz(quizData);
       
-      alert('Professional Quiz created successfully with advanced features!');
+      if (result.success) {
+        console.log('✅ Quiz saved to database successfully!');
+        
+        // Update local state
+        const quiz: Quiz = {
+          id: result.quiz?.id || Date.now(),
+          course_id: selectedCourse,
+          class_id: selectedClass,
+          title: newQuiz.title!,
+          description: newQuiz.description!,
+          instructions: newQuiz.instructions || '',
+          difficulty: newQuiz.difficulty || 'beginner',
+          time_limit: newQuiz.time_limit!,
+          questions: newQuiz.questions!,
+          created_at: new Date().toISOString(),
+          is_active: newQuiz.is_active,
+          is_published: false,
+          sections: newQuiz.sections || [],
+          configuration: newQuiz.configuration || {
+            mocktest_template: false,
+            show_question_marks: true,
+            difficulty_level: 'medium',
+            multichoice_label: 'A,B,C,D',
+            calculator_type: 'none',
+            window_restriction: false,
+            switch_window_warnings: 3,
+            proctoring_enabled: false,
+            max_attempts: 1,
+            leaderboard_enabled: false,
+            answer_shuffle: false,
+            section_order_selection: false,
+            quiz_pause_enabled: false,
+            percentile_ranking: false,
+            randomization_enabled: false,
+            time_per_question: false,
+            auto_submit: true,
+            show_answers_after: 'after_submission',
+            negative_marking: false,
+            negative_marks_value: 0.25,
+            partial_marking: false,
+            question_navigation: true,
+            review_mode: true,
+            full_screen_mode: false,
+            copy_paste_disabled: false,
+            right_click_disabled: false
+          },
+          grading_system: newQuiz.grading_system || {
+            passing_percentage: 60,
+            grades: [
+              { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
+              { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
+              { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
+              { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
+              { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
+              { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
+            ]
+          }
+        };
+
+        setQuizzes([...quizzes, quiz]);
+        setShowCreateQuizModal(false);
+        
+        // Reset form
+        setNewQuiz({
+          title: '',
+          description: '',
+          instructions: 'Read all questions carefully. You have limited time to complete this quiz.',
+          difficulty: 'beginner',
+          time_limit: 30,
+          questions: [],
+          is_active: true,
+          is_published: false,
+          sections: [],
+          configuration: {
+            mocktest_template: false,
+            show_question_marks: true,
+            difficulty_level: 'medium',
+            multichoice_label: 'A,B,C,D',
+            calculator_type: 'none',
+            window_restriction: false,
+            switch_window_warnings: 3,
+            proctoring_enabled: false,
+            max_attempts: 1,
+            leaderboard_enabled: false,
+            answer_shuffle: false,
+            section_order_selection: false,
+            quiz_pause_enabled: false,
+            percentile_ranking: false,
+            randomization_enabled: false,
+            time_per_question: false,
+            auto_submit: true,
+            show_answers_after: 'after_submission',
+            negative_marking: false,
+            negative_marks_value: 0.25,
+            partial_marking: false,
+            question_navigation: true,
+            review_mode: true,
+            full_screen_mode: false,
+            copy_paste_disabled: false,
+            right_click_disabled: false
+          },
+          grading_system: {
+            passing_percentage: 60,
+            grades: [
+              { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
+              { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
+              { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
+              { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
+              { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
+              { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
+            ]
+          }
+        });
+        
+        // Show success with detailed info
+        alert(`✅ Quiz "${newQuiz.title}" saved successfully!\n\n📚 Course: ${courses.find(c => c.id === selectedCourse)?.name}\n📖 Class: ${classNumber}\n❓ Questions: ${newQuiz.questions!.length}\n⏱️ Time Limit: ${newQuiz.time_limit} minutes\n\nStudents can now access this quiz!`);
+      } else {
+        console.error('❌ Failed to save quiz:', result.error);
+        alert(`Failed to save quiz: ${result.error}`);
+      }
     } catch (error) {
-      console.error('Error saving quiz:', error);
-      alert('Error saving quiz');
+      console.error('❌ Error saving quiz:', error);
+      alert('Error saving quiz. Please try again.');
     }
   };
 
@@ -1006,7 +923,7 @@ const ManageQuizzes: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-600 text-sm font-medium">🎥 Proctored</p>
-              <p className="text-3xl font-bold text-purple-900">{quizzes.filter(q => q.configuration.proctoring_enabled).length}</p>
+              <p className="text-3xl font-bold text-purple-900">{quizzes.filter(q => q.configuration?.proctoring_enabled).length}</p>
             </div>
             <ShieldCheckIcon className="h-10 w-10 text-purple-600" />
           </div>
@@ -1015,7 +932,7 @@ const ManageQuizzes: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-600 text-sm font-medium">🏆 With Leaderboard</p>
-              <p className="text-3xl font-bold text-orange-900">{quizzes.filter(q => q.configuration.leaderboard_enabled).length}</p>
+              <p className="text-3xl font-bold text-orange-900">{quizzes.filter(q => q.configuration?.leaderboard_enabled).length}</p>
             </div>
             <TrophyIcon className="h-10 w-10 text-orange-600" />
           </div>
@@ -1024,7 +941,7 @@ const ManageQuizzes: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-600 text-sm font-medium">🖥️ Mock Tests</p>
-              <p className="text-3xl font-bold text-red-900">{quizzes.filter(q => q.configuration.mocktest_template).length}</p>
+              <p className="text-3xl font-bold text-red-900">{quizzes.filter(q => q.configuration?.mocktest_template).length}</p>
             </div>
             <ComputerDesktopIcon className="h-10 w-10 text-red-600" />
           </div>
@@ -1058,31 +975,31 @@ const ManageQuizzes: React.FC = () => {
                       <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
                         <span>⏱️ {quiz.time_limit} min</span>
                         <span>📝 {quiz.questions.length} questions</span>
-                        <span>🎯 {quiz.sections.length} sections</span>
+                        <span>🎯 {quiz.sections?.length || 0} sections</span>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {quiz.configuration.mocktest_template && (
+                      {quiz.configuration?.mocktest_template && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           <ComputerDesktopIcon className="h-3 w-3 mr-1" />
                           🖥️ Mock Test
                         </span>
                       )}
-                      {quiz.configuration.calculator_type !== 'none' && (
+                      {quiz.configuration?.calculator_type !== 'none' && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <CalculatorIcon className="h-3 w-3 mr-1" />
                           🧮 Calculator
                         </span>
                       )}
-                      {quiz.configuration.leaderboard_enabled && (
+                      {quiz.configuration?.leaderboard_enabled && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                           <TrophyIcon className="h-3 w-3 mr-1" />
                           🏆 Leaderboard
                         </span>
                       )}
-                      {quiz.configuration.percentile_ranking && (
+                      {quiz.configuration?.percentile_ranking && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                           <ChartBarIcon className="h-3 w-3 mr-1" />
                           📊 Percentile
@@ -1092,19 +1009,19 @@ const ManageQuizzes: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {quiz.configuration.proctoring_enabled && (
+                      {quiz.configuration?.proctoring_enabled && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                           <ShieldCheckIcon className="h-3 w-3 mr-1" />
                           🎥 Proctored
                         </span>
                       )}
-                      {quiz.configuration.window_restriction && (
+                      {quiz.configuration?.window_restriction && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                           <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
                           🚫 No Switch
                         </span>
                       )}
-                      {quiz.configuration.full_screen_mode && (
+                      {quiz.configuration?.full_screen_mode && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                           📺 Fullscreen
                         </span>
@@ -1612,14 +1529,14 @@ const ManageQuizzes: React.FC = () => {
                               placeholder={`Option ${String.fromCharCode(65 + index)}`}
                             />
                             <button
-                              onClick={() => setNewQuestion({...newQuestion, correct_answer: index})}
+                              onClick={() => setNewQuestion({...newQuestion, correctAnswer: index})}
                               className={`px-4 py-3 rounded-lg font-medium transition-colors ${
-                                newQuestion.correct_answer === index
+                                newQuestion.correctAnswer === index
                                   ? 'bg-green-500 text-white shadow-lg'
                                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                               }`}
                             >
-                              {newQuestion.correct_answer === index ? '✅ Correct' : 'Mark Correct'}
+                              {newQuestion.correctAnswer === index ? '✅ Correct' : 'Mark Correct'}
                             </button>
                           </div>
                         ))}
@@ -1667,9 +1584,9 @@ const ManageQuizzes: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-3">Correct Answer</label>
                       <div className="flex gap-4">
                         <button
-                          onClick={() => setNewQuestion({...newQuestion, correct_answer: 'true'})}
+                          onClick={() => setNewQuestion({...newQuestion, correctAnswer: 'true'})}
                           className={`px-6 py-3 rounded-lg font-medium ${
-                            newQuestion.correct_answer === 'true'
+                            newQuestion.correctAnswer === 'true'
                               ? 'bg-green-500 text-white'
                               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                           }`}
@@ -1677,9 +1594,9 @@ const ManageQuizzes: React.FC = () => {
                           ✅ True
                         </button>
                         <button
-                          onClick={() => setNewQuestion({...newQuestion, correct_answer: 'false'})}
+                          onClick={() => setNewQuestion({...newQuestion, correctAnswer: 'false'})}
                           className={`px-6 py-3 rounded-lg font-medium ${
-                            newQuestion.correct_answer === 'false'
+                            newQuestion.correctAnswer === 'false'
                               ? 'bg-green-500 text-white'
                               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                           }`}
@@ -1696,8 +1613,8 @@ const ManageQuizzes: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Correct Answer</label>
                       <input
                         type={newQuestion.type === 'numerical' ? 'number' : 'text'}
-                        value={newQuestion.correct_answer as string || ''}
-                        onChange={(e) => setNewQuestion({...newQuestion, correct_answer: e.target.value})}
+                        value={newQuestion.correctAnswer as string || ''}
+                        onChange={(e) => setNewQuestion({...newQuestion, correctAnswer: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                         placeholder={newQuestion.type === 'numerical' ? 'Enter the correct number' : 'Enter the correct answer'}
                       />
@@ -1757,12 +1674,12 @@ const ManageQuizzes: React.FC = () => {
                             {q.type === 'multiple-choice' && q.options && (
                               <div className="text-sm text-gray-600">
                                 Options: {q.options.filter(opt => opt.trim()).length} | 
-                                Correct: {q.options[q.correct_answer as number] || 'Not set'}
+                                Correct: {q.options[q.correctAnswer as number] || 'Not set'}
                               </div>
                             )}
                             {q.type === 'true-false' && (
                               <div className="text-sm text-gray-600">
-                                Correct Answer: {q.correct_answer}
+                                Correct Answer: {q.correctAnswer}
                               </div>
                             )}
                           </div>

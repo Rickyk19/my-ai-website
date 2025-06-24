@@ -7,6 +7,7 @@ import Courses from './pages/Courses';
 import CourseContent from './pages/CourseContent';
 import ClassContent from './pages/ClassContent';
 import ClassQuiz from './pages/ClassQuiz';
+import DynamicQuizPage from './pages/DynamicQuizPage';
 import Feedback from './pages/Feedback';
 import Dashboard from './pages/Dashboard';
 import AddCourse from './pages/AddCourse';
@@ -29,6 +30,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import MemberProtectedRoute from './components/MemberProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import QuizDemoPage from './pages/QuizDemoPage';
+import DatabaseTest from './pages/DatabaseTest';
 
 // Placeholder components for different routes
 const AIExplained = () => <div>AI Explained Page</div>;
@@ -53,6 +55,11 @@ const App: React.FC = () => {
             <Route path="course/:courseId/class/:classNumber" element={
               <MemberProtectedRoute>
                 <ClassContent />
+              </MemberProtectedRoute>
+            } />
+            <Route path="course/:courseId/class/:classNumber/quiz" element={
+              <MemberProtectedRoute>
+                <DynamicQuizPage />
               </MemberProtectedRoute>
             } />
             <Route path="quiz/course/:courseId/class/:classNumber" element={
@@ -114,6 +121,7 @@ const App: React.FC = () => {
                 <QuizDemoPage />
               </MemberProtectedRoute>
             } />
+            <Route path="database-test" element={<DatabaseTest />} />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<SignUp />} />
             <Route path="members-login" element={<MembersLogin />} />

@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import { useNavigate } from 'react-router-dom';
-import { getMemberPurchases } from '../utils/supabase';
+import { getMemberPurchases, getQuiz } from '../utils/supabase';
 
 interface Course {
   id: number;
@@ -182,6 +182,34 @@ const MembersDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error submitting comment:', error);
+    }
+  };
+
+  const handleQuizClick = async (courseId: number, classNumber: number) => {
+    try {
+      console.log(`🎯 Checking for quiz: Course ${courseId}, Class ${classNumber}`);
+      
+      // Check if admin has created a quiz for this specific course/class
+      const quizResult = await getQuiz(courseId, classNumber);
+      
+      if (quizResult.success && quizResult.quiz) {
+        // Quiz exists! Navigate to the dynamic quiz interface
+        console.log('✅ Quiz found! Redirecting to quiz interface...');
+        navigate(`/course/${courseId}/class/${classNumber}/quiz`);
+      } else {
+        // No quiz found, show fallback or demo
+        console.log('❌ No quiz found for this class. Showing demo...');
+        if (selectedCourse?.course_name.toLowerCase().includes('python') && classNumber === 1) {
+          navigate('/student-quiz-demo');
+        } else {
+          alert(`No quiz available for Class ${classNumber} yet. The instructor hasn't created one.`);
+        }
+      }
+      
+      setShowModal(false);
+    } catch (error) {
+      console.error('Error checking for quiz:', error);
+      alert('Error loading quiz. Please try again.');
     }
   };
 
@@ -441,20 +469,13 @@ const MembersDashboard: React.FC = () => {
                     </button>
                   )}
                   <button
-                    onClick={() => {
-                      if (selectedCourse.course_name.toLowerCase().includes('python')) {
-                        navigate('/student-quiz-demo');
-                      } else {
-                        navigate('/ai-quizzes');
-                      }
-                      setShowModal(false);
-                    }}
+                    onClick={() => handleQuizClick(selectedCourse.course_details?.id || selectedCourse.id, 1)}
                     className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded hover:from-purple-700 hover:to-pink-700 transition-all"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clipRule="evenodd"/>
                     </svg>
-                    Quiz
+                    Quiz (Class 1)
                   </button>
                   {selectedCourse.course_details?.certificate_available && (
                     <button
@@ -508,14 +529,7 @@ const MembersDashboard: React.FC = () => {
                               PDF
                             </button>
                             <button
-                              onClick={() => {
-                                if (selectedCourse.course_name.toLowerCase().includes('python') && classItem.class_number === 1) {
-                                  navigate('/student-quiz-demo');
-                                } else {
-                                  navigate('/ai-quizzes');
-                                }
-                                setShowModal(false);
-                              }}
+                              onClick={() => handleQuizClick(selectedCourse.course_details?.id || selectedCourse.id, classItem.class_number)}
                               className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-2 rounded hover:from-purple-700 hover:to-pink-700 text-sm"
                             >
                               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
