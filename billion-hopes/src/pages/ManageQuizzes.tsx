@@ -649,7 +649,10 @@ const ManageQuizzes: React.FC = () => {
       const result = await createQuiz(quizData);
       
       if (result.success) {
-        console.log('✅ Quiz saved to database successfully!');
+        const isUpdate = result.action === 'updated';
+        const actionText = isUpdate ? 'updated' : 'created';
+        
+        console.log(`✅ Quiz ${actionText} successfully!`);
         
         // Update local state
         const quiz: Quiz = {
@@ -707,7 +710,21 @@ const ManageQuizzes: React.FC = () => {
           }
         };
 
-        setQuizzes([...quizzes, quiz]);
+        // If updating, replace existing quiz in state; if creating, add new quiz
+        if (isUpdate) {
+          // Find and update existing quiz or add new one if not found locally
+          const existingIndex = quizzes.findIndex(q => q.course_id === selectedCourse && q.class_id === selectedClass);
+          if (existingIndex >= 0) {
+            const updatedQuizzes = [...quizzes];
+            updatedQuizzes[existingIndex] = quiz;
+            setQuizzes(updatedQuizzes);
+          } else {
+            setQuizzes([...quizzes, quiz]);
+          }
+        } else {
+          setQuizzes([...quizzes, quiz]);
+        }
+        
         setShowCreateQuizModal(false);
         
         // Reset form
@@ -763,7 +780,12 @@ const ManageQuizzes: React.FC = () => {
         });
         
         // Show success with detailed info
-        alert(`✅ Quiz "${newQuiz.title}" saved successfully!\n\n📚 Course: ${courses.find(c => c.id === selectedCourse)?.name}\n📖 Class: ${classNumber}\n❓ Questions: ${newQuiz.questions!.length}\n⏱️ Time Limit: ${newQuiz.time_limit} minutes\n\nStudents can now access this quiz!`);
+        const actionEmoji = isUpdate ? '🔄' : '✅';
+        const actionMessage = isUpdate ? 
+          `${actionEmoji} Quiz "${newQuiz.title}" updated successfully!\n\n📝 The existing quiz for this course/class has been replaced with your new content.` :
+          `${actionEmoji} Quiz "${newQuiz.title}" created successfully!`;
+        
+        alert(`${actionMessage}\n\n📚 Course: ${courses.find(c => c.id === selectedCourse)?.name}\n📖 Class: ${classNumber}\n❓ Questions: ${newQuiz.questions!.length}\n⏱️ Time Limit: ${newQuiz.time_limit} minutes\n\nStudents can now access this quiz!`);
       } else {
         console.error('❌ Failed to save quiz:', result.error);
         alert(`Failed to save quiz: ${result.error}`);

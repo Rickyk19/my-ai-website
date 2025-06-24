@@ -356,47 +356,111 @@ const ManageQuizzesEnhanced: React.FC = () => {
       return;
     }
 
+    if (!selectedCourse || !selectedClass) {
+      alert('Please select both course and class');
+      return;
+    }
+
     try {
-      const quiz: Quiz = {
-        id: Date.now(),
-        course_id: newQuiz.course_id!,
-        class_id: newQuiz.class_id!,
+      console.log('🔄 Saving quiz to database...');
+      
+      // Get the class number from the selected class
+      const selectedClassObj = courseClasses.find(c => c.id === selectedClass);
+      const classNumber = selectedClassObj?.class_number || 1;
+      
+      // Prepare quiz data for database (match the expected interface)
+      const quizData = {
+        course_id: selectedCourse,
+        class_number: classNumber,
         title: newQuiz.title!,
-        description: newQuiz.description!,
-        instructions: newQuiz.instructions!,
-        difficulty: newQuiz.difficulty!,
-        time_limit: newQuiz.time_limit!,
-        questions: newQuiz.questions!,
-        created_at: new Date().toISOString(),
-        is_active: newQuiz.is_active!,
-        is_published: false,
-        sections: newQuiz.sections!,
-        configuration: newQuiz.configuration!,
-        grading_system: newQuiz.grading_system!
+        description: newQuiz.description || '',
+        time_limit: newQuiz.time_limit || 30,
+        questions: newQuiz.questions!.map(q => ({
+          id: q.id,
+          question: q.question,
+          options: q.options || [],
+          correctAnswer: typeof q.correct_answer === 'number' ? q.correct_answer : 
+                        typeof q.correct_answer === 'string' ? parseInt(q.correct_answer as string) || 0 :
+                        Array.isArray(q.correct_answer) ? (typeof q.correct_answer[0] === 'number' ? q.correct_answer[0] : parseInt(String(q.correct_answer[0])) || 0) : 0,
+          explanation: q.explanation || ''
+        }))
       };
 
-      setQuizzes([...quizzes, quiz]);
-      setShowCreateQuizModal(false);
+      // Save to database using the createQuiz function from supabase.ts
+      const { createQuiz } = await import('../utils/supabase');
+      const result = await createQuiz(quizData);
       
-      // Reset form
-      setNewQuiz({
-        title: '',
-        description: '',
-        instructions: 'Read all questions carefully. You have limited time to complete this quiz.',
-        difficulty: 'beginner',
-        time_limit: 30,
-        questions: [],
-        is_active: true,
-        is_published: false,
-        sections: [],
-        configuration: newQuiz.configuration,
-        grading_system: newQuiz.grading_system
-      });
-      
-      alert(`🚀 Professional Quiz "${quiz.title}" created successfully with ${quiz.questions.length} questions!`);
+      if (result.success) {
+        const isUpdate = result.action === 'updated';
+        const actionText = isUpdate ? 'updated' : 'created';
+        
+        console.log(`✅ Quiz ${actionText} successfully!`);
+        
+        // Update local state
+        const quiz: Quiz = {
+          id: result.quiz?.id || Date.now(),
+          course_id: selectedCourse,
+          class_id: selectedClass,
+          title: newQuiz.title!,
+          description: newQuiz.description!,
+          instructions: newQuiz.instructions!,
+          difficulty: newQuiz.difficulty!,
+          time_limit: newQuiz.time_limit!,
+          questions: newQuiz.questions!,
+          created_at: new Date().toISOString(),
+          is_active: newQuiz.is_active!,
+          is_published: false,
+          sections: newQuiz.sections!,
+          configuration: newQuiz.configuration!,
+          grading_system: newQuiz.grading_system!
+        };
+
+        // If updating, replace existing quiz in state; if creating, add new quiz
+        if (isUpdate) {
+          // Find and update existing quiz or add new one if not found locally
+          const existingIndex = quizzes.findIndex(q => q.course_id === selectedCourse && q.class_id === selectedClass);
+          if (existingIndex >= 0) {
+            const updatedQuizzes = [...quizzes];
+            updatedQuizzes[existingIndex] = quiz;
+            setQuizzes(updatedQuizzes);
+          } else {
+            setQuizzes([...quizzes, quiz]);
+          }
+        } else {
+          setQuizzes([...quizzes, quiz]);
+        }
+        
+        setShowCreateQuizModal(false);
+        
+        // Reset form
+        setNewQuiz({
+          title: '',
+          description: '',
+          instructions: 'Read all questions carefully. You have limited time to complete this quiz.',
+          difficulty: 'beginner',
+          time_limit: 30,
+          questions: [],
+          is_active: true,
+          is_published: false,
+          sections: [],
+          configuration: newQuiz.configuration,
+          grading_system: newQuiz.grading_system
+        });
+        
+        // Show success with detailed info
+        const actionEmoji = isUpdate ? '🔄' : '✅';
+        const actionMessage = isUpdate ? 
+          `${actionEmoji} Quiz "${newQuiz.title}" updated successfully!\n\n📝 The existing quiz for this course/class has been replaced with your new content.` :
+          `${actionEmoji} Quiz "${newQuiz.title}" created successfully!`;
+        
+        alert(`${actionMessage}\n\n📚 Course: ${courses.find(c => c.id === selectedCourse)?.name}\n📖 Class: ${classNumber}\n❓ Questions: ${newQuiz.questions!.length}\n⏱️ Time Limit: ${newQuiz.time_limit} minutes\n\nStudents can now access this quiz!`);
+      } else {
+        console.error('❌ Failed to save quiz:', result.error);
+        alert(`Failed to save quiz: ${result.error}`);
+      }
     } catch (error) {
-      console.error('Error saving quiz:', error);
-      alert('Error saving quiz');
+      console.error('❌ Error saving quiz:', error);
+      alert('Error saving quiz. Please try again.');
     }
   };
 

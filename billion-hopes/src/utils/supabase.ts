@@ -177,6 +177,67 @@ export const createQuiz = async (quiz: Omit<Quiz, 'id' | 'created_at' | 'updated
   try {
     console.log('📝 Creating quiz:', quiz.title);
     
+    // First, check if a quiz already exists for this course/class combination
+    console.log('🔍 Checking if quiz already exists for course', quiz.course_id, 'class', quiz.class_number);
+    
+    const checkResponse = await fetch(`${supabaseUrl}/rest/v1/class_quizzes?select=id&course_id=eq.${quiz.course_id}&class_number=eq.${quiz.class_number}&limit=1`, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      mode: 'cors',
+      credentials: 'omit'
+    });
+    
+    if (checkResponse.ok) {
+      const existingQuizzes = await checkResponse.json();
+      
+      if (existingQuizzes.length > 0) {
+        // Quiz exists, update it instead
+        const existingQuizId = existingQuizzes[0].id;
+        console.log('📝 Quiz already exists with ID', existingQuizId, '- updating instead of creating');
+        
+        const updateResponse = await fetch(`${supabaseUrl}/rest/v1/class_quizzes?id=eq.${existingQuizId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          mode: 'cors',
+          credentials: 'omit',
+          body: JSON.stringify({
+            title: quiz.title,
+            description: quiz.description,
+            time_limit: quiz.time_limit,
+            questions: JSON.stringify(quiz.questions),
+            updated_at: new Date().toISOString()
+          })
+        });
+        
+        if (!updateResponse.ok) {
+          throw new Error(`Failed to update quiz: ${updateResponse.status}`);
+        }
+        
+        const result = await updateResponse.json();
+        console.log('✅ Quiz updated successfully');
+        
+        return {
+          success: true,
+          quiz: result[0],
+          action: 'updated'
+        };
+      }
+    }
+    
+    // No existing quiz found, create a new one
+    console.log('📝 No existing quiz found, creating new quiz');
+    
     const response = await fetch(`${supabaseUrl}/rest/v1/class_quizzes`, {
       method: 'POST',
       headers: {
@@ -209,7 +270,8 @@ export const createQuiz = async (quiz: Omit<Quiz, 'id' | 'created_at' | 'updated
     
     return {
       success: true,
-      quiz: result[0]
+      quiz: result[0],
+      action: 'created'
     };
     
   } catch (error: any) {
