@@ -139,6 +139,8 @@ const ManageQuizzes: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
   const [showCreateQuizModal, setShowCreateQuizModal] = useState(false);
+  const [showEditQuizModal, setShowEditQuizModal] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   const [showViewQuizModal, setShowViewQuizModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showGradingModal, setShowGradingModal] = useState(false);
@@ -211,182 +213,9 @@ const ManageQuizzes: React.FC = () => {
   });
 
   useEffect(() => {
-    // Load courses from Supabase database
+    // Load courses and quizzes from Supabase database
     loadCourses();
-    
-    // Create demo Python quiz
-    const pythonDemoQuiz: Quiz = {
-      id: 999,
-      course_id: 6,
-      class_id: 61, // Class 1 of Python course
-      title: "Python Basics - Variables and Data Types",
-      description: "Test your understanding of Python fundamentals including variables, data types, and basic operations.",
-      instructions: "Read each question carefully. Some questions include code examples. You have 30 minutes to complete this quiz.",
-      difficulty: 'beginner',
-      time_limit: 30,
-      total_marks: 100,
-      questions: [
-        {
-          id: 1,
-          section_id: 1,
-          question: "What is the correct way to create a variable in Python?",
-          type: 'multiple-choice',
-          options: [
-            'var x = 5',
-            'x = 5',
-            'int x = 5',
-            'variable x = 5'
-          ],
-          correctAnswer: 1,
-          explanation: "In Python, variables are created by simply assigning a value using the = operator. No declaration keywords are needed.",
-          points: 10,
-          negative_marks: 0.25,
-          difficulty: 'easy',
-          image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmOGZmIi8+CiAgPHRleHQgeD0iMjAiIHk9IjQwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjMzMzIj4jIFB5dGhvbiBWYXJpYWJsZSBFeGFtcGxlczwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNzAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMwMDciPnggPSA1ICAgICAgIyBDb3JyZWN0PC90ZXh0PgogIDx0ZXh0IHg9IjIwIiB5PSI5MCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Q5NTM0ZiI+dmFyIHggPSA1ICAjIEluY29ycmVjdDwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTEwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZDk1MzRmIj5pbnQgeCA9IDUgIyBJbmNvcnJlY3Q8L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjE0MCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiI+UHl0aG9uIGlzIGR5bmFtaWNhbGx5IHR5cGVkIC0gbm8gZGVjbGFyYXRpb24gbmVlZGVkITwvdGV4dD4KPC9zdmc+',
-          has_multiple_correct: false,
-          tags: ['variables', 'basics']
-        },
-        {
-          id: 2,
-          question: "Which of the following is NOT a valid Python data type?",
-          type: 'multiple-choice',
-          options: [
-            'int',
-            'float',
-            'string',
-            'char'
-          ],
-          correctAnswer: 3,
-          explanation: "Python doesn't have a 'char' data type. Individual characters are just strings of length 1.",
-          points: 10,
-          image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjEyNTJiIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIj4+Pj4gcHJpbnQodHlwZSg1LjApKTwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM0ZGE5MjQiPiZsdDtjbGFzcyAnZmxvYXQnJmd0OzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzk5OSI+UHl0aG9uIENvbnNvbGU8L3RleHQ+Cjwvc3ZnPg==',
-          has_multiple_correct: false,
-          tags: ['data-types', 'type-function']
-        },
-        {
-          id: 3,
-          question: "What will be the output of the following code?\n\nprint(type(5.0))",
-          type: 'multiple-choice',
-          options: [
-            "<class 'int'>",
-            "<class 'float'>",
-            "<class 'number'>",
-            "<class 'decimal'>"
-          ],
-          correctAnswer: 1,
-          explanation: "5.0 is a floating-point number, so type() returns <class 'float'>.",
-          points: 10,
-          image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjEyNTJiIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIj4+Pj4gcHJpbnQodHlwZSg1LjApKTwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM0ZGE5MjQiPiZsdDtjbGFzcyAnZmxvYXQnJmd0OzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzk5OSI+UHl0aG9uIENvbnNvbGU8L3RleHQ+Cjwvc3ZnPg==',
-          has_multiple_correct: false,
-          tags: ['data-types', 'type-function']
-        },
-        {
-          id: 4,
-          question: "Python is case-sensitive. Which means 'Variable' and 'variable' are different.",
-          type: 'true-false',
-          correctAnswer: 1,
-          explanation: "Python is indeed case-sensitive. 'Variable' and 'variable' would be treated as two different identifiers.",
-          points: 10,
-          image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzUwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjlmOWY5Ii8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjMzMzIj5EaXZpc2lvbiBPcGVyYXRvcnMgaW4gUHl0aG9uOjwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMwMDciPjEwIC8gMyA9IDMuMzMzLi4uICAjIFJlZ3VsYXIgZGl2aXNpb248L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjkwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZDA2NjAwIj4xMCAvLyAzID0gMyAgICAgICMgRmxvb3IgZGl2aXNpb248L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjEyMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzAwNyI+MTAgJSAzID0gMSAgICAgICAjIE1vZHVsbyAocmVtYWluZGVyKTwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTUwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiI+Ly8gcmV0dXJucyB0aGUgZmxvb3IgdmFsdWUgKGludGVnZXIgcGFydCk8L3RleHQ+Cjwvc3ZnPg==',
-          has_multiple_correct: false,
-          tags: ['operators', 'floor-division']
-        },
-        {
-          id: 5,
-          question: "Which method is used to get user input in Python?",
-          type: 'fill-blank',
-          correctAnswer: 1,
-          explanation: "The input() function is used to get user input in Python. It always returns a string.",
-          points: 10,
-          image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjEyNTJiIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIj4+Pj4geCA9ICc1JzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNTAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmYiPj4+PiB5ID0gJzEwJzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNzAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmYiPj4+PiBwcmludCh4ICsgeSkKPC90ZXh0PgogIDx0ZXh0IHg9IjIwIiB5PSIxMDAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM0ZGE5MjQiPjUxMDwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTMwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzk5OSI+U3RyaW5nIGNvbmNhdGVuYXRpb24sIG5vdCBhZGRpdGlvbiE8L3RleHQ+Cjwvc3ZnPg==',
-          has_multiple_correct: false,
-          tags: ['strings', 'concatenation', 'operators']
-        },
-        {
-          id: 6,
-          question: "Which of the following are valid Python variable names? (Select all that apply)",
-          type: 'multiple-choice',
-          options: [
-            '_my_var',
-            '2nd_variable',
-            'my-variable',
-            'MyVariable123'
-          ],
-          correctAnswer: 1,
-          explanation: "_my_var and MyVariable123 are valid. Variable names cannot start with numbers (2nd_variable) or contain hyphens (my-variable).",
-          points: 15,
-          image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzUwIiBoZWlnaHQ9IjE0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmOGZmIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjMzMzIj5sZW4oKSBGdW5jdGlvbiBFeGFtcGxlczo8L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjYwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDA3Ij5sZW4oIkhlbGxvIikgPT4gNTwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iODAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMwMDciPmxlbihbMSwgMiwgMywgNF0pID0+IDQ8L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjEwMCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzAwNyI+bGVuKCIiKSA9PiAwPC90ZXh0PgogIDx0ZXh0IHg9IjIwIiB5PSIxMjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNjY2Ij5Db3VudHMgY2hhcmFjdGVycyBpbiBzdHJpbmdzLCBpdGVtcyBpbiBsaXN0czwvdGV4dD4KPC9zdmc+',
-          has_multiple_correct: true,
-          tags: ['functions', 'len', 'built-in-functions']
-        },
-        {
-          id: 7,
-          question: "Complete the code to convert a string to an integer:\n\nnum_str = '42'\nnum_int = _____(num_str)",
-          type: 'fill-blank',
-          correctAnswer: 1,
-          explanation: "The int() function converts a string representation of a number to an integer.",
-          points: 10,
-          image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjE0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZmOGVkIi8+CiAgPHRleHQgeD0iMjAiIHk9IjMwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE2IiBmaWxsPSIjMzMzIj5UeXBlIENvbnZlcnNpb24gaW4gUHl0aG9uOjwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNkOTUzNGYiPm51bV9zdHIgPSAnNDInICAjIFN0cmluZzwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iODAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMwMDciPm51bV9pbnQgPSBpbnQobnVtX3N0cikgICMgSW50ZWdlcjwvdGV4dD4KICA8dGV4dCB4PSIyMCIgeT0iMTAwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDA3Ij5wcmludChudW1faW50ICsgMTApICAjIDUyPC90ZXh0PgogIDx0ZXh0IHg9IjIwIiB5PSIxMjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNjY2Ij5Db252ZXJ0cyBzdHJpbmcgdG8gaW50ZWdlcjwvdGV4dD4KPC9zdmc+',
-          has_multiple_correct: false,
-          tags: ['type-conversion', 'int-function']
-        }
-      ],
-      created_at: new Date().toISOString(),
-      is_active: true,
-      is_published: true,
-      configuration: {
-        mocktest_template: false,
-        show_question_marks: true,
-        difficulty_level: 'easy',
-        multichoice_label: 'A,B,C,D',
-        calculator_type: 'none',
-        window_restriction: false,
-        switch_window_warnings: 3,
-        proctoring_enabled: false,
-        max_attempts: 3,
-        leaderboard_enabled: true,
-        answer_shuffle: false,
-        section_order_selection: false,
-        quiz_pause_enabled: true,
-        percentile_ranking: true,
-        randomization_enabled: false,
-        time_per_question: false,
-        auto_submit: true,
-        show_answers_after: 'after_submission',
-        negative_marking: true,
-        negative_marks_value: 0.25,
-        partial_marking: true,
-        question_navigation: true,
-        review_mode: true,
-        full_screen_mode: false,
-        copy_paste_disabled: false,
-        right_click_disabled: false
-      },
-      grading_system: {
-        passing_percentage: 70,
-        grades: [
-          { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
-          { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
-          { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
-          { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
-          { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
-          { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
-        ]
-      },
-      sections: [
-        {
-          id: 1,
-          title: "Python Fundamentals",
-          time_limit: 30,
-          question_count: 10,
-          order: 1
-        }
-      ]
-    };
-    
-    // Add the demo quiz to the quiz list
-    setQuizzes([pythonDemoQuiz]);
-    setIsLoading(false);
+    loadQuizzes();
   }, []);
 
   useEffect(() => {
@@ -490,68 +319,81 @@ const ManageQuizzes: React.FC = () => {
 
   const loadQuizzes = async () => {
     try {
-      const mockQuizzes: Quiz[] = [
-        {
-          id: 1,
-          course_id: 1,
-          class_id: 1,
-          title: "AI Fundamentals - Professional Assessment",
-          description: "Comprehensive test covering AI basics with advanced proctoring",
-          instructions: "This is a proctored exam. Window switching is not allowed. Calculator is provided.",
-          difficulty: 'beginner',
-          time_limit: 60,
-          questions: [],
-          created_at: '2024-01-15',
-          is_active: true,
-          is_published: true,
-          sections: [
-            { id: 1, title: "Theory", time_limit: 30, question_count: 15, order: 1 },
-            { id: 2, title: "Practical", time_limit: 30, question_count: 10, order: 2 }
-          ],
-          configuration: {
-            mocktest_template: true,
+      console.log('📚 Loading quizzes from database...');
+      setIsLoading(true);
+      
+      // Load quizzes from database using the getQuizzes function
+      const { getQuizzes } = await import('../utils/supabase');
+      const result = await getQuizzes();
+      
+      if (result.success && result.quizzes) {
+        console.log(`✅ Loaded ${result.quizzes.length} quizzes from database`);
+        
+        // Transform database quizzes to match our Quiz interface
+        const transformedQuizzes: Quiz[] = result.quizzes.map((dbQuiz: any) => ({
+          id: dbQuiz.id,
+          course_id: dbQuiz.course_id,
+          class_id: dbQuiz.class_id || 1, // Default to class 1 if not specified
+          title: dbQuiz.title,
+          description: dbQuiz.description || '',
+          instructions: dbQuiz.instructions || 'Read all questions carefully.',
+          difficulty: dbQuiz.difficulty || 'beginner',
+          time_limit: dbQuiz.time_limit || 30,
+          questions: dbQuiz.questions || [],
+          created_at: dbQuiz.created_at || new Date().toISOString(),
+          is_active: dbQuiz.is_active !== undefined ? dbQuiz.is_active : true,
+          is_published: dbQuiz.is_published !== undefined ? dbQuiz.is_published : false,
+          sections: dbQuiz.sections || [],
+          configuration: dbQuiz.configuration || {
+            mocktest_template: false,
             show_question_marks: true,
             difficulty_level: 'medium',
             multichoice_label: 'A,B,C,D',
-            calculator_type: 'scientific',
-            window_restriction: true,
-            switch_window_warnings: 2,
-            proctoring_enabled: true,
-            max_attempts: 2,
-            leaderboard_enabled: true,
-            answer_shuffle: true,
+            calculator_type: 'none',
+            window_restriction: false,
+            switch_window_warnings: 3,
+            proctoring_enabled: false,
+            max_attempts: 1,
+            leaderboard_enabled: false,
+            answer_shuffle: false,
             section_order_selection: false,
             quiz_pause_enabled: false,
-            percentile_ranking: true,
-            randomization_enabled: true,
-            time_per_question: true,
+            percentile_ranking: false,
+            randomization_enabled: false,
+            time_per_question: false,
             auto_submit: true,
             show_answers_after: 'after_submission',
-            negative_marking: true,
+            negative_marking: false,
             negative_marks_value: 0.25,
-            partial_marking: true,
+            partial_marking: false,
             question_navigation: true,
             review_mode: true,
-            full_screen_mode: true,
-            copy_paste_disabled: true,
-            right_click_disabled: true
+            full_screen_mode: false,
+            copy_paste_disabled: false,
+            right_click_disabled: false
           },
-          grading_system: {
+          grading_system: dbQuiz.grading_system || {
             passing_percentage: 70,
             grades: [
-              { name: 'Excellent', min_percentage: 90, max_percentage: 100, color: '#10B981' },
-              { name: 'Good', min_percentage: 80, max_percentage: 89, color: '#059669' },
-              { name: 'Average', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
-              { name: 'Below Average', min_percentage: 60, max_percentage: 69, color: '#DC2626' },
-              { name: 'Fail', min_percentage: 0, max_percentage: 59, color: '#991B1B' }
+              { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
+              { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
+              { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
+              { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
+              { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
+              { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
             ]
           }
-        }
-      ];
-      setQuizzes(mockQuizzes);
-      setIsLoading(false);
+        }));
+        
+        setQuizzes(transformedQuizzes);
+      } else {
+        console.log('📝 No quizzes found in database');
+        setQuizzes([]);
+      }
     } catch (error) {
-      console.error('Error loading quizzes:', error);
+      console.error('❌ Error loading quizzes:', error);
+      setQuizzes([]);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -725,7 +567,13 @@ const ManageQuizzes: React.FC = () => {
           setQuizzes([...quizzes, quiz]);
         }
         
-        setShowCreateQuizModal(false);
+        // Close appropriate modal and reset state
+        if (editingQuiz) {
+          setShowEditQuizModal(false);
+          setEditingQuiz(null);
+        } else {
+          setShowCreateQuizModal(false);
+        }
         
         // Reset form
         setNewQuiz({
@@ -803,11 +651,72 @@ const ManageQuizzes: React.FC = () => {
     alert('Quiz published successfully!');
   };
 
-  const scheduleQuiz = (quizId: number, date: string) => {
+  const unpublishQuiz = (quizId: number) => {
     setQuizzes(quizzes.map(q => 
-      q.id === quizId ? { ...q, scheduled_date: date, is_published: false } : q
+      q.id === quizId ? { ...q, is_published: false } : q
     ));
-    alert('Quiz scheduled successfully!');
+    alert('Quiz unpublished successfully! You can now edit it.');
+  };
+
+  const editQuiz = (quiz: Quiz) => {
+    setEditingQuiz(quiz);
+    setSelectedCourse(quiz.course_id);
+    setSelectedClass(quiz.class_id);
+    
+    // Pre-populate the form with existing quiz data
+    setNewQuiz({
+      title: quiz.title,
+      description: quiz.description,
+      instructions: quiz.instructions || 'Read all questions carefully. You have limited time to complete this quiz.',
+      difficulty: quiz.difficulty || 'beginner',
+      time_limit: quiz.time_limit,
+      questions: quiz.questions || [],
+      is_active: quiz.is_active !== undefined ? quiz.is_active : true,
+      is_published: false, // Always set to false when editing
+      sections: quiz.sections || [],
+      configuration: quiz.configuration || {
+        mocktest_template: false,
+        show_question_marks: true,
+        difficulty_level: 'medium',
+        multichoice_label: 'A,B,C,D',
+        calculator_type: 'none',
+        window_restriction: false,
+        switch_window_warnings: 3,
+        proctoring_enabled: false,
+        max_attempts: 1,
+        leaderboard_enabled: false,
+        answer_shuffle: false,
+        section_order_selection: false,
+        quiz_pause_enabled: false,
+        percentile_ranking: false,
+        randomization_enabled: false,
+        time_per_question: false,
+        auto_submit: true,
+        show_answers_after: 'after_submission',
+        negative_marking: false,
+        negative_marks_value: 0.25,
+        partial_marking: false,
+        question_navigation: true,
+        review_mode: true,
+        full_screen_mode: false,
+        copy_paste_disabled: false,
+        right_click_disabled: false
+      },
+      grading_system: quiz.grading_system || {
+        passing_percentage: 60,
+        grades: [
+          { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
+          { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
+          { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
+          { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
+          { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
+          { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
+        ]
+      },
+      total_marks: quiz.total_marks
+    });
+    
+    setShowEditQuizModal(true);
   };
 
   const duplicateQuiz = (quiz: Quiz) => {
@@ -820,6 +729,31 @@ const ManageQuizzes: React.FC = () => {
     };
     setQuizzes([...quizzes, duplicatedQuiz]);
     alert('Quiz duplicated successfully!');
+  };
+
+  const deleteQuizFromDatabase = async (quiz: Quiz) => {
+    if (window.confirm(`Are you sure you want to delete "${quiz.title}"? This action cannot be undone and will permanently remove the quiz from the database.`)) {
+      try {
+        console.log('🗑️ Deleting quiz:', quiz.title);
+        
+        // Import deleteQuiz function and delete from database
+        const { deleteQuiz } = await import('../utils/supabase');
+        const result = await deleteQuiz(quiz.id);
+        
+        if (result.success) {
+          // Remove from local state only if database deletion succeeded
+          setQuizzes(quizzes.filter(q => q.id !== quiz.id));
+          alert(`✅ Quiz "${quiz.title}" deleted successfully!`);
+          console.log('✅ Quiz deleted from both database and local state');
+        } else {
+          alert(`❌ Failed to delete quiz: ${result.error}`);
+          console.error('❌ Database deletion failed:', result.error);
+        }
+      } catch (error) {
+        console.error('❌ Error during quiz deletion:', error);
+        alert('❌ Error deleting quiz. Please try again.');
+      }
+    }
   };
 
   if (isLoading) {
@@ -1088,13 +1022,20 @@ const ManageQuizzes: React.FC = () => {
                         <CogIcon className="h-5 w-5" />
                       </button>
                       <button
+                        onClick={() => editQuiz(quiz)}
+                        className="text-orange-600 hover:text-orange-900 p-1 rounded"
+                        title="Edit Quiz"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      <button
                         onClick={() => duplicateQuiz(quiz)}
                         className="text-green-600 hover:text-green-900 p-1 rounded"
                         title="Duplicate"
                       >
                         <DocumentDuplicateIcon className="h-5 w-5" />
                       </button>
-                      {!quiz.is_published && (
+                      {!quiz.is_published ? (
                         <button
                           onClick={() => publishQuiz(quiz.id)}
                           className="text-emerald-600 hover:text-emerald-900 p-1 rounded"
@@ -1102,11 +1043,38 @@ const ManageQuizzes: React.FC = () => {
                         >
                           <PlayIcon className="h-5 w-5" />
                         </button>
+                      ) : (
+                        <button
+                          onClick={() => unpublishQuiz(quiz.id)}
+                          className="text-yellow-600 hover:text-yellow-900 p-1 rounded"
+                          title="Unpublish"
+                        >
+                          <PauseIcon className="h-5 w-5" />
+                        </button>
                       )}
                       <button
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this quiz?')) {
-                            setQuizzes(quizzes.filter(q => q.id !== quiz.id));
+                        onClick={async () => {
+                          if (window.confirm('Are you sure you want to delete this quiz? This action cannot be undone and will permanently remove the quiz from the database.')) {
+                            try {
+                              console.log('🗑️ Deleting quiz:', quiz.title);
+                              
+                              // Import deleteQuiz function and delete from database
+                              const { deleteQuiz } = await import('../utils/supabase');
+                              const result = await deleteQuiz(quiz.id);
+                              
+                              if (result.success) {
+                                // Remove from local state only if database deletion succeeded
+                                setQuizzes(quizzes.filter(q => q.id !== quiz.id));
+                                alert(`✅ Quiz "${quiz.title}" deleted successfully!`);
+                                console.log('✅ Quiz deleted from both database and local state');
+                              } else {
+                                alert(`❌ Failed to delete quiz: ${result.error}`);
+                                console.error('❌ Database deletion failed:', result.error);
+                              }
+                            } catch (error) {
+                              console.error('❌ Error during quiz deletion:', error);
+                              alert('❌ Error deleting quiz. Please try again.');
+                            }
                           }
                         }}
                         className="text-red-600 hover:text-red-900 p-1 rounded"
@@ -1740,6 +1708,308 @@ const ManageQuizzes: React.FC = () => {
                   }`}
                 >
                   🚀 Create Professional Quiz
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Quiz Modal */}
+      {showEditQuizModal && (
+        <div 
+          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-75 flex items-center justify-center"
+          style={{ zIndex: 99999 }}
+        >
+          <div className="bg-white p-8 rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">✏️ Edit Professional Quiz</h2>
+              <button
+                onClick={() => {
+                  setShowEditQuizModal(false);
+                  setEditingQuiz(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {editingQuiz && (
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                  <p className="text-orange-800 font-medium">
+                    ✏️ Editing quiz: <strong>{editingQuiz.title}</strong> - 
+                    {courses.find(c => c.id === editingQuiz.course_id)?.name} - 
+                    Class {courseClasses.find(c => c.id === editingQuiz.class_id)?.class_number}
+                  </p>
+                  <p className="text-orange-600 text-sm mt-1">
+                    📝 Quiz is automatically unpublished when edited. You can republish after saving changes.
+                  </p>
+                </div>
+              )}
+              
+              {/* Quiz Basic Info - Same as Create Modal */}
+              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">📝 Quiz Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Quiz Title</label>
+                    <input
+                      type="text"
+                      value={newQuiz.title || ''}
+                      onChange={(e) => setNewQuiz({...newQuiz, title: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter quiz title..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Time Limit (minutes)</label>
+                    <input
+                      type="number"
+                      value={newQuiz.time_limit || 30}
+                      onChange={(e) => setNewQuiz({...newQuiz, time_limit: parseInt(e.target.value)})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      min="5"
+                      max="300"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={newQuiz.description || ''}
+                    onChange={(e) => setNewQuiz({...newQuiz, description: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                    placeholder="Enter quiz description..."
+                  />
+                </div>
+              </div>
+
+              {/* Existing Questions List for Editing */}
+              {newQuiz.questions && newQuiz.questions.length > 0 && (
+                <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Current Questions ({newQuiz.questions.length})</h3>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {newQuiz.questions.map((q, index) => (
+                      <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded">
+                                Q{index + 1}
+                              </span>
+                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                                {q.type}
+                              </span>
+                              <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">
+                                {q.points} pts
+                              </span>
+                            </div>
+                            <p className="font-medium text-gray-900 mb-1">
+                              {q.question.length > 80 ? `${q.question.substring(0, 80)}...` : q.question}
+                            </p>
+                            {q.type === 'multiple-choice' && q.options && (
+                              <div className="text-sm text-gray-600">
+                                Options: {q.options.filter(opt => opt.trim()).length} | 
+                                Correct: {q.options[q.correctAnswer as number] || 'Not set'}
+                              </div>
+                            )}
+                            {q.type === 'true-false' && (
+                              <div className="text-sm text-gray-600">
+                                Correct Answer: {q.correctAnswer}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              const updatedQuestions = newQuiz.questions?.filter((_, i) => i !== index);
+                              setNewQuiz({...newQuiz, questions: updatedQuestions});
+                            }}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Delete Question"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Question Section - Same as Create Modal */}
+              <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">➕ Add New Question</h3>
+                <div className="space-y-4">
+                  {/* Question Type Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Question Type</label>
+                    <select
+                      value={newQuestion.type || 'multiple-choice'}
+                      onChange={(e) => setNewQuestion({...newQuestion, type: e.target.value as any})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="multiple-choice">Multiple Choice</option>
+                      <option value="true-false">True/False</option>
+                      <option value="fill-blank">Fill in the Blank</option>
+                      <option value="numerical">Numerical Answer</option>
+                    </select>
+                  </div>
+
+                  {/* Question Text */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Question</label>
+                    <textarea
+                      value={newQuestion.question || ''}
+                      onChange={(e) => setNewQuestion({...newQuestion, question: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      rows={3}
+                      placeholder="Enter your question here..."
+                    />
+                  </div>
+
+                  {/* Points */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Points</label>
+                      <input
+                        type="number"
+                        value={newQuestion.points || 10}
+                        onChange={(e) => setNewQuestion({...newQuestion, points: parseInt(e.target.value) || 10})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                        min="1"
+                        max="100"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Multiple Choice Options */}
+                  {newQuestion.type === 'multiple-choice' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">Answer Options</label>
+                      <div className="space-y-3">
+                        {(newQuestion.options || ['', '', '', '']).map((option, index) => (
+                          <div key={index} className="flex gap-3 items-center">
+                            <span className="text-sm font-medium text-gray-600 w-8">
+                              {String.fromCharCode(65 + index)}.
+                            </span>
+                            <input
+                              type="text"
+                              value={option}
+                              onChange={(e) => {
+                                const updatedOptions = [...(newQuestion.options || ['', '', '', ''])];
+                                updatedOptions[index] = e.target.value;
+                                setNewQuestion({...newQuestion, options: updatedOptions});
+                              }}
+                              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                              placeholder={`Option ${String.fromCharCode(65 + index)}`}
+                            />
+                            <button
+                              onClick={() => setNewQuestion({...newQuestion, correctAnswer: index})}
+                              className={`px-4 py-3 rounded-lg font-medium transition-colors ${
+                                newQuestion.correctAnswer === index
+                                  ? 'bg-green-500 text-white shadow-lg'
+                                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              }`}
+                            >
+                              {newQuestion.correctAnswer === index ? '✅ Correct' : 'Mark Correct'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* True/False Options */}
+                  {newQuestion.type === 'true-false' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">Correct Answer</label>
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => setNewQuestion({...newQuestion, correctAnswer: 'true'})}
+                          className={`px-6 py-3 rounded-lg font-medium ${
+                            newQuestion.correctAnswer === 'true'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          ✅ True
+                        </button>
+                        <button
+                          onClick={() => setNewQuestion({...newQuestion, correctAnswer: 'false'})}
+                          className={`px-6 py-3 rounded-lg font-medium ${
+                            newQuestion.correctAnswer === 'false'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          ❌ False
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fill in the Blank / Numerical Answer */}
+                  {(newQuestion.type === 'fill-blank' || newQuestion.type === 'numerical') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Correct Answer</label>
+                      <input
+                        type={newQuestion.type === 'numerical' ? 'number' : 'text'}
+                        value={newQuestion.correctAnswer as string || ''}
+                        onChange={(e) => setNewQuestion({...newQuestion, correctAnswer: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                        placeholder={newQuestion.type === 'numerical' ? 'Enter the correct number' : 'Enter the correct answer'}
+                      />
+                    </div>
+                  )}
+
+                  {/* Explanation */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">💡 Explanation (Optional)</label>
+                    <textarea
+                      value={newQuestion.explanation || ''}
+                      onChange={(e) => setNewQuestion({...newQuestion, explanation: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      rows={2}
+                      placeholder="Explain why this is the correct answer..."
+                    />
+                  </div>
+
+                  <button
+                    onClick={addQuestion}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all flex items-center justify-center gap-2 font-medium"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                    Add Question to Quiz
+                  </button>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowEditQuizModal(false);
+                    setEditingQuiz(null);
+                  }}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveQuiz}
+                  disabled={!newQuiz.title || !newQuiz.questions?.length}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                    newQuiz.title && newQuiz.questions?.length
+                      ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-700 hover:to-red-700 shadow-lg'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  ✏️ Save Quiz Changes
                 </button>
               </div>
             </div>

@@ -375,7 +375,7 @@ export const updateQuiz = async (quizId: number, updates: Partial<Quiz>) => {
 
 export const deleteQuiz = async (quizId: number) => {
   try {
-    console.log('🗑️ Deleting quiz:', quizId);
+    console.log('🗑️ Deleting quiz with ID:', quizId);
     
     const response = await fetch(`${supabaseUrl}/rest/v1/class_quizzes?id=eq.${quizId}`, {
       method: 'DELETE',
@@ -384,26 +384,23 @@ export const deleteQuiz = async (quizId: number) => {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-      },
-      mode: 'cors',
-      credentials: 'omit'
+      }
     });
-    
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Delete response error:', response.status, errorText);
       throw new Error(`Failed to delete quiz: ${response.status}`);
     }
+
+    console.log('✅ Quiz deleted successfully from database');
+    return { success: true };
     
-    console.log('✅ Quiz deleted successfully');
-    
-    return {
-      success: true
-    };
-    
-  } catch (error: any) {
-    console.error('❌ Failed to delete quiz:', error);
-    return {
-      success: false,
-      error: error.message
+  } catch (error) {
+    console.error('❌ Error deleting quiz:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
     };
   }
 };
@@ -437,6 +434,76 @@ export const getAllQuizzes = async () => {
       success: false,
       error: error.message,
       quizzes: []
+    };
+  }
+};
+
+export const getQuizzes = async () => {
+  try {
+    console.log('📚 Fetching all quizzes from database...');
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/class_quizzes?select=*`, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Get quizzes response error:', response.status, errorText);
+      throw new Error(`Failed to fetch quizzes: ${response.status}`);
+    }
+
+    const quizzes = await response.json();
+    console.log(`✅ Successfully fetched ${quizzes.length} quizzes from database`);
+    
+    return { 
+      success: true, 
+      quizzes: quizzes 
+    };
+    
+  } catch (error) {
+    console.error('❌ Error fetching quizzes:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      quizzes: []
+    };
+  }
+};
+
+export const clearAllQuizzes = async () => {
+  try {
+    console.log('🗑️ Clearing all quizzes from database...');
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/class_quizzes`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Clear quizzes response error:', response.status, errorText);
+      throw new Error(`Failed to clear quizzes: ${response.status}`);
+    }
+
+    console.log('✅ All quizzes cleared from database');
+    return { success: true };
+    
+  } catch (error) {
+    console.error('❌ Error clearing quizzes:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
     };
   }
 };

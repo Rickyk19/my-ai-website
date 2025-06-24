@@ -206,7 +206,7 @@ const ManageQuizzesEnhanced: React.FC = () => {
   });
 
   useEffect(() => {
-    // Load sample courses immediately for demo purposes
+    // Load sample courses and real quizzes from database
     const sampleCourses: Course[] = [
       {
         id: 1,
@@ -250,8 +250,91 @@ const ManageQuizzesEnhanced: React.FC = () => {
       }
     ];
     setCourses(sampleCourses);
-    setIsLoading(false);
+    
+    // Load real quizzes from database
+    loadQuizzes();
   }, []);
+
+  const loadQuizzes = async () => {
+    try {
+      console.log('📚 Loading quizzes from database...');
+      setIsLoading(true);
+      
+      // Load quizzes from database using the getQuizzes function
+      const { getQuizzes } = await import('../utils/supabase');
+      const result = await getQuizzes();
+      
+      if (result.success && result.quizzes) {
+        console.log(`✅ Loaded ${result.quizzes.length} quizzes from database`);
+        
+        // Transform database quizzes to match our Quiz interface
+        const transformedQuizzes: Quiz[] = result.quizzes.map((dbQuiz: any) => ({
+          id: dbQuiz.id,
+          course_id: dbQuiz.course_id,
+          class_id: dbQuiz.class_id || 1,
+          title: dbQuiz.title,
+          description: dbQuiz.description || '',
+          instructions: dbQuiz.instructions || 'Read all questions carefully.',
+          difficulty: dbQuiz.difficulty || 'beginner',
+          time_limit: dbQuiz.time_limit || 30,
+          questions: dbQuiz.questions || [],
+          created_at: dbQuiz.created_at || new Date().toISOString(),
+          is_active: dbQuiz.is_active !== undefined ? dbQuiz.is_active : true,
+          is_published: dbQuiz.is_published !== undefined ? dbQuiz.is_published : false,
+          sections: dbQuiz.sections || [],
+          configuration: dbQuiz.configuration || {
+            mocktest_template: false,
+            show_question_marks: true,
+            difficulty_level: 'medium',
+            multichoice_label: 'A,B,C,D',
+            calculator_type: 'none',
+            window_restriction: false,
+            switch_window_warnings: 3,
+            proctoring_enabled: false,
+            max_attempts: 1,
+            leaderboard_enabled: false,
+            answer_shuffle: false,
+            section_order_selection: false,
+            quiz_pause_enabled: false,
+            percentile_ranking: false,
+            randomization_enabled: false,
+            time_per_question: false,
+            auto_submit: true,
+            show_answers_after: 'after_submission',
+            negative_marking: false,
+            negative_marks_value: 0.25,
+            partial_marking: false,
+            question_navigation: true,
+            review_mode: true,
+            full_screen_mode: false,
+            copy_paste_disabled: false,
+            right_click_disabled: false
+          },
+          grading_system: dbQuiz.grading_system || {
+            passing_percentage: 70,
+            grades: [
+              { name: 'A+', min_percentage: 90, max_percentage: 100, color: '#10B981' },
+              { name: 'A', min_percentage: 80, max_percentage: 89, color: '#059669' },
+              { name: 'B+', min_percentage: 70, max_percentage: 79, color: '#F59E0B' },
+              { name: 'B', min_percentage: 60, max_percentage: 69, color: '#D97706' },
+              { name: 'C', min_percentage: 50, max_percentage: 59, color: '#DC2626' },
+              { name: 'F', min_percentage: 0, max_percentage: 49, color: '#991B1B' }
+            ]
+          }
+        }));
+        
+        setQuizzes(transformedQuizzes);
+      } else {
+        console.log('📝 No quizzes found in database');
+        setQuizzes([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading quizzes:', error);
+      setQuizzes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedCourse) {
@@ -464,6 +547,98 @@ const ManageQuizzesEnhanced: React.FC = () => {
     }
   };
 
+  const publishQuiz = (quizId: number) => {
+    setQuizzes(quizzes.map(q => 
+      q.id === quizId ? { ...q, is_published: true } : q
+    ));
+    alert('Quiz published successfully!');
+  };
+
+  const unpublishQuiz = (quizId: number) => {
+    setQuizzes(quizzes.map(q => 
+      q.id === quizId ? { ...q, is_published: false } : q
+    ));
+    alert('Quiz unpublished successfully! You can now edit it.');
+  };
+
+  const editQuiz = (quiz: Quiz) => {
+    // Pre-populate the form with existing quiz data
+    setNewQuiz({
+      title: quiz.title,
+      description: quiz.description,
+      instructions: quiz.instructions || 'Read all questions carefully. You have limited time to complete this quiz.',
+      difficulty: quiz.difficulty || 'beginner',
+      time_limit: quiz.time_limit,
+      questions: quiz.questions || [],
+      is_active: quiz.is_active,
+      is_published: false, // Always set to false when editing
+      sections: quiz.sections || [],
+      configuration: quiz.configuration,
+      grading_system: quiz.grading_system
+    });
+    
+    setSelectedCourse(quiz.course_id);
+    setSelectedClass(quiz.class_id);
+    setShowCreateQuizModal(true);
+    
+    alert('📝 Quiz loaded for editing! Make your changes and save to update the quiz.');
+  };
+
+  const deleteQuizFromDatabase = async (quiz: Quiz) => {
+    if (window.confirm(`Are you sure you want to delete "${quiz.title}"? This action cannot be undone and will permanently remove the quiz from the database.`)) {
+      try {
+        console.log('🗑️ Deleting quiz:', quiz.title);
+        
+        // Import deleteQuiz function and delete from database
+        const { deleteQuiz } = await import('../utils/supabase');
+        const result = await deleteQuiz(quiz.id);
+        
+        if (result.success) {
+          // Remove from local state only if database deletion succeeded
+          setQuizzes(quizzes.filter(q => q.id !== quiz.id));
+          alert(`✅ Quiz "${quiz.title}" deleted successfully!`);
+          console.log('✅ Quiz deleted from both database and local state');
+        } else {
+          alert(`❌ Failed to delete quiz: ${result.error}`);
+          console.error('❌ Database deletion failed:', result.error);
+        }
+      } catch (error) {
+        console.error('❌ Error during quiz deletion:', error);
+        alert('❌ Error deleting quiz. Please try again.');
+      }
+    }
+  };
+
+  const clearAllQuizzesFromDatabase = async () => {
+    if (window.confirm('⚠️ WARNING: This will DELETE ALL QUIZZES from the database permanently! This action cannot be undone. Are you absolutely sure?')) {
+      try {
+        console.log('🗑️ Clearing all quizzes from database...');
+        
+        // Delete all quizzes one by one
+        const deletePromises = quizzes.map(async (quiz) => {
+          const { deleteQuiz } = await import('../utils/supabase');
+          return deleteQuiz(quiz.id);
+        });
+        
+        const results = await Promise.all(deletePromises);
+        const successCount = results.filter(r => r.success).length;
+        
+        if (successCount === quizzes.length) {
+          setQuizzes([]);
+          alert(`✅ Successfully deleted all ${successCount} quizzes from the database!`);
+          console.log('✅ All quizzes cleared successfully');
+        } else {
+          alert(`⚠️ Deleted ${successCount} out of ${quizzes.length} quizzes. Some may have failed.`);
+          // Reload quizzes to see what's left
+          loadQuizzes();
+        }
+      } catch (error) {
+        console.error('❌ Error clearing all quizzes:', error);
+        alert('❌ Error clearing quizzes. Please try again.');
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -479,20 +654,37 @@ const ManageQuizzesEnhanced: React.FC = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">🚀 Professional Quiz Management</h1>
-          <p className="text-gray-600">Create advanced quizzes with questions, images, and multiple choice answers</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleCreateQuiz}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all flex items-center gap-2 shadow-lg"
-          >
-            <PlusIcon className="h-5 w-5" />
-            Create Professional Quiz
-          </button>
+      {/* Header Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">🎯 Professional Quiz Suite (Learnyst-Level)</h1>
+            <p className="text-gray-600 mt-2">Advanced quiz management with enterprise features & proctoring</p>
+          </div>
+          <div className="flex gap-3">
+            {quizzes.length > 0 && (
+              <button
+                onClick={clearAllQuizzesFromDatabase}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                title="Clear all demo/fake quizzes from database"
+              >
+                <TrashIcon className="h-5 w-5" />
+                Clear All Demo Data ({quizzes.length})
+              </button>
+            )}
+            <button
+              onClick={handleCreateQuiz}
+              disabled={!selectedCourse || !selectedClass}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                selectedCourse && selectedClass
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg transform hover:scale-105'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <PlusIcon className="h-6 w-6" />
+              Create Professional Quiz
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1010,11 +1202,31 @@ const ManageQuizzesEnhanced: React.FC = () => {
                         <EyeIcon className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this quiz?')) {
-                            setQuizzes(quizzes.filter(q => q.id !== quiz.id));
-                          }
-                        }}
+                        onClick={() => editQuiz(quiz)}
+                        className="text-orange-600 hover:text-orange-900 p-2 rounded"
+                        title="Edit Quiz"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      {!quiz.is_published ? (
+                        <button
+                          onClick={() => publishQuiz(quiz.id)}
+                          className="text-emerald-600 hover:text-emerald-900 p-2 rounded"
+                          title="Publish"
+                        >
+                          <PlayIcon className="h-5 w-5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => unpublishQuiz(quiz.id)}
+                          className="text-yellow-600 hover:text-yellow-900 p-2 rounded"
+                          title="Unpublish"
+                        >
+                          <PauseIcon className="h-5 w-5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteQuizFromDatabase(quiz)}
                         className="text-red-600 hover:text-red-900 p-2 rounded"
                         title="Delete"
                       >
