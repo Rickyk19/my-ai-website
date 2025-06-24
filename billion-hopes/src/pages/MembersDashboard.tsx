@@ -85,7 +85,26 @@ const MembersDashboard: React.FC = () => {
       // Get fresh purchases data with course details
       const result = await getMemberPurchases(data.email);
       if (result.success) {
-        setCourses(result.purchases);
+        console.log('📚 Raw purchases from database:', result.purchases);
+        console.log('📊 Total purchases found:', result.purchases.length);
+        
+        // Remove duplicate courses by course_name using a simpler approach
+        const seenCourseNames = new Set<string>();
+        const uniqueCourses: Course[] = [];
+        
+        for (const course of result.purchases) {
+          if (!seenCourseNames.has(course.course_name)) {
+            seenCourseNames.add(course.course_name);
+            uniqueCourses.push(course);
+          } else {
+            console.log('🔄 Duplicate course removed:', course.course_name);
+          }
+        }
+        
+        console.log('✅ Unique courses after deduplication:', uniqueCourses.length);
+        console.log('📋 Unique course names:', uniqueCourses.map(course => course.course_name));
+        
+        setCourses(uniqueCourses);
       }
     } catch (error) {
       console.error('Error loading member data:', error);
