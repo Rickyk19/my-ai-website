@@ -490,7 +490,7 @@ const Courses: React.FC = () => {
                 <div className="border-t pt-4 mt-auto">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <span className="text-2xl font-bold text-gray-900">₹{course.price.toLocaleString()}</span>
+                      <span className="text-2xl font-bold text-gray-900">₹{(course.price || 0).toLocaleString()}</span>
                       <span className="text-sm text-gray-500 ml-2">One-time payment</span>
                     </div>
                   </div>
@@ -537,7 +537,7 @@ const Courses: React.FC = () => {
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Purchase Course</h2>
                     <h3 className="text-lg text-gray-700">{selectedCourse.name}</h3>
-                    <p className="text-xl font-bold text-blue-600 mt-2">₹{selectedCourse.price.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-blue-600 mt-2">₹{(selectedCourse.price || 0).toLocaleString()}</p>
                   </div>
                   <button
                     onClick={() => setShowPurchaseModal(false)}
@@ -633,7 +633,7 @@ const Courses: React.FC = () => {
                     className="w-full bg-green-600 text-white py-3 px-4 rounded font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <CurrencyDollarIcon className="h-5 w-5" />
-                    Complete Purchase - ₹{selectedCourse.price.toLocaleString()}
+                    Complete Purchase - ₹{(selectedCourse.price || 0).toLocaleString()}
                   </button>
 
                   <p className="text-xs text-gray-500 text-center">

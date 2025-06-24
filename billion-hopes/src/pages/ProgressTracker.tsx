@@ -246,7 +246,7 @@ const ProgressTracker: React.FC = () => {
               <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center">
                 <span className="text-white text-2xl">⭐</span>
               </div>
-              <span className="text-2xl font-bold text-gray-900">{userStats.totalPoints.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-gray-900">{(userStats.totalPoints || 0).toLocaleString()}</span>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Points</h3>
             <p className="text-sm text-gray-600">{userStats.achievementsEarned} achievements earned</p>

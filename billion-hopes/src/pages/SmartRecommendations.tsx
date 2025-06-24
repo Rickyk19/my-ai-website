@@ -340,7 +340,7 @@ const SmartRecommendations: React.FC = () => {
                       <span className="text-sm font-medium text-gray-700 ml-1">{rec.rating}</span>
                     </div>
                     <span className="text-gray-400">•</span>
-                    <span className="text-sm text-gray-600">{rec.enrollments.toLocaleString()} enrolled</span>
+                    <span className="text-sm text-gray-600">{(rec.enrollments || 0).toLocaleString()} enrolled</span>
                   </div>
                   {rec.price && (
                     <span className="text-lg font-bold text-blue-600">{rec.price}</span>

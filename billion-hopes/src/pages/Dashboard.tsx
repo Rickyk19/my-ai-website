@@ -458,6 +458,9 @@ const Dashboard: React.FC = () => {
       case 'course':
         navigate('/add-course');
         break;
+      case 'manage-courses':
+        navigate('/manage-courses');
+        break;
       case 'page':
         setShowPageModal(true);
         break;
@@ -972,7 +975,7 @@ const Dashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-600 text-sm font-medium">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">{value.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-gray-900">{(value || 0).toLocaleString()}</p>
         </div>
         <div className="text-gray-400" style={{ color }}>
           {icon}
@@ -1040,6 +1043,13 @@ const Dashboard: React.FC = () => {
                   >
                     <AcademicCapIcon className="h-4 w-4 inline mr-2" />
                     Add Course
+                  </button>
+                  <button
+                    onClick={() => handleQuickAdd('manage-courses')}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-l-4 border-blue-400"
+                  >
+                    <PencilIcon className="h-4 w-4 inline mr-2 text-blue-600" />
+                    Manage Courses
                   </button>
                   <button
                     onClick={() => navigate('/manage-quizzes')}

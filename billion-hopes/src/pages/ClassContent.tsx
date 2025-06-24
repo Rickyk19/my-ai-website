@@ -784,7 +784,7 @@ const ClassContent: React.FC = () => {
               <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
                 <button
-                  onClick={() => navigate(`/quiz/course/${courseId}/class/${classNumber}`)}
+                  onClick={() => navigate(`/course/${courseId}/class/${classNumber}/quiz`)}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center"
                 >
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">

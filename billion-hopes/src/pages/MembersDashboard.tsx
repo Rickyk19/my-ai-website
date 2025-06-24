@@ -314,7 +314,7 @@ const MembersDashboard: React.FC = () => {
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <TrophyIcon className="h-6 w-6 text-green-600" />
               </div>
-              <span className="text-2xl font-bold text-gray-900">{userStats.totalXP.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-gray-900">{(userStats.totalXP || 0).toLocaleString()}</span>
             </div>
             <h3 className="font-semibold text-gray-900">Total XP</h3>
             <p className="text-gray-600 text-sm">Experience points earned</p>
@@ -337,7 +337,7 @@ const MembersDashboard: React.FC = () => {
                 <CalendarIcon className="h-6 w-6 text-purple-600" />
               </div>
               <span className="text-sm font-bold text-gray-900">
-                ₹{totalInvestment.toLocaleString()}
+                ₹{(totalInvestment || 0).toLocaleString()}
               </span>
             </div>
             <h3 className="font-semibold text-gray-900">Total Investment</h3>
@@ -445,7 +445,7 @@ const MembersDashboard: React.FC = () => {
                         <span>👨‍🏫 {selectedCourse.course_details.instructor}</span>
                         <span>⏱️ {selectedCourse.course_details.duration}</span>
                         <span>📊 {selectedCourse.course_details.level}</span>
-                        <span>💰 ₹{selectedCourse.amount.toLocaleString()}</span>
+                        <span>💰 ₹{(selectedCourse.amount || 0).toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -457,33 +457,29 @@ const MembersDashboard: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Action Buttons */}
+                {/* Action Buttons - Only Certificate */}
                 <div className="flex gap-4 mb-6">
-                  {selectedCourse.course_details?.demo_pdf_url && (
-                    <button
-                      onClick={() => downloadPDF(selectedCourse.course_details!.demo_pdf_url, selectedCourse.course_name)}
-                      className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                    >
-                      <DocumentArrowDownIcon className="h-5 w-5" />
-                      Download PDF
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleQuizClick(selectedCourse.course_details?.id || selectedCourse.id, 1)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded hover:from-purple-700 hover:to-pink-700 transition-all"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clipRule="evenodd"/>
-                    </svg>
-                    Quiz (Class 1)
-                  </button>
                   {selectedCourse.course_details?.certificate_available && (
                     <button
-                      onClick={() => downloadCertificate(selectedCourse.course_name)}
-                      className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                      onClick={() => {
+                        // TODO: Check if all classes completed before allowing certificate download
+                        const allClassesCompleted = false; // This should be calculated based on actual progress
+                        if (allClassesCompleted) {
+                          downloadCertificate(selectedCourse.course_name);
+                        } else {
+                          alert('Complete all classes to unlock your certificate!');
+                        }
+                      }}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                        false // Replace with actual completion check
+                          ? 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={true} // Enable when course completion logic is implemented
                     >
                       <AcademicCapIcon className="h-5 w-5" />
                       Get Certificate
+                      {!false && <span className="text-xs ml-2">(Complete all classes)</span>}
                     </button>
                   )}
                 </div>

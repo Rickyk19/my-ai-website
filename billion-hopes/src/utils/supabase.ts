@@ -508,3 +508,110 @@ export const clearAllQuizzes = async () => {
   }
 };
 
+// Course Management Functions using direct fetch to avoid CORS issues
+
+export const getCourses = async () => {
+  try {
+    console.log('📚 Fetching all courses...');
+    
+    const response = await corsRequest('courses?select=*&order=created_at.desc');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch courses: ${response.status} ${response.statusText}`);
+    }
+    
+    const courses = await response.json();
+    console.log(`✅ Found ${courses.length} courses`);
+    
+    return {
+      success: true,
+      courses: courses
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to fetch courses:', error);
+    return {
+      success: false,
+      error: error.message,
+      courses: []
+    };
+  }
+};
+
+export const updateCourse = async (courseId: number, updates: any) => {
+  try {
+    console.log('📝 Updating course:', courseId);
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/courses?id=eq.${courseId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      mode: 'cors',
+      credentials: 'omit',
+      body: JSON.stringify({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update course: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ Course updated successfully');
+    
+    return {
+      success: true,
+      course: result[0]
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to update course:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+export const deleteCourse = async (courseId: number) => {
+  try {
+    console.log('🗑️ Deleting course:', courseId);
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/courses?id=eq.${courseId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      mode: 'cors',
+      credentials: 'omit'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete course: ${response.status}`);
+    }
+    
+    console.log('✅ Course deleted successfully');
+    
+    return {
+      success: true
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to delete course:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
