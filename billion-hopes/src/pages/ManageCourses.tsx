@@ -13,7 +13,9 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   XMarkIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  VideoCameraIcon,
+  ChatBubbleLeftIcon
 } from '@heroicons/react/24/outline';
 import supabase, { getCourses, updateCourse, deleteCourse } from '../utils/supabase';
 
@@ -40,8 +42,10 @@ interface Course {
   video_files?: string[]; // Array of video file URLs
   additional_materials?: string[]; // Array of additional material URLs
   student_comments?: string; // Student feedback/comments
+  student_feedback?: any[]; // Student feedback/comments as array
   assignment_files?: string[]; // Assignment PDFs
   quiz_files?: string[]; // Quiz materials
+  course_rating?: number; // Course rating 0-5
 }
 
 const ManageCourses: React.FC = () => {
