@@ -107,12 +107,11 @@ const StudentQuizInterface: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Load YOUR quiz from Course 1, Class 1 directly
+      // Load YOUR quiz from Course 1, Class 1 directly - this is connected to admin dashboard
       const { getQuiz } = await import('../utils/supabase');
-              console.log('🎯 Loading your "Introduction to AI" quiz from Course 1, Class 1...');
-        const result = await getQuiz(1, 1);
-        console.log('📋 Raw quiz result:', result);
-        console.log('🔍 Course ID 1, Class ID 1 - checking if this matches your admin setup...');
+      console.log('🎯 Loading quiz from Course 1, Class 1...');
+      const result = await getQuiz(1, 1);
+      console.log('📋 Raw quiz result:', result);
       
       if (result && result.success && result.quiz) {
         console.log('✅ Loaded quiz data:', result.quiz);
@@ -140,14 +139,7 @@ const StudentQuizInterface: React.FC = () => {
           if (course) {
             courseName = course.name;
             console.log('✅ Found Course 1:', courseName);
-            // Get the class data from the same structure as admin
-            if (course.classes && course.classes.length > 0) {
-              className = course.classes[0].name; // Class 1
-              console.log('✅ Found Class 1:', className);
-            }
           }
-        } else {
-          console.error('❌ Failed to load courses data:', coursesResult);
         }
         
         // Transform database quiz data to match our interface
@@ -322,6 +314,8 @@ const StudentQuizInterface: React.FC = () => {
       </div>
     );
   }
+
+
 
   if (!quizStarted) {
     return (

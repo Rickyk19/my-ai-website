@@ -135,6 +135,17 @@ interface QuizSection {
 const ManageQuizzes: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseClasses, setCourseClasses] = useState<CourseClass[]>([]);
+  
+  // Helper function to format class title without duplication
+  const formatClassTitle = (classItem: { class_number: number; title: string }) => {
+    const title = classItem.title;
+    // Check if title already starts with "Class {number}:"
+    if (title.startsWith(`Class ${classItem.class_number}:`)) {
+      return title; // Use title as-is
+    } else {
+      return `Class ${classItem.class_number}: ${title}`; // Add class number prefix
+    }
+  };
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
@@ -218,20 +229,25 @@ const ManageQuizzes: React.FC = () => {
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    // Load courses and quizzes from Supabase database
+    // Load courses, classes, and quizzes from Supabase database
     loadCourses();
+    loadAllCourseClasses();
     loadQuizzes();
   }, []);
 
+  // Re-process quizzes when courseClasses data becomes available
   useEffect(() => {
-    if (courses.length > 0) {
-      loadAllCourseClasses();
+    if (courseClasses.length > 0) {
+      console.log('🔄 Course classes loaded, re-processing quiz class mappings...');
+      // Reload quizzes to fix the class_id mapping now that we have courseClasses data
+      loadQuizzes();
     }
-  }, [courses]);
+  }, [courseClasses]);
 
   useEffect(() => {
     if (selectedCourse) {
-      loadCourseClasses(selectedCourse);
+      // Don't reload classes when selecting a course - we already have all classes loaded
+      console.log(`Course ${selectedCourse} selected. Classes already loaded.`);
     }
   }, [selectedCourse]);
 
@@ -297,7 +313,7 @@ const ManageQuizzes: React.FC = () => {
           duration_minutes: dbClass.duration_minutes || 45
         }));
         
-        // Add to existing classes instead of replacing them
+        // Replace classes for this course only (no duplicates)
         setCourseClasses(prevClasses => {
           const filteredClasses = prevClasses.filter(c => c.course_id !== courseId);
           return [...filteredClasses, ...transformedClasses];
@@ -507,10 +523,17 @@ const ManageQuizzes: React.FC = () => {
             }
           }
 
+          // Find the actual class_id from course_classes table using course_id and class_number
+          const actualClass = courseClasses.find(c => 
+            c.course_id === dbQuiz.course_id && c.class_number === dbQuiz.class_number
+          );
+          
+          console.log(`🔍 Quiz "${dbQuiz.title}": course_id=${dbQuiz.course_id}, class_number=${dbQuiz.class_number}, actualClass=${actualClass ? `${actualClass.id} (${actualClass.title})` : 'NOT FOUND'}, courseClasses.length=${courseClasses.length}`);
+          
           return {
             id: dbQuiz.id,
             course_id: dbQuiz.course_id,
-            class_id: dbQuiz.class_id || dbQuiz.course_id * 10 + 1, // Generate proper class_id if not specified
+            class_id: actualClass?.id || dbQuiz.course_id * 10 + (dbQuiz.class_number || 1), // Use actual class ID or fallback
             title: dbQuiz.title,
             description: dbQuiz.description || '',
             instructions: dbQuiz.instructions || 'Read all questions carefully.',
@@ -691,7 +714,11 @@ const ManageQuizzes: React.FC = () => {
       return;
     }
 
-    if (!selectedCourse || !selectedClass) {
+    // Use course and class from newQuiz (for edit mode) or selected values (for create mode)
+    const courseId = newQuiz.course_id || selectedCourse;
+    const classId = newQuiz.class_id || selectedClass;
+
+    if (!courseId || !classId) {
       alert('Please select both course and class');
       return;
     }
@@ -700,12 +727,12 @@ const ManageQuizzes: React.FC = () => {
       console.log('🔄 Saving quiz to database...');
       
       // Get the class number from the selected class
-      const selectedClassObj = courseClasses.find(c => c.id === selectedClass);
+      const selectedClassObj = courseClasses.find(c => c.id === classId);
       const classNumber = selectedClassObj?.class_number || 1;
       
       // Prepare quiz data for database (match the expected interface)
       const quizData = {
-        course_id: selectedCourse,
+        course_id: courseId,
         class_number: classNumber,
         title: newQuiz.title!,
         description: newQuiz.description || '',
@@ -736,8 +763,8 @@ const ManageQuizzes: React.FC = () => {
         // Update local state
         const quiz: Quiz = {
           id: result.quiz?.id || Date.now(),
-          course_id: selectedCourse,
-          class_id: selectedClass,
+          course_id: courseId,
+          class_id: classId,
           title: newQuiz.title!,
           description: newQuiz.description!,
           instructions: newQuiz.instructions || '',
@@ -792,7 +819,7 @@ const ManageQuizzes: React.FC = () => {
         // If updating, replace existing quiz in state; if creating, add new quiz
         if (isUpdate) {
           // Find and update existing quiz or add new one if not found locally
-          const existingIndex = quizzes.findIndex(q => q.course_id === selectedCourse && q.class_id === selectedClass);
+          const existingIndex = quizzes.findIndex(q => q.course_id === courseId && q.class_id === classId);
           if (existingIndex >= 0) {
             const updatedQuizzes = [...quizzes];
             updatedQuizzes[existingIndex] = quiz;
@@ -874,7 +901,7 @@ const ManageQuizzes: React.FC = () => {
         const imageCount = newQuiz.questions!.filter(q => q.image_url).length;
         const imageText = imageCount > 0 ? `\n🖼️ Images: ${imageCount} questions with images` : '';
         
-        alert(`${actionMessage}\n\n📚 Course: ${courses.find(c => c.id === selectedCourse)?.name}\n📖 Class: ${classNumber}\n❓ Questions: ${newQuiz.questions!.length}\n⏱️ Time Limit: ${newQuiz.time_limit} minutes${imageText}\n\nStudents can now access this quiz!`);
+        alert(`${actionMessage}\n\n📚 Course: ${courses.find(c => c.id === courseId)?.name}\n📖 Class: ${classNumber}\n❓ Questions: ${newQuiz.questions!.length}\n⏱️ Time Limit: ${newQuiz.time_limit} minutes${imageText}\n\nStudents can now access this quiz!`);
       } else {
         console.error('❌ Failed to save quiz:', result.error);
         alert(`Failed to save quiz: ${result.error}`);
@@ -1015,6 +1042,8 @@ const ManageQuizzes: React.FC = () => {
       instructions: quiz.instructions || 'Read all questions carefully. You have limited time to complete this quiz.',
       difficulty: quiz.difficulty || 'beginner',
       time_limit: quiz.time_limit,
+      course_id: quiz.course_id, // Set the course ID for editing
+      class_id: quiz.class_id,   // Set the class ID for editing
       questions: safeQuestions, // Use the safely processed questions array
       is_active: quiz.is_active !== undefined ? quiz.is_active : true,
       is_published: false, // Always set to false when editing
@@ -1252,9 +1281,11 @@ const ManageQuizzes: React.FC = () => {
               disabled={!selectedCourse}
             >
               <option value="">Choose a class...</option>
-              {courseClasses.map((classItem) => (
+              {courseClasses
+                .filter((classItem) => selectedCourse ? classItem.course_id === selectedCourse : false)
+                .map((classItem) => (
                 <option key={classItem.id} value={classItem.id}>
-                  Class {classItem.class_number}: {classItem.title}
+                  {formatClassTitle(classItem)}
                 </option>
               ))}
             </select>
@@ -1263,7 +1294,7 @@ const ManageQuizzes: React.FC = () => {
                 Please select a course first
               </p>
             )}
-            {selectedCourse && courseClasses.length === 0 && (
+            {selectedCourse && courseClasses.filter(c => c.course_id === selectedCourse).length === 0 && (
               <p className="text-sm text-gray-500 mt-2">
                 No classes available for this course
               </p>
@@ -1404,7 +1435,10 @@ const ManageQuizzes: React.FC = () => {
                         <div className="flex items-center gap-1 text-xs text-blue-700">
                           <span className="font-medium">📖 Class:</span>
                           <span className="font-semibold">
-                            Class {courseClasses.find(c => c.id === quiz.class_id)?.class_number || 'Unknown'}: {courseClasses.find(c => c.id === quiz.class_id)?.title || 'Unknown Class'}
+                            {(() => {
+                              const foundClass = courseClasses.find(c => c.id === quiz.class_id);
+                              return foundClass ? formatClassTitle(foundClass) : 'Unknown Class';
+                            })()}
                           </span>
                         </div>
                       </div>
@@ -2364,6 +2398,86 @@ const ManageQuizzes: React.FC = () => {
                     placeholder="Enter quiz description..."
                   />
                 </div>
+              </div>
+
+              {/* Course and Class Selection for Edit Quiz */}
+              <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">🎓 Course & Class Assignment</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      📚 Select Course
+                    </label>
+                    <select
+                      value={newQuiz.course_id || ''}
+                      onChange={(e) => {
+                        const courseId = e.target.value ? Number(e.target.value) : undefined;
+                        setNewQuiz({
+                          ...newQuiz, 
+                          course_id: courseId,
+                          class_id: undefined // Reset class when course changes
+                        });
+                      }}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                    >
+                      <option value="">Choose a course...</option>
+                      {courses.map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      📖 Select Class
+                    </label>
+                    <select
+                      value={newQuiz.class_id || ''}
+                      onChange={(e) => setNewQuiz({
+                        ...newQuiz, 
+                        class_id: e.target.value ? Number(e.target.value) : undefined
+                      })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      disabled={!newQuiz.course_id}
+                    >
+                      <option value="">Choose a class...</option>
+                      {courseClasses
+                        .filter((classItem) => newQuiz.course_id ? classItem.course_id === newQuiz.course_id : false)
+                        .map((classItem) => (
+                        <option key={classItem.id} value={classItem.id}>
+                          {formatClassTitle(classItem)}
+                        </option>
+                      ))}
+                    </select>
+                    {!newQuiz.course_id && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        Please select a course first
+                      </p>
+                    )}
+                    {newQuiz.course_id && courseClasses.filter(c => c.course_id === newQuiz.course_id).length === 0 && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        No classes available for this course
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                {newQuiz.course_id && newQuiz.class_id && (
+                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-800 font-medium">
+                      ✅ Quiz will be assigned to: {courses.find(c => c.id === newQuiz.course_id)?.name} - 
+                                             {(() => {
+                         const foundClass = courseClasses.find(c => c.id === newQuiz.class_id);
+                         return foundClass ? formatClassTitle(foundClass) : 'Unknown Class';
+                       })()}
+                    </p>
+                    <p className="text-green-600 text-sm mt-1">
+                      This quiz will be available to students enrolled in this specific class.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Existing Questions List for Editing */}
