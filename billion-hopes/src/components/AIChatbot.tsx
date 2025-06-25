@@ -77,6 +77,7 @@ const AIChatbot: React.FC = () => {
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -90,7 +91,18 @@ const AIChatbot: React.FC = () => {
   useEffect(() => {
     loadCoursesFromDatabase();
     checkExistingRegistration();
-  }, []);
+    
+    // Show subtle notification after 8 seconds
+    const timer = setTimeout(() => {
+      if (!isOpen) {
+        setShowNotification(true);
+        // Hide notification after 6 seconds
+        setTimeout(() => setShowNotification(false), 6000);
+      }
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   // Check if user is already registered (using localStorage)
   const checkExistingRegistration = () => {
@@ -105,6 +117,40 @@ const AIChatbot: React.FC = () => {
         localStorage.removeItem('billionHopesChatbotUser');
       }
     }
+  };
+
+  // Reset registration and clear all data
+  const resetRegistration = () => {
+    // Clear localStorage
+    localStorage.removeItem('billionHopesChatbotUser');
+    
+    // Reset all states
+    setIsRegistered(false);
+    setStudentInfo({
+      email: '',
+      mobile_number: '',
+      first_name: '',
+      last_name: ''
+    });
+    setRegistrationError('');
+    setRegistrationLoading(false);
+    
+    // Clear chat messages and reset to initial state
+    setMessages([
+      {
+        id: 1,
+        text: "🔄 **Registration Reset!** 🎓\n\nYour previous registration has been cleared. Please enter your details again to access our AI Course Assistant.\n\n✨ **Fresh Start Benefits:**\n• Update your contact information\n• Get latest course recommendations\n• Access newest features\n• Personalized experience\n\nReady to begin again?",
+        isBot: true,
+        timestamp: new Date(),
+        suggestions: [
+          "What's new since last time?",
+          "Show me all courses",
+          "Tell me about latest features"
+        ]
+      }
+    ]);
+    
+    console.log('🔄 Registration reset - ready for new entry');
   };
 
   // Load real courses from database
@@ -217,7 +263,7 @@ const AIChatbot: React.FC = () => {
         // Add welcome message
         const welcomeMessage: Message = {
           id: Date.now(),
-          text: `🎉 **Welcome ${studentInfo.first_name || 'there'}!** 🚀\n\nThank you for registering! Your information has been saved securely.\n\n📧 Email: ${studentInfo.email}\n📱 Mobile: ${studentInfo.mobile_number}\n\nNow you have full access to our AI Course Assistant! I can help you:\n\n🎓 Explore all 20+ courses\n💰 Get pricing information\n👨‍🏫 Meet our instructors\n⭐ Read student success stories\n🎯 Get personalized recommendations\n\nWhat would you like to know about our courses?`,
+          text: `🎉 **Welcome ${studentInfo.first_name || 'there'}!** 🚀\n\nThank you for registering! Your information has been saved securely.\n\n📧 Email: ${studentInfo.email}\n📱 Mobile: ${studentInfo.mobile_number}\n\nNow you have full access to our AI Course Assistant! I can help you:\n\n🎓 Explore all 20+ courses\n💰 Get pricing information\n👨‍🏫 Meet our instructors\n⭐ Read student success stories\n🎯 Get personalized recommendations\n\n💡 **Need to change details?** Click the 🔄 Reset button in the header or type "reset" anytime!\n\nWhat would you like to know about our courses?`,
           isBot: true,
           timestamp: new Date(),
           suggestions: [
@@ -275,14 +321,14 @@ const AIChatbot: React.FC = () => {
         
         const welcomeBackMessage: Message = {
           id: Date.now(),
-          text: `👋 **Welcome back ${studentInfo.first_name || 'there'}!** 🎉\n\nGreat to see you again! Your session has been updated.\n\n📧 ${studentInfo.email}\n📱 ${studentInfo.mobile_number}\n\nI'm here to help you explore our courses and find the perfect learning path for you!\n\nWhat can I help you with today?`,
+          text: `👋 **Welcome back ${studentInfo.first_name || 'there'}!** 🎉\n\nGreat to see you again! Your session has been updated.\n\n📧 ${studentInfo.email}\n📱 ${studentInfo.mobile_number}\n\nI'm here to help you explore our courses and find the perfect learning path for you!\n\n🔄 **Want to use different details?** Click the Reset button above or type "reset"!\n\nWhat can I help you with today?`,
           isBot: true,
           timestamp: new Date(),
           suggestions: [
             "What's new in courses?",
             "Show me AI courses",
             "Course recommendations",
-            "Pricing information",
+            "Reset my registration",
             "Success stories"
           ]
         };
@@ -306,6 +352,15 @@ const AIChatbot: React.FC = () => {
     visualData?: any;
   } => {
     const message = userMessage.toLowerCase();
+
+    // Reset Registration Commands
+    if (message.includes('reset') || message.includes('change details') || message.includes('new registration') || message.includes('update info') || message.includes('refresh registration')) {
+      resetRegistration();
+      return {
+        text: "🔄 **Registration Reset Successfully!** ✨\n\nYour registration has been cleared! The form will appear after this message so you can:\n\n🆕 **Enter new details**\n📧 **Update email address**\n📱 **Change mobile number**\n👤 **Update your name**\n\nThis is useful if:\n• You want to use a different email\n• You changed your phone number\n• Someone else wants to use the chatbot\n• You want to start fresh\n\nThe registration form will appear in 2 seconds...",
+        suggestions: []
+      };
+    }
 
     // Show All Courses
     if (message.includes('show') && (message.includes('course') || message.includes('all'))) {
@@ -488,12 +543,12 @@ const AIChatbot: React.FC = () => {
 
     // Default response for general queries
     return {
-      text: "🤖 I'm here to help you with everything about Billion Hopes!\n\nI can provide information about:\n\n🎓 **Courses & Pricing**\n⭐ **Student Reviews**\n🚀 **Website Features**\n🔐 **Members Area Access**\n🛠️ **Technical Support**\n💡 **Learning Guidance**\n\nWhat specific information would you like to know? Just ask me anything!",
+      text: "🤖 I'm here to help you with everything about Billion Hopes!\n\nI can provide information about:\n\n🎓 **Courses & Pricing**\n⭐ **Student Reviews**\n🚀 **Website Features**\n🔐 **Members Area Access**\n🛠️ **Technical Support**\n💡 **Learning Guidance**\n\n💡 **Pro Tip:** Type 'reset' anytime to change your registration details!\n\nWhat specific information would you like to know? Just ask me anything!",
       suggestions: [
         "Tell me about courses",
         "What are the prices?",
         "Show student reviews",
-        "Website features",
+        "Reset registration",
         "How to get started?"
       ]
     };
@@ -543,43 +598,84 @@ const AIChatbot: React.FC = () => {
 
   return (
     <>
-      {/* Enhanced Floating Chat Button */}
-      <motion.button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-40 w-18 h-18 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all ${isOpen ? 'hidden' : 'flex'} items-center justify-center group`}
-        whileHover={{ scale: 1.15, rotate: 5 }}
-        whileTap={{ scale: 0.9 }}
-        initial={{ scale: 0, rotate: 180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ delay: 2, type: "spring", stiffness: 200 }}
-      >
-        <div className="relative">
-          <ChatBubbleLeftRightIcon className="h-8 w-8 group-hover:rotate-12 transition-transform" />
+      {/* Simple notification popup - appears briefly */}
+      <AnimatePresence>
+        {showNotification && !isOpen && (
           <motion.div
-            className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full"
-            animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-          />
-        </div>
-        
-        {/* AI Badge */}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-24 right-6 z-50 max-w-xs"
+          >
+            <div className="bg-white text-gray-800 p-3 rounded-lg shadow-lg border border-gray-200">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <ChatBubbleLeftRightIcon className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Need help choosing a course?</p>
+                  <p className="text-xs text-gray-600">Ask our AI assistant!</p>
+                </div>
+                <button
+                  onClick={() => setShowNotification(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Clean & Modern Floating Chat Button */}
+      <motion.div
+        className={`fixed bottom-6 right-6 z-40 ${isOpen ? 'hidden' : 'block'}`}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
+      >
+        {/* Subtle Ring Effect */}
         <motion.div
-          className="absolute -top-3 -right-3 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center border-2 border-white"
-          animate={{ rotate: [0, 360] }}
-          transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
-        >
-          <SparklesIcon className="h-4 w-4 text-white" />
-        </motion.div>
+          className="absolute inset-0 w-16 h-16 bg-blue-500 rounded-full opacity-20"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0, 0.2] }}
+          transition={{ repeat: Infinity, duration: 3 }}
+        />
         
-        {/* Notification Badge */}
-        <motion.div
-          className="absolute -bottom-2 -left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold"
-          animate={{ y: [-2, 2, -2] }}
-          transition={{ repeat: Infinity, duration: 2 }}
+        {/* Main Button */}
+        <motion.button
+          onClick={() => setIsOpen(true)}
+          className="relative w-14 h-14 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          {courses.length}+ Courses
-        </motion.div>
-      </motion.button>
+          <ChatBubbleLeftRightIcon className="h-7 w-7 group-hover:scale-110 transition-transform duration-200" />
+          
+          {/* Online Indicator */}
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white">
+            <motion.div
+              className="w-full h-full bg-green-400 rounded-full"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            />
+          </div>
+        </motion.button>
+        
+
+      </motion.div>
+
+             {/* Simple tooltip - appears only on desktop */}
+       <motion.div
+         initial={{ opacity: 0, x: 10 }}
+         animate={{ opacity: isOpen ? 0 : 1, x: 0 }}
+         transition={{ delay: 3 }}
+         className={`fixed bottom-8 right-20 z-30 hidden lg:block ${isOpen ? 'hidden' : ''}`}
+       >
+         <div className="bg-gray-800 text-white px-3 py-2 rounded-lg text-sm shadow-lg">
+           Need help? Ask me!
+           <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 w-0 h-0 border-l-4 border-l-gray-800 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
+         </div>
+       </motion.div>
 
       {/* Chat Window */}
       <AnimatePresence>
@@ -588,7 +684,7 @@ const AIChatbot: React.FC = () => {
             initial={{ opacity: 0, y: 100, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.9 }}
-            className="fixed bottom-6 right-6 z-50 w-96 h-[600px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col"
+            className="fixed bottom-6 right-6 z-50 w-96 md:w-96 sm:w-80 w-72 h-[600px] md:h-[600px] sm:h-[500px] h-[450px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col"
           >
             {/* Enhanced Header */}
             <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white p-4 rounded-t-lg flex items-center justify-between relative overflow-hidden">
@@ -622,6 +718,20 @@ const AIChatbot: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-2 relative z-10">
+                {/* Reset Registration Button - Only show when registered */}
+                {isRegistered && (
+                  <motion.button
+                    onClick={resetRegistration}
+                    className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 px-2 py-1 rounded-full text-xs font-bold transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Reset registration and enter new details"
+                  >
+                    <span className="text-white">🔄</span>
+                    <span className="text-white hidden sm:inline">Reset</span>
+                  </motion.button>
+                )}
+                
                 {/* Live Indicator */}
                 <motion.div
                   className="flex items-center gap-1 bg-green-500 px-2 py-1 rounded-full text-xs font-bold"
