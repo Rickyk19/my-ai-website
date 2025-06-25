@@ -2534,20 +2534,22 @@ const ManageQuizzes: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => startEditingQuestion(index)}
-                              className="text-blue-500 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50 transition-colors"
+                              className="flex items-center gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-2 rounded-lg font-medium transition-colors"
                               title="Edit Question"
                             >
                               <PencilIcon className="h-4 w-4" />
+                              <span className="text-sm">Edit</span>
                             </button>
                             <button
                               onClick={() => {
                                 const updatedQuestions = newQuiz.questions?.filter((_, i) => i !== index);
                                 setNewQuiz({...newQuiz, questions: updatedQuestions});
                               }}
-                              className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                              className="flex items-center gap-2 bg-red-100 text-red-700 hover:bg-red-200 px-3 py-2 rounded-lg font-medium transition-colors"
                               title="Delete Question"
                             >
                               <TrashIcon className="h-4 w-4" />
+                              <span className="text-sm">Delete</span>
                             </button>
                           </div>
                         </div>
@@ -2573,11 +2575,20 @@ const ManageQuizzes: React.FC = () => {
                   )}
                 </div>
                 {isEditingQuestion && (
-                  <div className="mb-4 p-3 bg-orange-100 rounded-lg border border-orange-200">
-                    <p className="text-orange-800 text-sm">
-                      ✏️ You are editing Question {editingQuestionIndex !== null ? editingQuestionIndex + 1 : ''}. 
-                      Make your changes below and click "Update Question" to save.
-                    </p>
+                  <div className="mb-4 p-4 bg-orange-100 rounded-lg border-2 border-orange-300 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-orange-200 rounded-full flex items-center justify-center">
+                        <span className="text-orange-800 text-xl">✏️</span>
+                      </div>
+                      <div>
+                        <p className="text-orange-900 font-bold text-base">
+                          EDIT MODE ACTIVE - Question {editingQuestionIndex !== null ? editingQuestionIndex + 1 : ''}
+                        </p>
+                        <p className="text-orange-800 text-sm">
+                          Make your changes below and click "Update Question" to save your edits.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div className="space-y-4">
@@ -2853,26 +2864,36 @@ const ManageQuizzes: React.FC = () => {
                     />
                   </div>
 
-                  <button
-                    onClick={addQuestion}
-                    className={`w-full text-white px-6 py-3 rounded-lg transition-all flex items-center justify-center gap-2 font-medium ${
-                      isEditingQuestion 
-                        ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600' 
-                        : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
-                    }`}
-                  >
-                    {isEditingQuestion ? (
-                      <>
-                        <PencilIcon className="h-5 w-5" />
-                        Update Question
-                      </>
-                    ) : (
-                      <>
-                        <PlusIcon className="h-5 w-5" />
-                        Add Question to Quiz
-                      </>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={addQuestion}
+                      className={`flex-1 text-white px-6 py-3 rounded-lg transition-all flex items-center justify-center gap-2 font-medium shadow-lg ${
+                        isEditingQuestion 
+                          ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600' 
+                          : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                      }`}
+                    >
+                      {isEditingQuestion ? (
+                        <>
+                          <PencilIcon className="h-5 w-5" />
+                          ✏️ UPDATE QUESTION
+                        </>
+                      ) : (
+                        <>
+                          <PlusIcon className="h-5 w-5" />
+                          Add Question to Quiz
+                        </>
+                      )}
+                    </button>
+                    {isEditingQuestion && (
+                      <button
+                        onClick={cancelEditingQuestion}
+                        className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+                      >
+                        Cancel Edit
+                      </button>
                     )}
-                  </button>
+                  </div>
                 </div>
               </div>
               
