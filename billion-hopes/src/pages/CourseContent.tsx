@@ -2,15 +2,31 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { isPurchased } from '../utils/payment';
+import { getCourseClasses, getCourses } from '../utils/supabase';
 
 interface CourseClass {
   id: number;
+  course_id: number;
+  class_number: number;
   title: string;
   description: string;
-  duration: string;
-  videoUrl?: string;
-  pdfUrl?: string;
-  completed: boolean;
+  duration_minutes?: number;
+  video_url?: string;
+  pdf_materials?: string[];
+  learning_objectives?: string[];
+  prerequisites?: string[];
+  quiz_files?: string[];
+  assignment_files?: string[];
+  completed?: boolean;
+}
+
+interface Course {
+  id: number;
+  name: string;
+  description: string;
+  instructor?: string;
+  duration?: string;
+  price?: number;
 }
 
 const CourseContent: React.FC = () => {
@@ -20,65 +36,68 @@ const CourseContent: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<number>(1);
   const [showQuizModal, setShowQuizModal] = useState<boolean>(false);
   const [currentQuizClass, setCurrentQuizClass] = useState<number>(0);
-
-  // Mock course data
-  const courseClasses: CourseClass[] = [
-    {
-      id: 1,
-      title: "Introduction to AI Fundamentals",
-      description: "Learn the basic concepts and principles of Artificial Intelligence",
-      duration: "45 min",
-      videoUrl: "https://example.com/video1",
-      pdfUrl: "/demo-course-guide.pdf",
-      completed: false
-    },
-    {
-      id: 2,
-      title: "Machine Learning Basics",
-      description: "Understanding supervised and unsupervised learning algorithms",
-      duration: "60 min",
-      videoUrl: "https://example.com/video2",
-      pdfUrl: "/demo-course-guide.pdf",
-      completed: false
-    },
-    {
-      id: 3,
-      title: "Neural Networks & Deep Learning",
-      description: "Dive deep into neural networks and deep learning architectures",
-      duration: "75 min",
-      videoUrl: "https://example.com/video3",
-      pdfUrl: "/demo-course-guide.pdf",
-      completed: false
-    },
-    {
-      id: 4,
-      title: "AI Ethics & Future Trends",
-      description: "Explore ethical considerations and future developments in AI",
-      duration: "50 min",
-      videoUrl: "https://example.com/video4",
-      pdfUrl: "/demo-course-guide.pdf",
-      completed: false
-    },
-    {
-      id: 5,
-      title: "Practical AI Applications",
-      description: "Real-world applications and hands-on projects",
-      duration: "90 min",
-      videoUrl: "https://example.com/video5",
-      pdfUrl: "/demo-course-guide.pdf",
-      completed: false
-    }
-  ];
+  const [courseClasses, setCourseClasses] = useState<CourseClass[]>([]);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     // Redirect if course is not purchased
     if (!isPurchased(courseId)) {
       navigate('/courses');
+      return;
     }
+
+    loadCourseData();
   }, [courseId, navigate]);
 
-  const handleQuizClick = (classId: number) => {
-    setCurrentQuizClass(classId);
+  const loadCourseData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Load course details
+      const coursesResult = await getCourses();
+      if (coursesResult.success) {
+        const foundCourse = coursesResult.courses.find((c: Course) => c.id === courseId);
+        if (foundCourse) {
+          setCourse(foundCourse);
+        } else {
+          setError('Course not found');
+          return;
+        }
+      }
+
+      // Load course classes
+      const classesResult = await getCourseClasses(courseId);
+      if (classesResult.success) {
+        const classes = classesResult.classes.map((cls: any) => ({
+          ...cls,
+          completed: false, // You can implement completion tracking later
+          duration: cls.duration_minutes ? `${cls.duration_minutes} min` : '45 min'
+        }));
+        
+        setCourseClasses(classes);
+        
+        // Set first class as selected by default
+        if (classes.length > 0) {
+          setSelectedClass(classes[0].class_number);
+        }
+      } else {
+        console.error('Failed to load course classes:', classesResult.error);
+        setError('Failed to load course content');
+      }
+
+    } catch (error) {
+      console.error('Error loading course data:', error);
+      setError('Failed to load course data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuizClick = (classNumber: number) => {
+    setCurrentQuizClass(classNumber);
     setShowQuizModal(true);
   };
 
@@ -90,6 +109,10 @@ const CourseContent: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const getSelectedClassData = () => {
+    return courseClasses.find(cls => cls.class_number === selectedClass);
   };
 
   const QuizModal = () => (
@@ -107,7 +130,7 @@ const CourseContent: React.FC = () => {
           <button
             onClick={() => {
               setShowQuizModal(false);
-              navigate('/ai-quizzes');
+              navigate(`/student-quiz?course=${courseId}&class=${currentQuizClass}`);
             }}
             className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -124,6 +147,37 @@ const CourseContent: React.FC = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading course content...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Course</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => navigate('/courses')}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Courses
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedClassData = getSelectedClassData();
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -134,8 +188,8 @@ const CourseContent: React.FC = () => {
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         {/* Course Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8">
-          <h1 className="text-3xl font-bold mb-2">AI Mastery Course</h1>
-          <p className="text-blue-100">Complete AI Learning Journey - Members Only</p>
+          <h1 className="text-3xl font-bold mb-2">{course?.name || 'Course'}</h1>
+          <p className="text-blue-100">{course?.description || 'Complete Learning Journey - Members Only'}</p>
           <div className="mt-4 flex items-center space-x-6">
             <span className="flex items-center">
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -148,8 +202,16 @@ const CourseContent: React.FC = () => {
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
               </svg>
-              5+ Hours Content
+              {course?.duration || 'Multiple Hours'} Content
             </span>
+            {course?.instructor && (
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                </svg>
+                {course.instructor}
+              </span>
+            )}
           </div>
         </div>
 
@@ -160,18 +222,20 @@ const CourseContent: React.FC = () => {
             <div className="space-y-3">
               {courseClasses.map((courseClass) => (
                 <motion.div
-                  key={courseClass.id}
+                  key={courseClass.class_number}
                   whileHover={{ scale: 1.02 }}
-                  onClick={() => setSelectedClass(courseClass.id)}
+                  onClick={() => setSelectedClass(courseClass.class_number)}
                   className={`p-4 rounded-lg cursor-pointer transition-all ${
-                    selectedClass === courseClass.id
+                    selectedClass === courseClass.class_number
                       ? 'bg-blue-100 border-2 border-blue-300'
                       : 'bg-white border-2 border-gray-200 hover:border-blue-200'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-sm">Class {courseClass.id}</h3>
-                    <span className="text-xs text-gray-500">{courseClass.duration}</span>
+                    <h3 className="font-medium text-sm">Class {courseClass.class_number}</h3>
+                    <span className="text-xs text-gray-500">
+                      {courseClass.duration_minutes ? `${courseClass.duration_minutes} min` : '45 min'}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-600">{courseClass.title}</p>
                   {courseClass.completed && (
@@ -188,95 +252,137 @@ const CourseContent: React.FC = () => {
 
           {/* Main Content Area */}
           <div className="flex-1 p-8">
-            {courseClasses.map((courseClass) => (
-              selectedClass === courseClass.id && (
-                <motion.div
-                  key={courseClass.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold mb-2">
-                      Class {courseClass.id}: {courseClass.title}
-                    </h2>
-                    <p className="text-gray-600 mb-4">{courseClass.description}</p>
-                    <div className="flex items-center text-sm text-gray-500 mb-6">
-                      <span className="mr-4">⏰ Duration: {courseClass.duration}</span>
-                      <span>📈 Difficulty: Intermediate</span>
+            {selectedClassData ? (
+              <motion.div
+                key={selectedClassData.class_number}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold mb-2">
+                    Class {selectedClassData.class_number}: {selectedClassData.title}
+                  </h2>
+                  <p className="text-gray-600 mb-4">{selectedClassData.description}</p>
+
+                  {/* Learning Objectives */}
+                  {selectedClassData.learning_objectives && selectedClassData.learning_objectives.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="font-semibold mb-2">🎯 Learning Objectives:</h3>
+                      <ul className="list-disc list-inside text-gray-600 space-y-1">
+                        {selectedClassData.learning_objectives.map((objective, index) => (
+                          <li key={index}>{objective}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Prerequisites */}
+                  {selectedClassData.prerequisites && selectedClassData.prerequisites.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="font-semibold mb-2">📋 Prerequisites:</h3>
+                      <ul className="list-disc list-inside text-gray-600 space-y-1">
+                        {selectedClassData.prerequisites.map((prerequisite, index) => (
+                          <li key={index}>{prerequisite}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Video Section */}
+                {selectedClassData.video_url && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4">🎥 Class Video</h3>
+                    <div className="bg-gray-100 rounded-lg p-8 text-center">
+                      <div className="mb-4">
+                        <svg className="w-16 h-16 mx-auto text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
+                        </svg>
+                      </div>
+                      <p className="text-gray-600 mb-4">Video content will be available here</p>
+                      <a 
+                        href={selectedClassData.video_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block"
+                      >
+                        Watch Video 📺
+                      </a>
                     </div>
                   </div>
+                )}
 
-                  {/* Video Player Placeholder */}
-                  <div className="bg-gray-900 rounded-lg aspect-video mb-6 flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <svg className="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
-                      </svg>
-                      <p className="text-lg">Video Content</p>
-                      <p className="text-sm text-gray-300">Click to play</p>
+                {/* Materials Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {/* PDF Materials */}
+                  {selectedClassData.pdf_materials && selectedClassData.pdf_materials.length > 0 && (
+                    <div className="bg-blue-50 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        📄 Course Materials
+                      </h3>
+                      <div className="space-y-2">
+                        {selectedClassData.pdf_materials.map((pdf, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleDownloadPDF(`/demo-course-guide.pdf`, pdf)}
+                            className="w-full text-left p-3 bg-white rounded-lg hover:bg-blue-100 transition-colors flex items-center"
+                          >
+                            <svg className="w-5 h-5 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"/>
+                            </svg>
+                            <span className="text-sm">{pdf}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quiz Section */}
+                  <div className="bg-purple-50 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      🧠 Class Quiz
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Test your understanding of this class material
+                    </p>
+                    <button
+                      onClick={() => handleQuizClick(selectedClassData.class_number)}
+                      className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      Take Quiz 🚀
+                    </button>
+                  </div>
+                </div>
+
+                {/* Assignment Files */}
+                {selectedClassData.assignment_files && selectedClassData.assignment_files.length > 0 && (
+                  <div className="bg-green-50 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      📝 Assignments
+                    </h3>
+                    <div className="space-y-2">
+                      {selectedClassData.assignment_files.map((assignment, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                          <span className="text-sm">{assignment}</span>
+                          <button className="text-green-600 hover:text-green-700 font-medium">
+                            Download
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex space-x-4 mb-8">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleQuizClick(courseClass.id)}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg flex items-center justify-center"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clipRule="evenodd"/>
-                      </svg>
-                      🧠 Take Quiz
-                    </motion.button>
-                    
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleDownloadPDF(courseClass.pdfUrl!, courseClass.title)}
-                      className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white py-4 px-6 rounded-lg font-semibold hover:from-green-700 hover:to-blue-700 transition-all shadow-lg flex items-center justify-center"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd"/>
-                      </svg>
-                      📄 Download PDF
-                    </motion.button>
-                  </div>
-
-                  {/* Additional Resources */}
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold mb-4">📚 Additional Resources</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer">
-                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Practice Exercises
-                      </li>
-                      <li className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer">
-                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Code Examples
-                      </li>
-                      <li className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer">
-                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Discussion Forum
-                      </li>
-                    </ul>
-                  </div>
-                </motion.div>
-              )
-            ))}
+                )}
+              </motion.div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600">Select a class to view its content</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Quiz Modal */}
       {showQuizModal && <QuizModal />}
     </motion.div>
   );
