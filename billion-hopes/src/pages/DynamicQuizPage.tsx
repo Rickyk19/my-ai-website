@@ -290,6 +290,22 @@ const DynamicQuizPage: React.FC = () => {
 
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">{question.question}</h3>
 
+                    {/* Image Display in Explanation */}
+                    {question.image_url && (
+                      <div className="mb-6">
+                        <img 
+                          src={question.image_url} 
+                          alt="Question illustration" 
+                          className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
+                          onLoad={() => console.log(`🖼️ Image loaded in explanation for question ${index + 1}`)}
+                          onError={(e) => {
+                            console.error(`❌ Image failed to load in explanation for question ${index + 1}`, e);
+                            console.error('❌ Image URL:', question.image_url);
+                          }}
+                        />
+                      </div>
+                    )}
+
                     <div className="mb-6">
                       <h4 className="font-medium text-gray-800 mb-3">Answer Options:</h4>
                       <div className="space-y-2">

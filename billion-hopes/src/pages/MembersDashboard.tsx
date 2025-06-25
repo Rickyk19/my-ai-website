@@ -519,7 +519,7 @@ const MembersDashboard: React.FC = () => {
                               className="text-left w-full group"
                             >
                               <h4 className="font-semibold text-blue-600 group-hover:text-blue-800 transition-colors cursor-pointer">
-                                Class {classItem.class_number}: {classItem.title}
+                                {classItem.title.startsWith(`Class ${classItem.class_number}:`) ? classItem.title : `Class ${classItem.class_number}: ${classItem.title}`}
                               </h4>
                               <p className="text-gray-600 text-sm mt-1">{classItem.description}</p>
                               <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
