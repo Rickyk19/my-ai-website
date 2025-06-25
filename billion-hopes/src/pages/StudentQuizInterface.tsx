@@ -93,6 +93,114 @@ const StudentQuizInterface: React.FC = () => {
   const [answers, setAnswers] = useState<{[key: number]: any}>({});
   const [timeRemaining, setTimeRemaining] = useState(1800); // 30 minutes
   const [showResults, setShowResults] = useState(false);
+  const [realQuiz, setRealQuiz] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load real quiz data from database
+  useEffect(() => {
+    loadQuizData();
+  }, []);
+
+  const loadQuizData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Load YOUR quiz from Course 1, Class 1 directly
+      const { getQuiz } = await import('../utils/supabase');
+              console.log('🎯 Loading your "Introduction to AI" quiz from Course 1, Class 1...');
+        const result = await getQuiz(1, 1);
+        console.log('📋 Raw quiz result:', result);
+        console.log('🔍 Course ID 1, Class ID 1 - checking if this matches your admin setup...');
+      
+      if (result && result.success && result.quiz) {
+        console.log('✅ Loaded quiz data:', result.quiz);
+        
+        // Parse questions if they're stored as JSON string
+        let questions = result.quiz.questions;
+        if (typeof questions === 'string') {
+          try {
+            questions = JSON.parse(questions);
+          } catch (error) {
+            console.error('Failed to parse quiz questions:', error);
+            questions = [];
+          }
+        }
+        
+        // Get the REAL course and class data from the same source as admin dashboard
+        const { getCourses } = await import('../utils/supabase');
+        const coursesResult = await getCourses();
+        let courseName = "Complete Python Programming Masterclass";
+        let className = "Introduction to AI";
+        
+        if (coursesResult.success && coursesResult.courses) {
+          console.log('📚 Available courses from database:', coursesResult.courses);
+          const course = coursesResult.courses.find((c: any) => c.id === 1);
+          if (course) {
+            courseName = course.name;
+            console.log('✅ Found Course 1:', courseName);
+            // Get the class data from the same structure as admin
+            if (course.classes && course.classes.length > 0) {
+              className = course.classes[0].name; // Class 1
+              console.log('✅ Found Class 1:', className);
+            }
+          }
+        } else {
+          console.error('❌ Failed to load courses data:', coursesResult);
+        }
+        
+        // Transform database quiz data to match our interface
+        const transformedQuiz = {
+          title: result.quiz.title,
+          course: courseName,
+          class: `Class 1: ${className}`,
+          totalQuestions: questions.length,
+          totalMarks: questions.reduce((sum: number, q: any) => sum + (q.points || 10), 0),
+          timeLimit: result.quiz.time_limit || 30,
+          questions: questions.map((q: any, index: number) => ({
+            id: q.id || index + 1,
+            question: q.question,
+            type: q.type || 'multiple-choice',
+            options: q.options || [],
+            correct: q.correctAnswer !== undefined ? q.correctAnswer : q.correct_answer,
+            points: q.points || 10,
+            image_url: q.image_url // REAL IMAGES FROM ADMIN DASHBOARD!
+          }))
+        };
+        
+        setRealQuiz(transformedQuiz);
+        setTimeRemaining(transformedQuiz.timeLimit * 60);
+        console.log('✅ Quiz loaded with', transformedQuiz.questions.length, 'questions');
+        console.log('📋 ALL QUESTIONS:', transformedQuiz.questions.map((q: any, i: number) => ({
+          index: i + 1,
+          question: q.question?.substring(0, 50) + '...',
+          has_image: !!q.image_url,
+          image_length: q.image_url?.length || 0
+        })));
+        
+        // Special check for Question 11
+        if (transformedQuiz.questions.length >= 11) {
+          console.log('🎯 Question 11 data:', {
+            question: transformedQuiz.questions[10].question,
+            has_image: !!transformedQuiz.questions[10].image_url,
+            image_preview: transformedQuiz.questions[10].image_url ? transformedQuiz.questions[10].image_url.substring(0, 100) + '...' : 'NO IMAGE'
+          });
+        } else {
+          console.error(`❌ QUIZ ONLY HAS ${transformedQuiz.questions.length} QUESTIONS - CANNOT SHOW QUESTION 11!`);
+        }
+      } else {
+        console.warn('No real quiz found, using demo data');
+        setRealQuiz(null);
+      }
+    } catch (error) {
+      console.error('Failed to load quiz data:', error);
+      setError('Failed to load quiz. Please try again.');
+      setRealQuiz(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const demoQuiz = {
     title: "Python Basics - Variables and Data Types",
@@ -143,6 +251,9 @@ const StudentQuizInterface: React.FC = () => {
     ] as DemoQuestion[]
   };
 
+  // Use real quiz if available, fallback to demo quiz
+  const currentQuizData = realQuiz || demoQuiz;
+
   useEffect(() => {
     if (quizStarted && timeRemaining > 0 && !showResults) {
       const timer = setInterval(() => {
@@ -163,7 +274,7 @@ const StudentQuizInterface: React.FC = () => {
   };
 
   const nextQuestion = () => {
-    if (currentQuestion < demoQuiz.questions.length - 1) {
+    if (currentQuestion < currentQuizData.questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     }
   };
@@ -181,7 +292,7 @@ const StudentQuizInterface: React.FC = () => {
   const calculateScore = () => {
     let score = 0;
     let correct = 0;
-    demoQuiz.questions.forEach((q, idx) => {
+    currentQuizData.questions.forEach((q: any, idx: number) => {
       const userAnswer = answers[idx];
       if (userAnswer !== undefined) {
         if (q.type === 'multiple-choice' && userAnswer === q.correct) {
@@ -197,8 +308,20 @@ const StudentQuizInterface: React.FC = () => {
         }
       }
     });
-    return { score, correct, percentage: (score / demoQuiz.totalMarks) * 100 };
+    return { score, correct, percentage: (score / currentQuizData.totalMarks) * 100 };
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Quiz...</h2>
+          <p className="text-gray-600">Please wait while we load your quiz data</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!quizStarted) {
     return (
@@ -206,28 +329,30 @@ const StudentQuizInterface: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{demoQuiz.title}</h1>
-              <p className="text-gray-600 text-lg">Test your Python fundamentals knowledge</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{currentQuizData.title}</h1>
+              <p className="text-gray-600 text-lg">Test your knowledge</p>
+              {isLoading && <p className="text-blue-600">Loading quiz data...</p>}
+              {error && <p className="text-red-600">Error: {error}</p>}
             </div>
 
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl mb-8 border border-green-200">
-              <h3 className="text-lg font-semibold text-green-800 mb-2">📚 {demoQuiz.course}</h3>
-              <p className="text-green-700">{demoQuiz.class}</p>
+              <h3 className="text-lg font-semibold text-green-800 mb-2">📚 {currentQuizData.course}</h3>
+              <p className="text-green-700">{currentQuizData.class}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-blue-50 p-4 rounded-lg text-center">
                 <ClockIcon className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-600">{demoQuiz.timeLimit}</div>
+                <div className="text-2xl font-bold text-blue-600">{currentQuizData.timeLimit}</div>
                 <div className="text-sm text-blue-800">Minutes</div>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg text-center">
                 <CheckCircleIcon className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-600">{demoQuiz.totalQuestions}</div>
+                <div className="text-2xl font-bold text-purple-600">{currentQuizData.totalQuestions}</div>
                 <div className="text-sm text-purple-800">Questions</div>
               </div>
               <div className="bg-green-50 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-green-600">{demoQuiz.totalMarks}</div>
+                <div className="text-2xl font-bold text-green-600">{currentQuizData.totalMarks}</div>
                 <div className="text-sm text-green-800">Total Marks</div>
               </div>
             </div>
@@ -235,7 +360,7 @@ const StudentQuizInterface: React.FC = () => {
             <div className="bg-gray-50 p-6 rounded-xl mb-8">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">📋 Instructions</h3>
               <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>You have {demoQuiz.timeLimit} minutes to complete the quiz</li>
+                <li>You have {currentQuizData.timeLimit} minutes to complete the quiz</li>
                 <li>Each question shows the marks allocated</li>
                 <li>You can navigate between questions</li>
                 <li>Some questions include images for reference</li>
@@ -287,7 +412,7 @@ const StudentQuizInterface: React.FC = () => {
               <div className="bg-blue-50 p-6 rounded-xl text-center border border-blue-200">
                 <div className="text-3xl font-bold text-blue-600">{results.score}</div>
                 <div className="text-sm text-blue-800">Total Score</div>
-                <div className="text-xs text-blue-600 mt-1">out of {demoQuiz.totalMarks}</div>
+                <div className="text-xs text-blue-600 mt-1">out of {currentQuizData.totalMarks}</div>
               </div>
               <div className={`p-6 rounded-xl text-center border ${passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                 <div className={`text-3xl font-bold ${passed ? 'text-green-600' : 'text-red-600'}`}>
@@ -299,9 +424,9 @@ const StudentQuizInterface: React.FC = () => {
                 </div>
               </div>
               <div className="bg-purple-50 p-6 rounded-xl text-center border border-purple-200">
-                <div className="text-3xl font-bold text-purple-600">{results.correct}/{demoQuiz.questions.length}</div>
+                <div className="text-3xl font-bold text-purple-600">{results.correct}/{currentQuizData.questions.length}</div>
                 <div className="text-sm text-purple-800">Correct Answers</div>
-                <div className="text-xs text-purple-600 mt-1">{demoQuiz.questions.length - results.correct} incorrect</div>
+                <div className="text-xs text-purple-600 mt-1">{currentQuizData.questions.length - results.correct} incorrect</div>
               </div>
               <div className="bg-yellow-50 p-6 rounded-xl text-center border border-yellow-200">
                 <div className="text-3xl font-bold text-yellow-600">
@@ -330,7 +455,7 @@ const StudentQuizInterface: React.FC = () => {
                 <div>
                   <h4 className="font-medium text-gray-800 mb-2">Areas for Improvement:</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    {(demoQuiz.questions.length - results.correct) > 0 && <li>• Review {demoQuiz.questions.length - results.correct} incorrect answers below</li>}
+                    {(currentQuizData.questions.length - results.correct) > 0 && <li>• Review {currentQuizData.questions.length - results.correct} incorrect answers below</li>}
                     {results.percentage < 70 && <li>• Focus on core concepts to reach passing grade</li>}
                     {results.percentage < 50 && <li>• Consider reviewing course materials before retaking</li>}
                     <li>• Study the detailed explanations provided</li>
@@ -345,7 +470,7 @@ const StudentQuizInterface: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">📝 Detailed Question Analysis</h2>
             
             <div className="space-y-8">
-              {demoQuiz.questions.map((question, index) => {
+              {currentQuizData.questions.map((question: any, index: number) => {
                 const userAnswer = answers[index];
                 const correctAnswer = question.correct;
                 const isCorrect = userAnswer === correctAnswer;
@@ -385,7 +510,7 @@ const StudentQuizInterface: React.FC = () => {
                       <div className="mb-6">
                         <h4 className="font-medium text-gray-800 mb-3">Answer Options:</h4>
                         <div className="space-y-2">
-                          {question.options.map((option, optionIndex) => {
+                          {question.options.map((option: string, optionIndex: number) => {
                             const isUserChoice = userAnswer === optionIndex;
                             const isCorrectChoice = correctAnswer === optionIndex;
                             
@@ -603,7 +728,7 @@ const StudentQuizInterface: React.FC = () => {
     );
   }
 
-  const question = demoQuiz.questions[currentQuestion];
+  const question = currentQuizData.questions[currentQuestion];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -612,9 +737,9 @@ const StudentQuizInterface: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-gray-900">{demoQuiz.title}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{currentQuizData.title}</h1>
               <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                Question {currentQuestion + 1} of {demoQuiz.questions.length}
+                Question {currentQuestion + 1} of {currentQuizData.questions.length}
               </span>
             </div>
             
@@ -637,7 +762,7 @@ const StudentQuizInterface: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
               <h3 className="font-semibold text-gray-900 mb-4">Questions</h3>
               <div className="grid grid-cols-5 gap-2">
-                {demoQuiz.questions.map((_, index) => {
+                {currentQuizData.questions.map((_: any, index: number) => {
                   const hasAnswer = answers[index] !== undefined;
                   return (
                     <button
@@ -679,13 +804,45 @@ const StudentQuizInterface: React.FC = () => {
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">{question.question}</h2>
                 
+                {/* Debug info for ANY question */}
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    🔍 <strong>Current Question {currentQuestion + 1} Debug:</strong> 
+                    Has image: {question.image_url ? 'YES' : 'NO'}
+                    {question.image_url && ` (${question.image_url.length} chars)`}
+                    <br />
+                    Total questions in quiz: {currentQuizData.questions.length}
+                  </p>
+                </div>
+                
+                {/* Debug info for Question 11 */}
+                {currentQuestion === 10 && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      🔍 <strong>Question 11 Debug:</strong> Has image: {question.image_url ? 'YES' : 'NO'}
+                      {question.image_url && ` (${question.image_url.length} chars)`}
+                    </p>
+                  </div>
+                )}
+                
                 {question.image_url && (
                   <div className="mb-6">
                     <img 
                       src={question.image_url} 
                       alt="Question illustration" 
                       className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
+                      onLoad={() => console.log('🖼️ Image loaded successfully for question', currentQuestion + 1)}
+                      onError={(e) => console.error('❌ Image failed to load for question', currentQuestion + 1, e)}
                     />
+                  </div>
+                )}
+                
+                {/* Show if image should be there but isn't */}
+                {currentQuestion === 10 && !question.image_url && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800">
+                      ⚠️ <strong>Expected Image Missing:</strong> Question 11 should have an image but none found!
+                    </p>
                   </div>
                 )}
               </div>
@@ -694,7 +851,7 @@ const StudentQuizInterface: React.FC = () => {
               <div className="mb-8">
                 {question.type === 'multiple-choice' && question.options && (
                   <div className="space-y-3">
-                    {question.options.map((option, index) => (
+                    {question.options.map((option: string, index: number) => (
                       <label
                         key={index}
                         className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:bg-gray-50 ${
@@ -791,7 +948,7 @@ const StudentQuizInterface: React.FC = () => {
                 </button>
 
                 <div className="flex gap-4">
-                  {currentQuestion === demoQuiz.questions.length - 1 ? (
+                  {currentQuestion === currentQuizData.questions.length - 1 ? (
                     <button
                       onClick={submitQuiz}
                       className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all"

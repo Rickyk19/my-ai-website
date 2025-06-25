@@ -615,3 +615,66 @@ export const deleteCourse = async (courseId: number) => {
   }
 };
 
+// Course Classes Management Functions
+
+export const getCourseClasses = async (courseId?: number) => {
+  try {
+    console.log(`📚 Fetching course classes${courseId ? ` for course ${courseId}` : ''}...`);
+    
+    let endpoint = 'course_classes?select=*&order=course_id,class_number';
+    if (courseId) {
+      endpoint = `course_classes?select=*&course_id=eq.${courseId}&order=class_number`;
+    }
+    
+    const response = await corsRequest(endpoint);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch course classes: ${response.status} ${response.statusText}`);
+    }
+    
+    const classes = await response.json();
+    console.log(`✅ Found ${classes.length} course classes${courseId ? ` for course ${courseId}` : ''}`);
+    
+    return {
+      success: true,
+      classes: classes
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to fetch course classes:', error);
+    return {
+      success: false,
+      error: error.message,
+      classes: []
+    };
+  }
+};
+
+export const getAllCourseClasses = async () => {
+  try {
+    console.log('📚 Fetching all course classes...');
+    
+    const response = await corsRequest('course_classes?select=*&order=course_id,class_number');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch all course classes: ${response.status} ${response.statusText}`);
+    }
+    
+    const classes = await response.json();
+    console.log(`✅ Found ${classes.length} total course classes`);
+    
+    return {
+      success: true,
+      classes: classes
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Failed to fetch all course classes:', error);
+    return {
+      success: false,
+      error: error.message,
+      classes: []
+    };
+  }
+};
+

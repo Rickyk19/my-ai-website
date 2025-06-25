@@ -147,6 +147,7 @@ const ManageQuizzes: React.FC = () => {
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeConfigTab, setActiveConfigTab] = useState('general');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const [newQuiz, setNewQuiz] = useState<Partial<Quiz>>({
     title: '',
@@ -277,45 +278,70 @@ const ManageQuizzes: React.FC = () => {
 
   const loadCourseClasses = async (courseId: number) => {
     try {
-      // Generate mock classes for the specific course with unique IDs based on courseId
-      const mockClasses: CourseClass[] = [
-        { id: courseId * 10 + 1, course_id: courseId, class_number: 1, title: "Introduction to AI", description: "Basic AI concepts", duration_minutes: 45 },
-        { id: courseId * 10 + 2, course_id: courseId, class_number: 2, title: "Machine Learning Basics", description: "ML fundamentals", duration_minutes: 60 },
-        { id: courseId * 10 + 3, course_id: courseId, class_number: 3, title: "Neural Networks", description: "Understanding neural networks", duration_minutes: 75 },
-        { id: courseId * 10 + 4, course_id: courseId, class_number: 4, title: "Deep Learning", description: "Advanced deep learning", duration_minutes: 90 },
-        { id: courseId * 10 + 5, course_id: courseId, class_number: 5, title: "AI Applications", description: "Real-world AI applications", duration_minutes: 60 }
-      ];
+      console.log(`📚 Loading real course classes for course ${courseId} from database...`);
       
-      // Add to existing classes instead of replacing them
-      setCourseClasses(prevClasses => {
-        const filteredClasses = prevClasses.filter(c => c.course_id !== courseId);
-        return [...filteredClasses, ...mockClasses];
-      });
+      // Use the real getCourseClasses function from supabase.ts
+      const { getCourseClasses } = await import('../utils/supabase');
+      const result = await getCourseClasses(courseId);
+      
+      if (result.success && result.classes) {
+        console.log(`✅ Loaded ${result.classes.length} real classes for course ${courseId}`);
+        
+        // Transform database classes to match our CourseClass interface
+        const transformedClasses: CourseClass[] = result.classes.map((dbClass: any) => ({
+          id: dbClass.id,
+          course_id: dbClass.course_id,
+          class_number: dbClass.class_number,
+          title: dbClass.title,
+          description: dbClass.description || 'No description available',
+          duration_minutes: dbClass.duration_minutes || 45
+        }));
+        
+        // Add to existing classes instead of replacing them
+        setCourseClasses(prevClasses => {
+          const filteredClasses = prevClasses.filter(c => c.course_id !== courseId);
+          return [...filteredClasses, ...transformedClasses];
+        });
+      } else {
+        console.warn(`No classes found for course ${courseId}:`, result.error);
+        // Keep existing classes for other courses, just filter out this course's classes
+        setCourseClasses(prevClasses => prevClasses.filter(c => c.course_id !== courseId));
+      }
     } catch (error) {
       console.error('Error loading course classes:', error);
     }
   };
 
-  // New function to load all course classes
+  // New function to load all course classes from database
   const loadAllCourseClasses = async () => {
     try {
-      const allClasses: CourseClass[] = [];
+      console.log('📚 Loading ALL course classes from database...');
       
-      // Load classes for all courses
-      for (const course of courses) {
-        const mockClasses: CourseClass[] = [
-          { id: course.id * 10 + 1, course_id: course.id, class_number: 1, title: "Introduction to AI", description: "Basic AI concepts", duration_minutes: 45 },
-          { id: course.id * 10 + 2, course_id: course.id, class_number: 2, title: "Machine Learning Basics", description: "ML fundamentals", duration_minutes: 60 },
-          { id: course.id * 10 + 3, course_id: course.id, class_number: 3, title: "Neural Networks", description: "Understanding neural networks", duration_minutes: 75 },
-          { id: course.id * 10 + 4, course_id: course.id, class_number: 4, title: "Deep Learning", description: "Advanced deep learning", duration_minutes: 90 },
-          { id: course.id * 10 + 5, course_id: course.id, class_number: 5, title: "AI Applications", description: "Real-world AI applications", duration_minutes: 60 }
-        ];
-        allClasses.push(...mockClasses);
+      // Use the real getAllCourseClasses function from supabase.ts
+      const { getAllCourseClasses } = await import('../utils/supabase');
+      const result = await getAllCourseClasses();
+      
+      if (result.success && result.classes) {
+        console.log(`✅ Loaded ${result.classes.length} total real course classes from database`);
+        
+        // Transform database classes to match our CourseClass interface
+        const transformedClasses: CourseClass[] = result.classes.map((dbClass: any) => ({
+          id: dbClass.id,
+          course_id: dbClass.course_id,
+          class_number: dbClass.class_number,
+          title: dbClass.title,
+          description: dbClass.description || 'No description available',
+          duration_minutes: dbClass.duration_minutes || 45
+        }));
+        
+        setCourseClasses(transformedClasses);
+      } else {
+        console.warn('No course classes found in database:', result.error);
+        setCourseClasses([]);
       }
-      
-      setCourseClasses(allClasses);
     } catch (error) {
       console.error('Error loading all course classes:', error);
+      setCourseClasses([]);
     }
   };
 
@@ -691,7 +717,9 @@ const ManageQuizzes: React.FC = () => {
           correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 
                         typeof q.correctAnswer === 'string' ? parseInt(q.correctAnswer as string) || 0 :
                         Array.isArray(q.correctAnswer) ? (q.correctAnswer[0] as number) || 0 : 0,
-          explanation: q.explanation || ''
+          explanation: q.explanation || '',
+          image_url: q.image_url,  // 🖼️ SAVE THE IMAGE URL TO DATABASE!
+          points: q.points || 10   // 📊 Also save points
         }))
       };
 
@@ -842,7 +870,11 @@ const ManageQuizzes: React.FC = () => {
           `${actionEmoji} Quiz "${newQuiz.title}" updated successfully!\n\n📝 The existing quiz for this course/class has been replaced with your new content.` :
           `${actionEmoji} Quiz "${newQuiz.title}" created successfully!`;
         
-        alert(`${actionMessage}\n\n📚 Course: ${courses.find(c => c.id === selectedCourse)?.name}\n📖 Class: ${classNumber}\n❓ Questions: ${newQuiz.questions!.length}\n⏱️ Time Limit: ${newQuiz.time_limit} minutes\n\nStudents can now access this quiz!`);
+        // Count images in questions
+        const imageCount = newQuiz.questions!.filter(q => q.image_url).length;
+        const imageText = imageCount > 0 ? `\n🖼️ Images: ${imageCount} questions with images` : '';
+        
+        alert(`${actionMessage}\n\n📚 Course: ${courses.find(c => c.id === selectedCourse)?.name}\n📖 Class: ${classNumber}\n❓ Questions: ${newQuiz.questions!.length}\n⏱️ Time Limit: ${newQuiz.time_limit} minutes${imageText}\n\nStudents can now access this quiz!`);
       } else {
         console.error('❌ Failed to save quiz:', result.error);
         alert(`Failed to save quiz: ${result.error}`);
@@ -958,14 +990,23 @@ const ManageQuizzes: React.FC = () => {
       if (typeof quiz.questions === 'string') {
         try {
           safeQuestions = JSON.parse(quiz.questions);
+          console.log('📊 Parsed questions from JSON string:', safeQuestions.length, 'questions');
         } catch (error) {
           console.warn('Failed to parse questions JSON for quiz:', quiz.id, error);
           safeQuestions = [];
         }
       } else if (Array.isArray(quiz.questions)) {
         safeQuestions = quiz.questions;
+        console.log('📊 Using array questions directly:', safeQuestions.length, 'questions');
       }
     }
+    
+    // Log image information for debugging
+    const questionsWithImages = safeQuestions.filter(q => q.image_url);
+    console.log(`🖼️ Quiz "${quiz.title}" has ${questionsWithImages.length} questions with images out of ${safeQuestions.length} total questions`);
+    questionsWithImages.forEach((q, index) => {
+      console.log(`  📸 Question ${index + 1}: "${q.question?.substring(0, 30)}..." has image (${q.image_url?.length} chars)`);
+    });
     
     // Pre-populate the form with existing quiz data
     setNewQuiz({
@@ -1110,6 +1151,34 @@ const ManageQuizzes: React.FC = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
+      {/* Auto-save Status Indicator */}
+      {autoSaveStatus !== 'idle' && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 font-medium ${
+          autoSaveStatus === 'saving' ? 'bg-blue-500 text-white' :
+          autoSaveStatus === 'saved' ? 'bg-green-500 text-white' :
+          'bg-red-500 text-white'
+        }`}>
+          {autoSaveStatus === 'saving' && (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <span>Saving image...</span>
+            </>
+          )}
+          {autoSaveStatus === 'saved' && (
+            <>
+              <span>✅</span>
+              <span>Image saved to database!</span>
+            </>
+          )}
+          {autoSaveStatus === 'error' && (
+            <>
+              <span>❌</span>
+              <span>Failed to save image</span>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -1818,7 +1887,17 @@ const ManageQuizzes: React.FC = () => {
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">Question Text</label>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('question-image')?.click()}
+                        className="flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
+                      >
+                        <span>📷</span>
+                        <span>Add Image</span>
+                      </button>
+                    </div>
                     <textarea
                       value={newQuestion.question || ''}
                       onChange={(e) => setNewQuestion({...newQuestion, question: e.target.value})}
@@ -1826,24 +1905,49 @@ const ManageQuizzes: React.FC = () => {
                       rows={3}
                       placeholder="Enter your question here..."
                     />
+                    {newQuestion.image_url && (
+                      <div className="mt-2 text-sm text-green-600 font-medium flex items-center gap-2">
+                        <span>✅</span>
+                        <span>Question image added!</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Image Upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">📷 Question Image (Optional)</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  {/* Enhanced Image Upload Section */}
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border-2 border-dashed border-purple-300">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span className="text-2xl">🖼️</span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Question Image Upload</h3>
+                        <p className="text-sm text-gray-600">Add visual elements to make your questions more engaging</p>
+                      </div>
+                    </div>
+                    
+                    <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 text-center bg-white/50 hover:bg-white/80 transition-colors">
                       <input
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                            // Validate file size (10MB limit)
+                            if (file.size > 10 * 1024 * 1024) {
+                              alert('File size must be less than 10MB');
+                              return;
+                            }
+                            
                             const reader = new FileReader();
-                            reader.onload = (event) => {
+                            reader.onload = async (event) => {
+                              const imageUrl = event.target?.result as string;
                               setNewQuestion({
                                 ...newQuestion,
-                                image_url: event.target?.result as string
+                                image_url: imageUrl
                               });
+                              
+                              // Show immediate feedback
+                              console.log('🖼️ Image uploaded successfully for new question!');
                             };
                             reader.readAsDataURL(file);
                           }
@@ -1851,32 +1955,78 @@ const ManageQuizzes: React.FC = () => {
                         className="hidden"
                         id="question-image"
                       />
-                      <label htmlFor="question-image" className="cursor-pointer">
+                      
+                      <label htmlFor="question-image" className="cursor-pointer block">
                         {newQuestion.image_url ? (
-                          <div>
-                            <img 
-                              src={newQuestion.image_url} 
-                              alt="Question" 
-                              className="max-w-xs mx-auto mb-2 rounded"
-                            />
-                            <p className="text-sm text-green-600">✅ Image uploaded! Click to change</p>
+                          <div className="space-y-4">
+                            <div className="relative inline-block">
+                              <img 
+                                src={newQuestion.image_url} 
+                                alt="Question" 
+                                className="max-w-sm max-h-64 mx-auto rounded-lg shadow-lg border-2 border-gray-200"
+                              />
+                              <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                                ✓
+                              </div>
+                            </div>
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                              <p className="text-sm font-medium text-green-800">✅ Image uploaded successfully!</p>
+                              <p className="text-xs text-green-600 mt-1">Click anywhere to change the image</p>
+                            </div>
                           </div>
                         ) : (
-                          <div>
-                            <div className="text-4xl mb-2">📷</div>
-                            <p className="text-gray-600">Click to upload question image</p>
-                            <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                          <div className="py-8">
+                            <div className="text-6xl mb-4 text-purple-400">📷</div>
+                            <h4 className="text-xl font-bold text-gray-700 mb-2">Upload Question Image</h4>
+                            <p className="text-gray-600 mb-4">Make your questions more visual and engaging</p>
+                            <div className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                              <span>📁</span>
+                              <span>Choose Image File</span>
+                            </div>
+                            <div className="mt-4 text-xs text-gray-500 space-y-1">
+                              <p>✅ Supported formats: PNG, JPG, JPEG, GIF, WebP</p>
+                              <p>📏 Maximum size: 10MB</p>
+                              <p>🎯 Recommended: 800x600px for best quality</p>
+                            </div>
                           </div>
                         )}
                       </label>
-                      {newQuestion.image_url && (
+                    </div>
+                    
+                    {newQuestion.image_url && (
+                      <div className="flex justify-center gap-3 mt-4">
                         <button
-                          onClick={() => setNewQuestion({...newQuestion, image_url: undefined})}
-                          className="mt-2 text-red-500 hover:text-red-700 text-sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setNewQuestion({...newQuestion, image_url: undefined});
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium"
                         >
-                          🗑️ Remove Image
+                          <span>🗑️</span>
+                          <span>Remove Image</span>
                         </button>
-                      )}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById('question-image')?.click();
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
+                        >
+                          <span>🔄</span>
+                          <span>Change Image</span>
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Image Tips */}
+                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2">💡 Image Tips for Better Questions:</h4>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        <li>• Use clear, high-quality images relevant to your question</li>
+                        <li>• Include diagrams, charts, or visual examples</li>
+                        <li>• Make sure text in images is readable</li>
+                        <li>• Consider adding arrows or annotations to highlight key areas</li>
+                      </ul>
                     </div>
                   </div>
 
@@ -2068,14 +2218,26 @@ const ManageQuizzes: React.FC = () => {
                                 {q.points} pts
                               </span>
                               {q.image_url && (
-                                <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded">
-                                  📷 Image
+                                <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">
+                                  🖼️ Has Image
                                 </span>
                               )}
                             </div>
-                            <p className="font-medium text-gray-900 mb-1">
+                            <p className="font-medium text-gray-900 mb-2">
                               {q.question.length > 80 ? `${q.question.substring(0, 80)}...` : q.question}
                             </p>
+                            
+                            {/* Display question image if exists */}
+                            {q.image_url && (
+                              <div className="my-3">
+                                <img 
+                                  src={q.image_url} 
+                                  alt="Question" 
+                                  className="max-w-32 h-20 object-cover rounded-lg border border-gray-200 shadow-sm"
+                                />
+                              </div>
+                            )}
+                            
                             {q.type === 'multiple-choice' && q.options && (
                               <div className="text-sm text-gray-600">
                                 Options: {q.options.filter(opt => opt.trim()).length} | 
@@ -2223,10 +2385,26 @@ const ManageQuizzes: React.FC = () => {
                               <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">
                                 {q.points} pts
                               </span>
+                              {q.image_url && (
+                                <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded">
+                                  📷 Image
+                                </span>
+                              )}
                             </div>
-                            <p className="font-medium text-gray-900 mb-1">
+                            <p className="font-medium text-gray-900 mb-2">
                               {q.question.length > 80 ? `${q.question.substring(0, 80)}...` : q.question}
                             </p>
+                            
+                            {/* Display question image if exists */}
+                            {q.image_url && (
+                              <div className="my-3">
+                                <img 
+                                  src={q.image_url} 
+                                  alt="Question" 
+                                  className="max-w-32 h-20 object-cover rounded-lg border border-gray-200 shadow-sm"
+                                />
+                              </div>
+                            )}
                             {q.type === 'multiple-choice' && q.options && (
                               <div className="text-sm text-gray-600">
                                 Options: {q.options.filter(opt => opt.trim()).length} | 
@@ -2306,7 +2484,17 @@ const ManageQuizzes: React.FC = () => {
 
                   {/* Question Text */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Question</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">Question</label>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('edit-question-image')?.click()}
+                        className="flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
+                      >
+                        <span>📷</span>
+                        <span>Add Image</span>
+                      </button>
+                    </div>
                     <textarea
                       value={newQuestion.question || ''}
                       onChange={(e) => setNewQuestion({...newQuestion, question: e.target.value})}
@@ -2314,6 +2502,134 @@ const ManageQuizzes: React.FC = () => {
                       rows={3}
                       placeholder="Enter your question here..."
                     />
+                    {newQuestion.image_url && (
+                      <div className="mt-2 text-sm text-green-600 font-medium flex items-center gap-2">
+                        <span>✅</span>
+                        <span>Question image added!</span>
+                      </div>
+                    )}
+                    
+                    {/* Hidden image upload input for edit modal */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Validate file size (10MB limit)
+                          if (file.size > 10 * 1024 * 1024) {
+                            alert('File size must be less than 10MB');
+                            return;
+                          }
+                          
+                          const reader = new FileReader();
+                          reader.onload = async (event) => {
+                            const imageUrl = event.target?.result as string;
+                            
+                            // Update the question with the image
+                            setNewQuestion({
+                              ...newQuestion,
+                              image_url: imageUrl
+                            });
+                            
+                            // Auto-save if we're editing an existing question
+                            if (isEditingQuestion && editingQuestionIndex !== null) {
+                              const updatedQuestions = [...(newQuiz.questions || [])];
+                              updatedQuestions[editingQuestionIndex] = {
+                                ...updatedQuestions[editingQuestionIndex],
+                                image_url: imageUrl
+                              };
+                              
+                              setNewQuiz({
+                                ...newQuiz,
+                                questions: updatedQuestions
+                              });
+                              
+                              // Auto-save to database if quiz already exists
+                              if (editingQuiz && selectedCourse && selectedClass) {
+                                console.log('🔄 Auto-saving image upload to database...');
+                                setAutoSaveStatus('saving');
+                                try {
+                                  const selectedClassObj = courseClasses.find(c => c.id === selectedClass);
+                                  const classNumber = selectedClassObj?.class_number || 1;
+                                  
+                                  const quizData = {
+                                    course_id: selectedCourse,
+                                    class_number: classNumber,
+                                    title: newQuiz.title!,
+                                    description: newQuiz.description || '',
+                                    time_limit: newQuiz.time_limit || 30,
+                                    questions: updatedQuestions.map(q => ({
+                                      id: q.id,
+                                      question: q.question,
+                                      options: q.options || [],
+                                      correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 
+                                                    typeof q.correctAnswer === 'string' ? parseInt(q.correctAnswer as string) || 0 :
+                                                    Array.isArray(q.correctAnswer) ? (q.correctAnswer[0] as number) || 0 : 0,
+                                      explanation: q.explanation || '',
+                                      image_url: q.image_url,
+                                      points: q.points || 10
+                                    }))
+                                  };
+                                  
+                                  const { createQuiz } = await import('../utils/supabase');
+                                  const result = await createQuiz(quizData);
+                                  
+                                  if (result.success) {
+                                    console.log('✅ Image auto-saved to database!');
+                                    setAutoSaveStatus('saved');
+                                    setTimeout(() => setAutoSaveStatus('idle'), 3000);
+                                  } else {
+                                    console.error('❌ Failed to auto-save image:', result.error);
+                                    setAutoSaveStatus('error');
+                                    setTimeout(() => setAutoSaveStatus('idle'), 5000);
+                                  }
+                                } catch (error) {
+                                  console.error('❌ Error auto-saving image:', error);
+                                  setAutoSaveStatus('error');
+                                  setTimeout(() => setAutoSaveStatus('idle'), 5000);
+                                }
+                              }
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                      id="edit-question-image"
+                    />
+                    
+                    {/* Image preview and controls for edit modal */}
+                    {newQuestion.image_url && (
+                      <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <img 
+                            src={newQuestion.image_url} 
+                            alt="Question" 
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-purple-800">Question Image Attached</p>
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                type="button"
+                                onClick={() => document.getElementById('edit-question-image')?.click()}
+                                className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              >
+                                Change Image
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setNewQuestion({...newQuestion, image_url: undefined})}
+                                className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                              >
+                                Remove Image
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Points */}
