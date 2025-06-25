@@ -19,6 +19,7 @@ interface QuizQuestion {
   options: string[];
   correctAnswer: number;
   explanation: string;
+  image_url?: string;
 }
 
 interface Quiz {
@@ -73,6 +74,17 @@ const DynamicQuizPage: React.FC = () => {
         setTimeLeft(result.quiz.time_limit * 60);
         setSelectedAnswers(new Array(result.quiz.questions.length).fill(-1));
         console.log('Quiz loaded successfully:', result.quiz.title);
+        console.log('Total questions:', result.quiz.questions.length);
+        
+        // Debug Question 11 specifically
+        if (result.quiz.questions.length >= 11) {
+          const q11 = result.quiz.questions[10];
+          console.log('🎯 Question 11 Debug:', {
+            question: q11.question?.substring(0, 50) + '...',
+            has_image: !!q11.image_url,
+            image_url: q11.image_url?.substring(0, 100) + '...' || 'NONE'
+          });
+        }
       } else {
         setError(result.error || 'Quiz not found for this class');
       }
@@ -532,6 +544,22 @@ const DynamicQuizPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             {currentQ.question}
           </h2>
+          
+          {/* Image Display */}
+          {currentQ.image_url && (
+            <div className="mb-6">
+              <img 
+                src={currentQ.image_url} 
+                alt="Question illustration" 
+                className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
+                onLoad={() => console.log(`🖼️ Image loaded successfully for question ${currentQuestion + 1}`)}
+                onError={(e) => {
+                  console.error(`❌ Image failed to load for question ${currentQuestion + 1}`, e);
+                  console.error('❌ Image URL:', currentQ.image_url);
+                }}
+              />
+            </div>
+          )}
           
           <div className="space-y-4">
             {currentQ.options.map((option, index) => (

@@ -113,6 +113,38 @@ const StudentQuizInterface: React.FC = () => {
       const result = await getQuiz(1, 1);
       console.log('📋 Raw quiz result:', result);
       
+      // 🔍 CRITICAL DEBUG: Check what quizzes actually exist in the database
+      const { getAllQuizzes } = await import('../utils/supabase');
+      const allQuizzesResult = await getAllQuizzes();
+      if (allQuizzesResult.success && allQuizzesResult.quizzes) {
+        console.log('🗂️ ALL QUIZZES IN DATABASE:', allQuizzesResult.quizzes.map((q: any) => ({
+          id: q.id,
+          title: q.title,
+          course_id: q.course_id,
+          class_number: q.class_number,
+          question_count: Array.isArray(q.questions) ? q.questions.length : (typeof q.questions === 'string' ? JSON.parse(q.questions).length : 0)
+        })));
+        
+        // Try to find ANY quiz that has 15 questions (your quiz!)
+        const quizWith15Questions = allQuizzesResult.quizzes.find((q: any) => {
+          const questions = Array.isArray(q.questions) ? q.questions : (typeof q.questions === 'string' ? JSON.parse(q.questions) : []);
+          return questions.length === 15;
+        });
+        
+        if (quizWith15Questions) {
+          console.log('🎯 FOUND YOUR 15-QUESTION QUIZ!', {
+            id: quizWith15Questions.id,
+            title: quizWith15Questions.title,
+            course_id: quizWith15Questions.course_id,
+            class_number: quizWith15Questions.class_number,
+            stored_at: `Course ${quizWith15Questions.course_id}, Class ${quizWith15Questions.class_number}`,
+            looking_for: 'Course 1, Class 1'
+          });
+        } else {
+          console.error('❌ NO QUIZ WITH 15 QUESTIONS FOUND!');
+        }
+      }
+      
       if (result && result.success && result.quiz) {
         console.log('✅ Loaded quiz data:', result.quiz);
         
@@ -128,10 +160,14 @@ const StudentQuizInterface: React.FC = () => {
         }
         
         // Get the REAL course and class data from the same source as admin dashboard
-        const { getCourses } = await import('../utils/supabase');
-        const coursesResult = await getCourses();
+        const { getCourses, getAllCourseClasses } = await import('../utils/supabase');
+        const [coursesResult, classesResult] = await Promise.all([
+          getCourses(),
+          getAllCourseClasses()
+        ]);
+        
         let courseName = "Complete Python Programming Masterclass";
-        let className = "Introduction to AI";
+        let classTitle = "Fundamentals & Introduction";
         
         if (coursesResult.success && coursesResult.courses) {
           console.log('📚 Available courses from database:', coursesResult.courses);
@@ -142,11 +178,31 @@ const StudentQuizInterface: React.FC = () => {
           }
         }
         
+        if (classesResult.success && classesResult.classes) {
+          console.log('📚 Available classes from database:', classesResult.classes);
+          // Find class with course_id=1 and class_number=1
+          const classData = classesResult.classes.find((c: any) => c.course_id === 1 && c.class_number === 1);
+          if (classData) {
+            classTitle = classData.title;
+            console.log('✅ Found Class 1:', classTitle);
+          }
+        }
+        
+        // Helper function to format class title (same as admin dashboard)
+        const formatClassTitle = (classNumber: number, title: string) => {
+          // Check if title already starts with "Class {number}:"
+          if (title.startsWith(`Class ${classNumber}:`)) {
+            return title; // Use title as-is
+          } else {
+            return `Class ${classNumber}: ${title}`; // Add class number prefix
+          }
+        };
+        
         // Transform database quiz data to match our interface
         const transformedQuiz = {
           title: result.quiz.title,
           course: courseName,
-          class: `Class 1: ${className}`,
+          class: formatClassTitle(1, classTitle),
           totalQuestions: questions.length,
           totalMarks: questions.reduce((sum: number, q: any) => sum + (q.points || 10), 0),
           timeLimit: result.quiz.time_limit || 30,
@@ -171,15 +227,28 @@ const StudentQuizInterface: React.FC = () => {
           image_length: q.image_url?.length || 0
         })));
         
-        // Special check for Question 11
+        // Special check for Question 11 - FORCE DEBUGGING
         if (transformedQuiz.questions.length >= 11) {
-          console.log('🎯 Question 11 data:', {
-            question: transformedQuiz.questions[10].question,
-            has_image: !!transformedQuiz.questions[10].image_url,
-            image_preview: transformedQuiz.questions[10].image_url ? transformedQuiz.questions[10].image_url.substring(0, 100) + '...' : 'NO IMAGE'
-          });
+          const q11 = transformedQuiz.questions[10];
+          const rawQ11 = questions[10];
+          
+          console.log('🎯 QUESTION 11 DETAILED DEBUG:');
+          console.log('Question text:', q11.question);
+          console.log('Has image_url:', !!q11.image_url);
+          console.log('Image URL:', q11.image_url || 'NONE');
+          console.log('Raw question keys:', rawQ11 ? Object.keys(rawQ11) : 'NOT FOUND');
+          console.log('Raw image_url:', rawQ11?.image_url || 'NONE');
+          
+          // FORCE ALERT TO SHOW DEBUGGING
+          alert(`Question 11 Debug:
+Question: ${q11.question?.substring(0, 50)}...
+Has Image: ${!!q11.image_url}
+Image URL: ${q11.image_url ? 'EXISTS' : 'MISSING'}
+Raw Image: ${rawQ11?.image_url ? 'EXISTS' : 'MISSING'}`);
+          
         } else {
           console.error(`❌ QUIZ ONLY HAS ${transformedQuiz.questions.length} QUESTIONS - CANNOT SHOW QUESTION 11!`);
+          alert(`ERROR: Quiz only has ${transformedQuiz.questions.length} questions!`);
         }
       } else {
         console.warn('No real quiz found, using demo data');
@@ -245,6 +314,16 @@ const StudentQuizInterface: React.FC = () => {
 
   // Use real quiz if available, fallback to demo quiz
   const currentQuizData = realQuiz || demoQuiz;
+  
+  // Critical debugging for quiz selection
+  console.log('🎯 CRITICAL DEBUG - Quiz Selection:', {
+    has_real_quiz: !!realQuiz,
+    real_quiz_questions: realQuiz?.questions?.length || 0,
+    using_demo: !realQuiz,
+    demo_questions: demoQuiz.questions.length,
+    selected_quiz_questions: currentQuizData.questions.length,
+    selected_quiz_title: currentQuizData.title
+  });
 
   useEffect(() => {
     if (quizStarted && timeRemaining > 0 && !showResults) {
@@ -325,6 +404,16 @@ const StudentQuizInterface: React.FC = () => {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{currentQuizData.title}</h1>
               <p className="text-gray-600 text-lg">Test your knowledge</p>
+              {/* Critical Quiz Source Indicator */}
+              {realQuiz ? (
+                <div className="mt-3 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                  ✅ Real Quiz Loaded ({realQuiz.questions.length} questions)
+                </div>
+              ) : (
+                <div className="mt-3 inline-flex items-center px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
+                  ⚠️ Using Demo Quiz ({demoQuiz.questions.length} questions)
+                </div>
+              )}
               {isLoading && <p className="text-blue-600">Loading quiz data...</p>}
               {error && <p className="text-red-600">Error: {error}</p>}
             </div>
@@ -821,13 +910,37 @@ const StudentQuizInterface: React.FC = () => {
                 
                 {question.image_url && (
                   <div className="mb-6">
+                    <div className="mb-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                      ✅ Image found for Question {currentQuestion + 1}: {question.image_url.substring(0, 50)}...
+                    </div>
                     <img 
                       src={question.image_url} 
                       alt="Question illustration" 
                       className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
                       onLoad={() => console.log('🖼️ Image loaded successfully for question', currentQuestion + 1)}
-                      onError={(e) => console.error('❌ Image failed to load for question', currentQuestion + 1, e)}
+                      onError={(e) => {
+                        console.error('❌ Image failed to load for question', currentQuestion + 1, e);
+                        console.error('❌ Image URL:', question.image_url);
+                      }}
                     />
+                  </div>
+                )}
+                
+                {/* Force show Question 11 image debug info */}
+                {currentQuestion === 10 && (
+                  <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h4 className="font-bold text-yellow-800 mb-2">🔍 Question 11 FULL DEBUG:</h4>
+                    <div className="text-sm text-yellow-800 space-y-1">
+                      <div><strong>Has image_url:</strong> {question.image_url ? 'YES' : 'NO'}</div>
+                      {question.image_url && (
+                        <>
+                          <div><strong>Image URL length:</strong> {question.image_url.length} characters</div>
+                          <div><strong>URL starts with:</strong> {question.image_url.substring(0, 50)}...</div>
+                          <div><strong>URL type:</strong> {question.image_url.startsWith('data:image/') ? 'Base64 Data URL' : 'Regular URL'}</div>
+                        </>
+                      )}
+                      <div><strong>Question object keys:</strong> {Object.keys(question).join(', ')}</div>
+                    </div>
                   </div>
                 )}
                 
