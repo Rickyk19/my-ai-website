@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import ThemeSelector from '../ThemeSelector';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-12">
+    <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 dark:text-gray-400 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           
@@ -187,23 +188,33 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-700 mt-8 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-gray-700 dark:border-gray-800 mt-8 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="mb-4 md:mb-0">
               <p className="text-sm">
                 © 2024 Billion Hopes. All rights reserved.
               </p>
             </div>
-            <div className="flex space-x-6 text-sm">
-              <Link to="/privacy" className="hover:text-white transition-colors">
-                Privacy
-              </Link>
-              <Link to="/terms" className="hover:text-white transition-colors">
-                Terms
-              </Link>
-              <Link to="/cookies" className="hover:text-white transition-colors">
-                Cookies
-              </Link>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {/* Theme Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400 dark:text-gray-500">Theme:</span>
+                <ThemeSelector />
+              </div>
+              
+              {/* Links */}
+              <div className="flex space-x-6 text-sm">
+                <Link to="/privacy" className="hover:text-white dark:hover:text-gray-200 transition-colors">
+                  Privacy
+                </Link>
+                <Link to="/terms" className="hover:text-white dark:hover:text-gray-200 transition-colors">
+                  Terms
+                </Link>
+                <Link to="/cookies" className="hover:text-white dark:hover:text-gray-200 transition-colors">
+                  Cookies
+                </Link>
+              </div>
             </div>
           </div>
         </div>

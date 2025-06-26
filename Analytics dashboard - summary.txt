@@ -1,0 +1,89 @@
+*Create a Analytics Dashboard Page for my Website in Admin Dashboard (create a button above 'Admin Dashboard' button in the sidebar - Seperate Tab (only Admins can see) through admin dashboard* (Do not touch any of the student area functionality) this is for Admin panel !! do not touch any of the working functionality of the website!!
+
+Features I need - 
+
+*1. Visitor & Traffic Analysis*
+
+- Total visitors Count (daily, weekly, monthly).
+
+- Traffic sources (Organic, Direct, Social, Paid Ads, Referrals).
+
+- Geographic location (Country, City).
+
+- Device & browser breakdown (Mobile/Desktop, Chrome/Safari).
+
+*2. User Behavior & Engagement*
+
+- Complete session history (pages visited, clicks, scroll depth).
+
+- Time spent per session (average, max, min).
+
+- Bounce rate & exit pages (where users leave).
+
+- Returning vs. new users ratio.
+
+*3. Course-Specific Tracking*
+
+- Most clicked/interacted course tabs.
+
+- Enquiry form submissions (conversion rate).
+
+- Heatmaps (where users click most).
+
+- Video engagement (watch time, drop-off points).
+
+*4. Paid vs. Free User Segmentation*
+
+- Paid user logins/logouts (frequency, duration).
+
+- Content Interaction – Whether they download study materials, watch videos, or take quizzes.
+
+- Activity comparison (features used by paid vs. free users).
+
+- Upgrade triggers (what actions lead to purchases).
+
+- Churn rate (how many paid users stop engaging).
+
+*5. Student Activity & Progress*
+
+- Study material downloads (who downloaded, how often).
+
+- Quiz performance (pass/fail rates, weak areas).
+
+- Course completion status (who finished vs. abandoned).
+
+- Video lecture engagement (watched vs. skipped).
+
+*6. Conversion & Revenue Metrics*
+
+- Enquiry-to-sale conversion rate.
+
+- Revenue per user (ARPU) & lifetime value (LTV).
+
+- Failed payment tracking & recovery.
+
+- Subscription renewal rates.
+
+*7. Real-Time Monitoring & Alerts*
+
+- Live visitor tracking.
+
+- Instant alerts for high-value actions (e.g., course purchase).
+
+- Unusual activity alerts (traffic spikes, failed logins).
+
+*8. Advanced Features (Optional)*
+
+- AI-Powered Insights:
+
+- Predict churn risk (users likely to leave).
+
+- Recommend personalized offers (e.g., discounts for inactive users).
+
+- Automated Reports:
+
+- Scheduled PDF/email summaries (daily/weekly).
+
+- Custom API Integrations:
+
+- Sync with CRM (e.g., HubSpot), payment gateways (Stripe), or LMS (LearnDash).

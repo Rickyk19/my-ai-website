@@ -10,6 +10,7 @@ import ClassQuiz from './pages/ClassQuiz';
 import DynamicQuizPage from './pages/DynamicQuizPage';
 import Feedback from './pages/Feedback';
 import Dashboard from './pages/Dashboard';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import AddCourse from './pages/AddCourse';
 import ManageCourses from './pages/ManageCourses';
 import ManageQuizzes from './pages/ManageQuizzes';
@@ -29,6 +30,7 @@ import SmartRecommendations from './pages/SmartRecommendations';
 import ProtectedRoute from './components/ProtectedRoute';
 import MemberProtectedRoute from './components/MemberProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import QuizDemoPage from './pages/QuizDemoPage';
 import DatabaseTest from './pages/DatabaseTest';
 
@@ -45,9 +47,10 @@ const SignUp = () => <div>Sign Up Page</div>;
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="courses" element={<Courses />} />
@@ -86,6 +89,11 @@ const App: React.FC = () => {
             <Route path="ai-quizzes" element={<AIQuizzes />} />
             <Route path="community" element={<CommunityForum />} />
             <Route path="recommendations" element={<SmartRecommendations />} />
+            <Route path="analytics-dashboard" element={
+              <ProtectedRoute adminOnly={true}>
+                <AnalyticsDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="dashboard" element={
               <ProtectedRoute adminOnly={true}>
                 <Dashboard />
@@ -135,9 +143,10 @@ const App: React.FC = () => {
             } />
             <Route path="quiz-demo" element={<QuizDemoPage />} />
           </Route>
-        </Routes>
-      </Router>
-    </AuthProvider>
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

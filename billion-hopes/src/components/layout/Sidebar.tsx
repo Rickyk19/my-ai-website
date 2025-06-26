@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDownIcon, ChatBubbleLeftIcon, Cog8ToothIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChatBubbleLeftIcon, Cog8ToothIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
@@ -84,14 +84,14 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="bg-white shadow-lg overflow-y-auto sticky top-24 h-[calc(100vh-6rem)]">
+    <aside className="bg-white dark:bg-gray-800 shadow-lg overflow-y-auto sticky top-24 h-[calc(100vh-6rem)] transition-colors">
       <nav className="p-4 flex flex-col h-full">
         <div className="flex-grow">
           {menuSections.map((section) => (
             <div key={section.title} className="mb-4">
               <button
                 onClick={() => toggleSection(section.title)}
-                className="flex items-center justify-between w-full text-left text-gray-700 hover:text-blue-600 font-medium py-2"
+                className="flex items-center justify-between w-full text-left text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-2 transition-colors"
               >
                 <span>{section.title}</span>
                 <ChevronDownIcon
@@ -114,7 +114,7 @@ const Sidebar: React.FC = () => {
                         <li key={item.path}>
                           <Link
                             to={item.path}
-                            className="block text-gray-600 hover:text-blue-600 py-1"
+                            className="block text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 py-1 transition-colors"
                           >
                             {item.title}
                           </Link>
@@ -128,11 +128,20 @@ const Sidebar: React.FC = () => {
           ))}
         </div>
         
-        <div className="mt-auto border-t border-gray-200 pt-4 space-y-2">
+        <div className="mt-auto border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+          {isAdmin && (
+            <Link
+              to="/analytics-dashboard"
+              className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <ChartBarIcon className="w-5 h-5" />
+              <span>Analytics Dashboard</span>
+            </Link>
+          )}
           {isAdmin && (
             <Link
               to="/dashboard"
-              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <Cog8ToothIcon className="w-5 h-5" />
               <span>Admin Dashboard</span>
@@ -141,7 +150,7 @@ const Sidebar: React.FC = () => {
           
           <Link
             to="/feedback"
-            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <ChatBubbleLeftIcon className="w-5 h-5" />
             <span>Share Feedback</span>
