@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getWorkingAnalyticsDashboardData } from '../services/workingAnalyticsService';
+import { getPaidStudentsAnalyticsData, searchPaidStudentHistory, searchRealPaidStudentHistory } from '../services/paidStudentsService';
 import { 
   ChartBarIcon, 
   UserGroupIcon, 
@@ -20,7 +21,10 @@ import {
   BellIcon,
   ChartPieIcon,
   FireIcon,
-  CalendarIcon
+  CalendarIcon,
+  StarIcon,
+  ShieldCheckIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 
 interface AnalyticsStats {
@@ -81,6 +85,11 @@ const AnalyticsDashboard: React.FC = () => {
 
   const [alerts, setAlerts] = useState<any[]>([]);
 
+  const [paidStudentsData, setPaidStudentsData] = useState<any>({});
+  const [searchEmail, setSearchEmail] = useState<string>('');
+  const [studentSearchResult, setStudentSearchResult] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
   useEffect(() => {
     loadAnalyticsData();
     // Real-time visitor count updates
@@ -95,8 +104,13 @@ const AnalyticsDashboard: React.FC = () => {
     try {
       console.log('🔄 Loading analytics data with WORKING service...');
       
+      // Load main analytics data
       const data = await getWorkingAnalyticsDashboardData();
       console.log('✅ WORKING analytics service loaded:', data);
+      
+      // Load paid students data
+      const paidData = await getPaidStudentsAnalyticsData();
+      console.log('✅ PAID STUDENTS analytics loaded:', paidData);
       
       // Update all state with real data
       console.log('📊 Setting stats:', data.stats);
@@ -109,6 +123,7 @@ const AnalyticsDashboard: React.FC = () => {
       setRealTimeVisitors(data.realTimeVisitors);
       setRecentActivity(data.recentActivity);
       setAlerts(data.activeAlerts);
+      setPaidStudentsData(paidData);
       
       console.log('🎉 Analytics data loaded and state updated - NO MORE ZEROS!');
     } catch (error) {
@@ -153,6 +168,42 @@ const AnalyticsDashboard: React.FC = () => {
       </div>
     </motion.div>
   );
+
+  const handleStudentSearch = async () => {
+    if (!searchEmail.trim()) {
+      alert('Please enter a student email address');
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      console.log('🔍 Searching for student:', searchEmail);
+      
+      // First try the real student search (from existing users/orders tables)
+      const realResult = await searchRealPaidStudentHistory(searchEmail.trim());
+      
+      if (realResult && realResult.found) {
+        console.log('✅ Found REAL student data:', realResult);
+        setStudentSearchResult(realResult);
+        return;
+      }
+      
+      // If not found in real data, try analytics tables
+      console.log('⚠️ Not found in real data, trying analytics tables...');
+      const analyticsResult = await searchPaidStudentHistory(searchEmail.trim());
+      setStudentSearchResult(analyticsResult);
+      console.log('✅ Search result:', analyticsResult);
+      
+    } catch (error) {
+      console.error('❌ Search failed:', error);
+      setStudentSearchResult({
+        found: false,
+        message: 'Search failed. Please try again.'
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const TabButton: React.FC<{ id: string; label: string; icon: React.ReactNode }> = ({ id, label, icon }) => (
     <button
@@ -214,6 +265,7 @@ const AnalyticsDashboard: React.FC = () => {
             <TabButton id="courses" label="Course Analytics" icon={<AcademicCapIcon className="h-5 w-5" />} />
             <TabButton id="revenue" label="Revenue & Conversion" icon={<CurrencyDollarIcon className="h-5 w-5" />} />
             <TabButton id="realtime" label="Real-Time" icon={<BellIcon className="h-5 w-5" />} />
+            <TabButton id="paid-students" label="Paid Students" icon={<StarIcon className="h-5 w-5" />} />
           </div>
         </div>
 
@@ -534,18 +586,630 @@ const AnalyticsDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Additional tabs can be implemented similarly */}
+        {/* Traffic & Visitors Tab */}
         {activeTab === 'traffic' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Traffic Analysis</h3>
-            <p className="text-gray-600">Detailed traffic analysis coming soon...</p>
+          <div className="space-y-6">
+            {/* Traffic Sources */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Traffic Sources</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-green-500 rounded mr-3"></div>
+                    <span className="font-medium">Organic Search</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-bold">{stats.traffic.organic.toFixed(1)}%</span>
+                    <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${stats.traffic.organic}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-blue-500 rounded mr-3"></div>
+                    <span className="font-medium">Direct Traffic</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-bold">{stats.traffic.direct.toFixed(1)}%</span>
+                    <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${stats.traffic.direct}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-purple-500 rounded mr-3"></div>
+                    <span className="font-medium">Social Media</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-bold">{stats.traffic.social.toFixed(1)}%</span>
+                    <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${stats.traffic.social}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-yellow-500 rounded mr-3"></div>
+                    <span className="font-medium">Paid Advertising</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-bold">{stats.traffic.paid.toFixed(1)}%</span>
+                    <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${stats.traffic.paid}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-red-500 rounded mr-3"></div>
+                    <span className="font-medium">Referrals</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-bold">{stats.traffic.referrals.toFixed(1)}%</span>
+                    <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-red-500 h-2 rounded-full" style={{ width: `${stats.traffic.referrals}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Geographic Data */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Countries</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {geographicData.map((country) => (
+                  <div key={country.country} className="text-center p-4 bg-gray-50 rounded-lg">
+                    <MapPinIcon className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                    <h4 className="font-medium text-gray-900">{country.country}</h4>
+                    <p className="text-sm text-gray-600">{country.visitors.toLocaleString()} visitors</p>
+                    <p className="text-xs text-gray-500">{country.percentage}%</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Device Breakdown */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Device Usage</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {deviceData.map((device) => (
+                  <div key={device.device} className="text-center p-6 bg-gray-50 rounded-lg">
+                    {device.device === 'Desktop' && <ComputerDesktopIcon className="h-12 w-12 text-blue-600 mx-auto mb-3" />}
+                    {device.device === 'Mobile' && <DevicePhoneMobileIcon className="h-12 w-12 text-green-600 mx-auto mb-3" />}
+                    {device.device === 'Tablet' && <DevicePhoneMobileIcon className="h-12 w-12 text-purple-600 mx-auto mb-3" />}
+                    <h4 className="text-xl font-bold text-gray-900">{device.visitors.toLocaleString()}</h4>
+                    <p className="text-gray-600">{device.device}</p>
+                    <p className="text-sm text-gray-500">{device.percentage}%</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
+        {/* User Behavior Tab */}
         {activeTab === 'behavior' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">User Behavior Analysis</h3>
-            <p className="text-gray-600">User behavior insights coming soon...</p>
+          <div className="space-y-6">
+            {/* Engagement Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <StatCard
+                title="Avg Session Time"
+                value={stats.engagement.avgSessionTime}
+                change={8.2}
+                icon={<ClockIcon className="h-6 w-6 text-blue-600" />}
+                color="#3B82F6"
+              />
+              <StatCard
+                title="Bounce Rate"
+                value={`${stats.engagement.bounceRate}%`}
+                change={-2.4}
+                icon={<ArrowTrendingDownIcon className="h-6 w-6 text-green-600" />}
+                color="#10B981"
+              />
+              <StatCard
+                title="Pages Per Session"
+                value={stats.engagement.pagesPerSession.toFixed(1)}
+                change={12.1}
+                icon={<DocumentTextIcon className="h-6 w-6 text-purple-600" />}
+                color="#8B5CF6"
+              />
+            </div>
+
+            {/* User Types */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">User Segmentation</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                  <UserGroupIcon className="h-12 w-12 text-green-600 mx-auto mb-3" />
+                  <h4 className="text-2xl font-bold text-green-900">{stats.users.new.toLocaleString()}</h4>
+                  <p className="text-green-700">New Users</p>
+                  <p className="text-sm text-green-600 mt-2">First-time visitors</p>
+                </div>
+                <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                  <UserGroupIcon className="h-12 w-12 text-blue-600 mx-auto mb-3" />
+                  <h4 className="text-2xl font-bold text-blue-900">{stats.users.returning.toLocaleString()}</h4>
+                  <p className="text-blue-700">Returning Users</p>
+                  <p className="text-sm text-blue-600 mt-2">Previous visitors</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Session Analysis */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Session Insights</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <h4 className="text-lg font-bold text-gray-900">2.3k</h4>
+                  <p className="text-sm text-gray-600">Sessions Today</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <h4 className="text-lg font-bold text-gray-900">15.2k</h4>
+                  <p className="text-sm text-gray-600">Sessions This Week</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <h4 className="text-lg font-bold text-gray-900">68.5k</h4>
+                  <p className="text-sm text-gray-600">Sessions This Month</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <h4 className="text-lg font-bold text-gray-900">3.4</h4>
+                  <p className="text-sm text-gray-600">Avg Pages/Session</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Popular Pages */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Visited Pages</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium">/courses</span>
+                  <span className="text-gray-600">2,450 views</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium">/</span>
+                  <span className="text-gray-600">1,890 views</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium">/members-login</span>
+                  <span className="text-gray-600">1,230 views</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium">/dashboard</span>
+                  <span className="text-gray-600">980 views</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Paid Students Tab */}
+        {activeTab === 'paid-students' && (
+          <div className="space-y-6">
+            {/* Student Search */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">🔍 Search Student History</h3>
+              <div className="flex items-center space-x-4">
+                <div className="flex-1">
+                  <input
+                    type="email"
+                    placeholder="Enter student email address (e.g., john.smith@gmail.com)"
+                    value={searchEmail}
+                    onChange={(e) => setSearchEmail(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleStudentSearch()}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <button
+                  onClick={handleStudentSearch}
+                  disabled={isSearching}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSearching ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
+                  )}
+                  {isSearching ? 'Searching...' : 'Search'}
+                </button>
+                {studentSearchResult && (
+                  <button
+                    onClick={() => {setStudentSearchResult(null); setSearchEmail('');}}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Search Results */}
+            {studentSearchResult && (
+              <div className="space-y-6">
+                {studentSearchResult.found ? (
+                  <>
+                    {/* Student Profile Summary */}
+                    <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
+                      <h3 className="text-xl font-bold mb-2">👤 {studentSearchResult.studentName || studentSearchResult.profile?.name}</h3>
+                      <p className="text-lg mb-4">📧 {studentSearchResult.studentEmail || studentSearchResult.profile?.email}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">
+                            {studentSearchResult.summary?.totalSessions || studentSearchResult.profile?.totalSessions || 'N/A'}
+                          </div>
+                          <div className="text-sm opacity-90">Total Sessions</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">
+                            {studentSearchResult.summary?.totalLoginTime ? 
+                              `${Math.round(studentSearchResult.summary.totalLoginTime / 60)}h` : 
+                              studentSearchResult.profile?.totalTimeSpent || 'N/A'
+                            }
+                          </div>
+                          <div className="text-sm opacity-90">Total Time</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">
+                            {studentSearchResult.summary?.coursesAccessedCount || studentSearchResult.profile?.coursesEnrolled || 0}
+                          </div>
+                          <div className="text-sm opacity-90">Courses Enrolled</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">
+                            {studentSearchResult.summary?.avgQuizScore ? 
+                              `${studentSearchResult.summary.avgQuizScore}%` : 
+                              studentSearchResult.profile?.averageQuizScore || 'N/A'
+                            }
+                          </div>
+                          <div className="text-sm opacity-90">Avg Quiz Score</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Activity Timeline */}
+                    <div className="bg-white rounded-lg shadow-md p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">📅 Complete Activity Timeline</h3>
+                      <div className="max-h-96 overflow-y-auto space-y-2">
+                        {studentSearchResult.activityTimeline.map((activity: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              {activity.type === 'session' && <ShieldCheckIcon className="h-5 w-5 text-blue-600" />}
+                              {activity.type === 'course' && <PlayIcon className="h-5 w-5 text-green-600" />}
+                              {activity.type === 'quiz' && <DocumentTextIcon className="h-5 w-5 text-purple-600" />}
+                              {activity.type === 'download' && <ArrowTrendingDownIcon className="h-5 w-5 text-orange-600" />}
+                              {activity.type === 'page_visit' && <EyeIcon className="h-5 w-5 text-gray-600" />}
+                              {activity.type === 'Course Purchase' && <span className="text-xl">🛒</span>}
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{activity.action || activity.type}</div>
+                                <div className="text-xs text-gray-500">{activity.details}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-gray-500">{new Date(activity.timestamp).toLocaleString()}</div>
+                              <div className="text-xs text-blue-500">{activity.duration}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Course Progress */}
+                    <div className="bg-white rounded-lg shadow-md p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">📚 Course Progress Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {studentSearchResult.courseProgress.map((course: any) => (
+                          <div key={course.courseName} className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-medium text-gray-900 mb-2">{course.courseName}</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span>Progress:</span>
+                                <span className="font-medium">{course.progress || course.completionStatus || 'Enrolled'}</span>
+                              </div>
+                              {course.progress && (
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div className="bg-green-500 h-2 rounded-full" style={{ width: `${course.progress}%` }}></div>
+                                </div>
+                              )}
+                              <div className="flex justify-between">
+                                <span>Instructor:</span>
+                                <span>{course.instructor || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Enrolled Date:</span>
+                                <span>{course.enrolledDate ? new Date(course.enrolledDate).toLocaleDateString() : 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Time Spent:</span>
+                                <span>{course.timeSpent ? `${course.timeSpent} minutes` : 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Activities:</span>
+                                <span>{course.activitiesCount || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Quizzes:</span>
+                                <span>{course.quizzesCompleted || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Downloads:</span>
+                                <span>{course.downloadsCount || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Last Activity:</span>
+                                <span>{course.lastActivity || 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Device & Location Analysis */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">💻 Device Usage</h3>
+                        <div className="space-y-3">
+                          {studentSearchResult.deviceUsage && Array.isArray(studentSearchResult.deviceUsage) ? (
+                            studentSearchResult.deviceUsage.map((device: any) => (
+                              <div key={device.device} className="flex items-center justify-between">
+                                <span className="font-medium capitalize">{device.device}</span>
+                                <span className="text-lg font-bold">{device.count} sessions</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg">
+                              {studentSearchResult.deviceUsage?.note || 'Device tracking not yet implemented for existing users'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg shadow-md p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">🌍 Location History</h3>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {studentSearchResult.locationHistory && Array.isArray(studentSearchResult.locationHistory) ? (
+                            studentSearchResult.locationHistory.map((location: any, index: number) => (
+                              <div key={index} className="text-sm">
+                                <div className="font-medium">{location.city}, {location.country}</div>
+                                <div className="text-gray-500">{location.loginTime} • {location.device}</div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg">
+                              {studentSearchResult.locationHistory?.note || 'Location tracking not yet implemented for existing users'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <h3 className="text-lg font-medium text-red-800 mb-2">❌ Student Not Found</h3>
+                    <p className="text-red-600">{studentSearchResult.message}</p>
+                    <p className="text-sm text-red-500 mt-2">Please check the email address and try again.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Paid Students Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="Total Paid Students"
+                value={paidStudentsData.overview?.totalStudents || 0}
+                change={15.3}
+                icon={<StarIcon className="h-6 w-6 text-yellow-600" />}
+                color="#F59E0B"
+              />
+              <StatCard
+                title="Active Sessions"
+                value={paidStudentsData.overview?.activeSessions || 0}
+                change={8.7}
+                icon={<ShieldCheckIcon className="h-6 w-6 text-green-600" />}
+                color="#10B981"
+              />
+              <StatCard
+                title="Avg Session Time"
+                value={`${paidStudentsData.overview?.avgSessionDuration || 0} min`}
+                change={12.1}
+                icon={<ClockIcon className="h-6 w-6 text-blue-600" />}
+                color="#3B82F6"
+              />
+              <StatCard
+                title="Quiz Pass Rate"
+                value={`${paidStudentsData.overview?.quizPassRate || 0}%`}
+                change={5.2}
+                icon={<AcademicCapIcon className="h-6 w-6 text-purple-600" />}
+                color="#8B5CF6"
+              />
+            </div>
+
+            {/* Student Sessions Table */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Student Sessions & Login Details</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Login Time</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Logout Time</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {(paidStudentsData.studentSessions || []).map((session: any) => (
+                      <tr key={session.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{session.studentName}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">{session.studentEmail}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{session.loginTime}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{session.logoutTime}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{session.duration}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {session.device === 'desktop' && <ComputerDesktopIcon className="h-4 w-4 text-blue-600 mr-2" />}
+                            {session.device === 'mobile' && <DevicePhoneMobileIcon className="h-4 w-4 text-green-600 mr-2" />}
+                            {session.device === 'tablet' && <DevicePhoneMobileIcon className="h-4 w-4 text-purple-600 mr-2" />}
+                            <span className="text-sm text-gray-900 capitalize">{session.device}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{session.location}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {session.isActive ? (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              🟢 Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                              ⚫ Offline
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Recent Activities */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">🔥 Recent Student Activities</h3>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {(paidStudentsData.recentActivities || []).map((activity: any) => (
+                  <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {activity.type === 'course_activity' && <PlayIcon className="h-5 w-5 text-blue-600" />}
+                      {activity.type === 'quiz' && <DocumentTextIcon className="h-5 w-5 text-green-600" />}
+                      {activity.type === 'download' && <ArrowTrendingDownIcon className="h-5 w-5 text-purple-600" />}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {activity.studentEmail}
+                        </div>
+                        <div className="text-sm text-gray-600">{activity.action}</div>
+                        <div className="text-xs text-gray-500">{activity.details}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-gray-500">{activity.time}</div>
+                      <div className="text-xs text-gray-400">{activity.device}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Analytics Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Device Breakdown */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📱 Device Usage</h3>
+                <div className="space-y-3">
+                  {(paidStudentsData.deviceBreakdown || []).map((device: any) => (
+                    <div key={device.device} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        {device.device === 'desktop' && <ComputerDesktopIcon className="h-6 w-6 text-blue-600 mr-3" />}
+                        {device.device === 'mobile' && <DevicePhoneMobileIcon className="h-6 w-6 text-green-600 mr-3" />}
+                        {device.device === 'tablet' && <DevicePhoneMobileIcon className="h-6 w-6 text-purple-600 mr-3" />}
+                        <span className="font-medium capitalize">{device.device}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-bold">{device.count}</span>
+                        <div className="text-sm text-gray-500">{device.percentage}%</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Performers */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">🏆 Top Performing Students</h3>
+                <div className="space-y-3">
+                  {(paidStudentsData.topPerformers || []).slice(0, 5).map((student: any, index: number) => (
+                    <div key={student.email} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-sm font-bold text-yellow-800">#{index + 1}</span>
+                        </div>
+                        <div>
+                          <div className="font-medium">{student.email}</div>
+                          <div className="text-sm text-gray-500">
+                            {student.totalTime} min • {student.coursesAccessed} courses
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-green-600">{student.engagementScore}</div>
+                        <div className="text-xs text-gray-500">Engagement Score</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Course Engagement */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📚 Popular Courses Among Paid Students</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(paidStudentsData.popularCourses || []).map((course: any) => (
+                  <div key={course.name} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <AcademicCapIcon className="h-5 w-5 text-blue-600 mr-2" />
+                      <h4 className="font-medium text-gray-900 truncate">{course.name}</h4>
+                    </div>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div>👥 {course.studentsCount} students enrolled</div>
+                      <div>📊 {course.totalActivities} total activities</div>
+                      <div>⏱️ {course.avgTimePerStudent} min average time</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
+              <h3 className="text-lg font-semibold mb-4">📈 Paid Students Summary</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{paidStudentsData.overview?.totalQuizzes || 0}</div>
+                  <div className="text-sm opacity-90">Total Quizzes Taken</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{paidStudentsData.overview?.totalDownloads || 0}</div>
+                  <div className="text-sm opacity-90">Files Downloaded</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{paidStudentsData.totalVideoWatchTime || 0}</div>
+                  <div className="text-sm opacity-90">Minutes Video Watched</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{paidStudentsData.overview?.avgQuizScore || 0}%</div>
+                  <div className="text-sm opacity-90">Average Quiz Score</div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
