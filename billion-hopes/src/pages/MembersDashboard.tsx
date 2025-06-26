@@ -14,6 +14,7 @@ import {
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import { useNavigate } from 'react-router-dom';
 import { getMemberPurchases, getQuiz } from '../utils/supabase';
+import { trackPageVisit, trackCourseActivity, trackDownload } from '../services/activityTracker';
 
 interface Course {
   id: number;
@@ -69,6 +70,8 @@ const MembersDashboard: React.FC = () => {
 
   useEffect(() => {
     loadMemberData();
+    // Track dashboard page visit
+    trackPageVisit('Members Dashboard', '/members-dashboard');
   }, []);
 
   const loadMemberData = async () => {
@@ -148,6 +151,10 @@ const MembersDashboard: React.FC = () => {
   const openCourseModal = async (course: Course) => {
     setSelectedCourse(course);
     setShowModal(true);
+    
+    // Track course interaction
+    trackCourseActivity(course.course_name, 'Course Opened', `Opened course details for ${course.course_name}`);
+    
     if (course.course_details?.id) {
       await loadCourseDetails(course.course_details.id);
     }
@@ -159,6 +166,9 @@ const MembersDashboard: React.FC = () => {
   };
 
   const downloadPDF = (pdfUrl: string, courseName: string) => {
+    // Track download activity
+    trackDownload(`${courseName}-guide.pdf`, 'pdf', 2.5, courseName);
+    
     const link = document.createElement('a');
     link.href = pdfUrl;
     link.download = `${courseName}-guide.pdf`;
@@ -169,6 +179,9 @@ const MembersDashboard: React.FC = () => {
   };
 
   const downloadCertificate = (courseName: string) => {
+    // Track certificate download
+    trackDownload(`${courseName}-certificate.pdf`, 'certificate', 1.2, courseName);
+    
     alert(`Downloading certificate for ${courseName}...`);
   };
 

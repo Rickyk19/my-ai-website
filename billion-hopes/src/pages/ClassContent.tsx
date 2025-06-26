@@ -19,6 +19,7 @@ import {
   HeartIcon as HeartSolidIcon,
   StarIcon as StarSolidIcon
 } from '@heroicons/react/24/solid';
+import { trackPageVisit, trackCourseActivity, trackDownload } from '../services/activityTracker';
 
 interface ClassData {
   id: number;
@@ -86,6 +87,11 @@ const ClassContent: React.FC = () => {
   useEffect(() => {
     loadClassData();
     loadComments();
+    
+    // Track class page visit
+    const courseIdStr = courseId || 'unknown';
+    const classNumberStr = classNumber || 'unknown';
+    trackPageVisit(`Class ${classNumberStr} - Course ${courseIdStr}`, `/course/${courseIdStr}/class/${classNumberStr}`);
   }, [courseId, classNumber]);
 
   const loadClassData = () => {
@@ -446,6 +452,9 @@ const ClassContent: React.FC = () => {
   };
 
   const downloadPDF = (filename: string) => {
+    // Track PDF download
+    trackDownload(filename, 'pdf', 2.5, classData?.title || 'Unknown Course');
+    
     // In production, this would download the actual PDF
     const link = document.createElement('a');
     link.href = `/pdfs/${filename}`;
@@ -524,7 +533,16 @@ const ClassContent: React.FC = () => {
                 {!isVideoPlaying ? (
                   <div 
                     className="absolute inset-0 flex items-center justify-center cursor-pointer"
-                    onClick={() => setIsVideoPlaying(true)}
+                    onClick={() => {
+                      setIsVideoPlaying(true);
+                      // Track video start
+                      trackCourseActivity(
+                        classData?.title || 'Unknown Course',
+                        'Video Started',
+                        `Started watching: ${classData?.title}`,
+                        0
+                      );
+                    }}
                   >
                     <div className="bg-white bg-opacity-20 rounded-full p-6 hover:bg-opacity-30 transition-all">
                       <PlayIcon className="h-16 w-16 text-white" />

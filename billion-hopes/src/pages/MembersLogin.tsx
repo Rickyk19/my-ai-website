@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { authenticateMember } from '../utils/supabase';
 import { useAuth } from '../context/AuthContext';
+import { startSession } from '../services/activityTracker';
 
 interface LoginFormData {
   email: string;
@@ -99,7 +100,11 @@ const MembersLogin: React.FC = () => {
         courses: authResult.purchases
       });
 
-      setMessage({type: 'success', text: 'Login successful! Redirecting to your course library...'});
+      // 🔥 START ACTIVITY TRACKING FOR PAID STUDENT
+      console.log('📊 Starting activity tracking for:', authResult.user.email);
+      await startSession(authResult.user.email, authResult.user.name);
+
+      setMessage({type: 'success', text: 'Login successful! Activity tracking enabled. Redirecting to your course library...'});
       
       setTimeout(() => {
         navigate('/members-dashboard');

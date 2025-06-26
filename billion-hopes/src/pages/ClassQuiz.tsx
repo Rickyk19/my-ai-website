@@ -10,6 +10,7 @@ import {
   BookOpenIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
+import { trackQuizActivity, trackCourseActivity } from '../services/activityTracker';
 
 interface Question {
   id: number;
@@ -35,6 +36,7 @@ const ClassQuiz: React.FC = () => {
   const [showResults, setShowResults] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [startTime, setStartTime] = useState<number>(0);
 
   useEffect(() => {
     loadQuizData();
@@ -209,6 +211,7 @@ const ClassQuiz: React.FC = () => {
 
   const startQuiz = () => {
     setQuizStarted(true);
+    setStartTime(Date.now());
   };
 
   const handleAnswerSelect = (answerIndex: number) => {
@@ -232,6 +235,28 @@ const ClassQuiz: React.FC = () => {
   const handleSubmitQuiz = () => {
     setShowResults(true);
     setQuizStarted(false);
+    
+    // Calculate quiz results for tracking
+    const score = calculateScore();
+    const total = quizData?.questions.length || 0;
+    const percentage = Math.round((score / total) * 100);
+    const timeTaken = Math.round((Date.now() - startTime) / 1000); // in seconds
+    
+    // Track quiz completion
+    trackQuizActivity(
+      `Course ${courseId}`,
+      `Class ${classNumber} Quiz`,
+      percentage,
+      total,
+      score,
+      timeTaken
+    );
+    
+    console.log('📊 Quiz completed and tracked:', {
+      score: `${score}/${total}`,
+      percentage: `${percentage}%`,
+      timeTaken: `${timeTaken}s`
+    });
   };
 
   const calculateScore = () => {
