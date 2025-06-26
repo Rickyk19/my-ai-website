@@ -33,6 +33,8 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import QuizDemoPage from './pages/QuizDemoPage';
 import DatabaseTest from './pages/DatabaseTest';
+import AnalyticsDebug from './pages/AnalyticsDebug';
+import SupabaseConnectionVerify from './pages/SupabaseConnectionVerify';
 
 // Placeholder components for different routes
 const AIExplained = () => <div>AI Explained Page</div>;
@@ -130,6 +132,8 @@ const App: React.FC = () => {
               </MemberProtectedRoute>
             } />
             <Route path="database-test" element={<DatabaseTest />} />
+            <Route path="analytics-debug" element={<AnalyticsDebug />} />
+            <Route path="supabase-verify" element={<SupabaseConnectionVerify />} />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<SignUp />} />
             <Route path="members-login" element={<MembersLogin />} />

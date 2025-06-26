@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getAnalyticsDashboardData } from '../services/analyticsService';
+import { getWorkingAnalyticsDashboardData } from '../services/workingAnalyticsService';
 import { 
   ChartBarIcon, 
   UserGroupIcon, 
@@ -64,48 +64,22 @@ const AnalyticsDashboard: React.FC = () => {
   const [realTimeVisitors, setRealTimeVisitors] = useState(0);
   
   const [stats, setStats] = useState<AnalyticsStats>({
-    visitors: { total: 12547, daily: 342, weekly: 2156, monthly: 8934, change: 15.2 },
-    traffic: { organic: 45, direct: 30, social: 15, paid: 7, referrals: 3 },
-    users: { new: 1256, returning: 834, paidUsers: 89, freeUsers: 1001 },
-    engagement: { avgSessionTime: '4m 32s', bounceRate: 42.3, pagesPerSession: 3.2 },
-    revenue: { total: 15420, arpu: 173.5, ltv: 890.2, conversionRate: 8.9 }
+    visitors: { total: 0, daily: 0, weekly: 0, monthly: 0, change: 0 },
+    traffic: { organic: 0, direct: 0, social: 0, paid: 0, referrals: 0 },
+    users: { new: 0, returning: 0, paidUsers: 0, freeUsers: 0 },
+    engagement: { avgSessionTime: '0m 0s', bounceRate: 0, pagesPerSession: 0 },
+    revenue: { total: 0, arpu: 0, ltv: 0, conversionRate: 0 }
   });
 
-  const [courseAnalytics, setCourseAnalytics] = useState([
-    { id: 1, name: 'AI Fundamentals', views: 2340, enrollments: 156, completion: 78 },
-    { id: 2, name: 'Machine Learning Basics', views: 1890, enrollments: 124, completion: 65 },
-    { id: 3, name: 'Deep Learning', views: 1567, enrollments: 98, completion: 71 },
-    { id: 4, name: 'Neural Networks', views: 1234, enrollments: 87, completion: 82 },
-    { id: 5, name: 'Computer Vision', views: 987, enrollments: 45, completion: 59 }
-  ]);
+  const [courseAnalytics, setCourseAnalytics] = useState<any[]>([]);
 
-  const [geographicData, setGeographicData] = useState([
-    { country: 'United States', visitors: 3452, percentage: 27.5 },
-    { country: 'India', visitors: 2876, percentage: 22.9 },
-    { country: 'United Kingdom', visitors: 1567, percentage: 12.5 },
-    { country: 'Canada', visitors: 1234, percentage: 9.8 },
-    { country: 'Australia', visitors: 987, percentage: 7.9 }
-  ]);
+  const [geographicData, setGeographicData] = useState<any[]>([]);
 
-  const [deviceData, setDeviceData] = useState([
-    { device: 'Desktop', visitors: 6273, percentage: 50.0 },
-    { device: 'Mobile', visitors: 5018, percentage: 40.0 },
-    { device: 'Tablet', visitors: 1256, percentage: 10.0 }
-  ]);
+  const [deviceData, setDeviceData] = useState<any[]>([]);
 
-  const [recentActivity, setRecentActivity] = useState([
-    { id: 1, action: 'User completed AI Fundamentals course', time: '2 minutes ago', type: 'completion' },
-    { id: 2, action: 'New user registered from India', time: '5 minutes ago', type: 'registration' },
-    { id: 3, action: 'Payment received for Machine Learning course', time: '12 minutes ago', type: 'payment' },
-    { id: 4, action: 'High traffic spike detected', time: '23 minutes ago', type: 'alert' },
-    { id: 5, action: 'Quiz submitted for Deep Learning module', time: '34 minutes ago', type: 'quiz' }
-  ]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
-  const [alerts, setAlerts] = useState([
-    { id: 1, type: 'warning', message: 'Bounce rate increased by 12% in last 24h', time: '1h ago' },
-    { id: 2, type: 'success', message: 'New monthly revenue record achieved', time: '3h ago' },
-    { id: 3, type: 'info', message: 'Server performance optimized', time: '6h ago' }
-  ]);
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
     loadAnalyticsData();
@@ -119,9 +93,15 @@ const AnalyticsDashboard: React.FC = () => {
   const loadAnalyticsData = async () => {
     setIsLoading(true);
     try {
-      const data = await getAnalyticsDashboardData(dateRange);
+      console.log('🔄 Loading analytics data with WORKING service...');
+      
+      const data = await getWorkingAnalyticsDashboardData();
+      console.log('✅ WORKING analytics service loaded:', data);
       
       // Update all state with real data
+      console.log('📊 Setting stats:', data.stats);
+      console.log('📊 Setting real-time visitors:', data.realTimeVisitors);
+      
       setStats(data.stats);
       setCourseAnalytics(data.courseAnalytics);
       setGeographicData(data.geographicData);
@@ -130,9 +110,9 @@ const AnalyticsDashboard: React.FC = () => {
       setRecentActivity(data.recentActivity);
       setAlerts(data.activeAlerts);
       
-      console.log('✅ Analytics data loaded successfully:', data);
+      console.log('🎉 Analytics data loaded and state updated - NO MORE ZEROS!');
     } catch (error) {
-      console.error('❌ Error loading analytics data:', error);
+      console.error('❌ Working analytics service failed:', error);
       // Keep existing sample data if API fails
     } finally {
       setIsLoading(false);
