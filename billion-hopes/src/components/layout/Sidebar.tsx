@@ -84,8 +84,8 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-white shadow-lg h-screen fixed left-0 top-24 overflow-y-auto">
-      <nav className="p-4 flex flex-col min-h-[calc(100vh-6rem)]">
+    <aside className="bg-white shadow-lg overflow-y-auto sticky top-24 h-[calc(100vh-6rem)]">
+      <nav className="p-4 flex flex-col h-full">
         <div className="flex-grow">
           {menuSections.map((section) => (
             <div key={section.title} className="mb-4">
