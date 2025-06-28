@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import TypesOfAI from './pages/TypesOfAI';
+import MLPage from './pages/MLPage';
+import DLNNPage from './pages/DLNNPage';
 import Courses from './pages/Courses';
 import CourseContent from './pages/CourseContent';
 import ClassContent from './pages/ClassContent';
@@ -35,6 +37,13 @@ import QuizDemoPage from './pages/QuizDemoPage';
 import DatabaseTest from './pages/DatabaseTest';
 import AnalyticsDebug from './pages/AnalyticsDebug';
 import SupabaseConnectionVerify from './pages/SupabaseConnectionVerify';
+import AgentsPage from './pages/AgentsPage';
+import RLPage from './pages/RLPage';
+import RoboticsPage from './pages/RoboticsPage';
+import AIIndustryPage from './pages/AIIndustryPage';
+import EthicsPage from './pages/EthicsPage';
+import YTLecturesPage from './pages/YTLecturesPage';
+import AIResourcesPage from './pages/AIResourcesPage';
 
 // Placeholder components for different routes
 const AIExplained = () => <div>AI Explained Page</div>;
@@ -73,6 +82,15 @@ const App: React.FC = () => {
               </MemberProtectedRoute>
             } />
             <Route path="ai-explained/types" element={<TypesOfAI />} />
+            <Route path="ai-explained/ml" element={<MLPage />} />
+            <Route path="ai-explained/dl-nn" element={<DLNNPage />} />
+            <Route path="ai-explained/agents" element={<AgentsPage />} />
+            <Route path="ai-explained/rl" element={<RLPage />} />
+            <Route path="ai-explained/robotics" element={<RoboticsPage />} />
+            <Route path="ai-explained/industry" element={<AIIndustryPage />} />
+            <Route path="ai-explained/ethics" element={<EthicsPage />} />
+            <Route path="ai-explained/lectures" element={<YTLecturesPage />} />
+            <Route path="ai-explained/resources" element={<AIResourcesPage />} />
             <Route path="ai-explained" element={<AIExplained />} />
             <Route path="solutions/*" element={<Solutions />} />
             <Route path="trends/*" element={<Trends />} />
