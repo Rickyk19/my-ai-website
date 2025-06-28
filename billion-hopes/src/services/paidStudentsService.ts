@@ -394,10 +394,10 @@ export const getPaidStudentsAnalyticsData = async () => {
   }
 };
 
-// NEW FUNCTION: Search real paid student from existing tables
+// NEW FUNCTION: Search real paid student from existing tables + real-time tracking
 export async function searchRealPaidStudentHistory(email: string) {
   try {
-    console.log('🔍 Searching for REAL paid student:', email);
+    console.log('🔍 Searching for REAL paid student with activity tracking:', email);
 
     // Helper function for direct Supabase queries
     const fetchRealData = async (table: string, query: string = '') => {
@@ -441,7 +441,7 @@ export async function searchRealPaidStudentHistory(email: string) {
 
     const user = userInfo[0];
 
-    // Get all orders for this user
+    // Get orders for course enrollment info
     const orders = await fetchRealData('orders', `?customer_email=eq.${email}&status=eq.completed&order=created_at.desc`);
 
     if (!orders || orders.length === 0) {
@@ -451,24 +451,101 @@ export async function searchRealPaidStudentHistory(email: string) {
       };
     }
 
-    // Get course details for enrolled courses
-    const courseNames = orders.map((order: any) => order.course_name);
-    let courseDetails: any[] = [];
-    
-    if (courseNames.length > 0) {
-      // Use name filter for courses
-      const courseQueries = courseNames.map((courseName: string) => 
-        fetchRealData('courses', `?name=eq.${encodeURIComponent(courseName)}`)
-      );
-      
-      const courseResults = await Promise.all(courseQueries);
-      courseDetails = courseResults.flat();
-    }
+    console.log(`📊 Orders data for ${email}:`, {
+      ordersCount: orders.length,
+      orderDetails: orders.map((o: any) => ({ course: o.course_name, amount: o.amount, date: o.created_at }))
+    });
 
-    // Create activity timeline from available data
+    // 🔥 FETCH REAL-TIME TRACKING DATA
+    console.log('📊 Fetching real-time tracking data...');
+    
+    // Get session data from real-time tracking
+    const sessions = await fetchRealData('student_sessions', `?student_email=eq.${email}&order=login_time.desc`);
+    const pageVisits = await fetchRealData('student_page_visits', `?student_email=eq.${email}&order=visit_time.desc&limit=50`);
+    const courseActivities = await fetchRealData('student_course_activities', `?student_email=eq.${email}&order=activity_time.desc`);
+    const quizPerformance = await fetchRealData('student_quiz_performance', `?student_email=eq.${email}&order=start_time.desc`);
+    const downloads = await fetchRealData('student_downloads', `?student_email=eq.${email}&order=download_time.desc`);
+    const dailyEngagement = await fetchRealData('student_daily_engagement', `?student_email=eq.${email}&order=date.desc`);
+
+    console.log('📊 Real-time data fetched:', {
+      sessions: sessions.length,
+      pageVisits: pageVisits.length,
+      courseActivities: courseActivities.length,
+      quizzes: quizPerformance.length,
+      downloads: downloads.length,
+      dailyEngagement: dailyEngagement.length
+    });
+
+    // Calculate comprehensive statistics
+    const totalSessions = sessions.length;
+    const totalLoginTime = sessions.reduce((sum: number, session: any) => 
+      sum + (session.session_duration_minutes || 0), 0);
+    const totalCoursesEnrolled = orders.length;
+    const avgQuizScore = quizPerformance.length > 0 
+      ? Math.round(quizPerformance.reduce((sum: number, quiz: any) => sum + quiz.score_percentage, 0) / quizPerformance.length)
+      : 0;
+
+    // Create comprehensive activity timeline
     const activityTimeline: any[] = [];
     
-    // Add order activities
+    // Add session activities
+    sessions.forEach((session: any) => {
+      activityTimeline.push({
+        timestamp: session.login_time,
+        type: 'Session Start',
+        details: `Logged in from ${session.device_type} (${session.browser}) in ${session.location_city}, ${session.location_country}`,
+        icon: '🔑',
+        duration: session.session_duration_minutes ? `${session.session_duration_minutes} min` : 'Active'
+      });
+      
+      if (session.logout_time) {
+        activityTimeline.push({
+          timestamp: session.logout_time,
+          type: 'Session End',
+          details: `Session ended after ${session.session_duration_minutes || 0} minutes`,
+          icon: '🚪',
+          duration: `${session.session_duration_minutes || 0} min`
+        });
+      }
+    });
+
+    // Add course activities
+    courseActivities.forEach((activity: any) => {
+      activityTimeline.push({
+        timestamp: activity.activity_time,
+        type: activity.activity_type,
+        details: activity.activity_details,
+        icon: '📚',
+        course: activity.course_name,
+        duration: `${activity.time_spent_minutes || 0} min`
+      });
+    });
+
+    // Add quiz activities
+    quizPerformance.forEach((quiz: any) => {
+      activityTimeline.push({
+        timestamp: quiz.start_time,
+        type: 'Quiz Completed',
+        details: `${quiz.quiz_name} - Score: ${quiz.score_percentage}% (${quiz.correct_answers}/${quiz.questions_total})`,
+        icon: '📝',
+        course: quiz.course_name,
+        duration: `${quiz.time_taken_minutes} min`
+      });
+    });
+
+    // Add download activities
+    downloads.forEach((download: any) => {
+      activityTimeline.push({
+        timestamp: download.download_time,
+        type: 'File Download',
+        details: `Downloaded ${download.file_name} (${download.file_type.toUpperCase()})`,
+        icon: '⬇️',
+        course: download.course_name,
+        duration: download.download_status
+      });
+    });
+
+    // Add order/purchase activities
     orders.forEach((order: any) => {
       activityTimeline.push({
         timestamp: order.created_at,
@@ -482,52 +559,91 @@ export async function searchRealPaidStudentHistory(email: string) {
     // Sort timeline by most recent first
     activityTimeline.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    // Calculate summary stats
-    const totalCoursesEnrolled = orders.length;
-    const totalAmountSpent = orders.reduce((sum: number, order: any) => sum + parseFloat(order.amount || '0'), 0);
-    const firstOrderDate = orders.length > 0 ? 
-      new Date(Math.min(...orders.map((o: any) => new Date(o.created_at).getTime()))) : null;
+    // Calculate course progress from real activities
+    const coursesAccessed = Array.from(new Set(courseActivities.map((activity: any) => activity.course_name)));
+    const courseProgress = coursesAccessed.map((courseName: unknown) => {
+      const courseNameStr = courseName as string;
+      const activities = courseActivities.filter((activity: any) => activity.course_name === courseNameStr);
+      const quizzes = quizPerformance.filter((quiz: any) => quiz.course_name === courseNameStr);
+      const courseDownloads = downloads.filter((download: any) => download.course_name === courseNameStr);
+      const order = orders.find((o: any) => o.course_name === courseNameStr);
+      
+      const totalTimeSpent = activities.reduce((sum: number, activity: any) => sum + (activity.time_spent_minutes || 0), 0);
+      const latestProgress = Math.max(...activities.map((activity: any) => activity.progress_percentage || 0), 0);
+      
+      return {
+        courseName: courseNameStr,
+        instructor: 'N/A', // Would need to join with courses table
+        enrolledDate: order?.created_at,
+        progress: latestProgress > 0 ? `${latestProgress}%` : 'In Progress',
+        completionStatus: latestProgress >= 100 ? 'Completed' : 'In Progress',
+        totalClasses: 'N/A',
+        completedClasses: activities.filter((a: any) => a.activity_type === 'Video Completed').length,
+        timeSpent: totalTimeSpent,
+        activitiesCount: activities.length,
+        quizzesCompleted: quizzes.length,
+        downloadsCount: courseDownloads.length,
+        lastActivity: activities.length > 0 ? new Date(activities[0].activity_time).toLocaleDateString() : 'N/A'
+      };
+    });
+
+    // Device usage analysis from real sessions
+    const deviceUsage = sessions.reduce((acc: any, session: any) => {
+      const deviceType = session.device_type || 'Unknown';
+      acc[deviceType] = (acc[deviceType] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Location history from real sessions
+    const locationHistory = sessions.slice(0, 10).map((session: any) => ({
+      city: session.location_city || 'Unknown',
+      country: session.location_country || 'Unknown',
+      loginTime: new Date(session.login_time).toLocaleString(),
+      device: session.device_type || 'Unknown',
+      browser: session.browser || 'Unknown'
+    }));
 
     const profile = {
       email: user.email,
       name: user.name,
       status: user.status,
       joinDate: user.created_at,
-      totalSessions: 'N/A (Real-time tracking not yet implemented)',
-      totalTimeSpent: 'N/A (Real-time tracking not yet implemented)',
+      totalSessions: totalSessions,
+      totalTimeSpent: totalLoginTime > 0 ? `${Math.round(totalLoginTime / 60)}h ${totalLoginTime % 60}m` : 'No sessions yet',
       coursesEnrolled: totalCoursesEnrolled,
-      totalAmountSpent: totalAmountSpent,
-      averageQuizScore: 'N/A (Quiz tracking not yet implemented)',
-      lastActiveDate: orders.length > 0 ? orders[0].created_at : user.created_at,
-      firstOrderDate: firstOrderDate?.toISOString()
+      coursesAccessed: coursesAccessed.length,
+      totalAmountSpent: orders.reduce((sum: number, order: any) => sum + parseFloat(order.amount || '0'), 0),
+      averageQuizScore: avgQuizScore > 0 ? `${avgQuizScore}%` : 'No quizzes taken yet',
+      lastActiveDate: sessions.length > 0 ? sessions[0].login_time : user.created_at,
+      firstOrderDate: orders.length > 0 ? orders[orders.length - 1].created_at : null
     };
-
-    const courseProgress = courseDetails.map((course: any) => {
-      const order = orders.find((o: any) => o.course_name === course.name);
-      return {
-        courseName: course.name,
-        instructor: course.instructor || 'N/A',
-        enrolledDate: order?.created_at,
-        progress: 'N/A (Progress tracking not yet implemented)',
-        completionStatus: 'Enrolled',
-        totalClasses: 'N/A',
-        completedClasses: 'N/A'
-      };
-    });
 
     return {
       found: true,
+      studentName: user.name,
+      studentEmail: user.email,
       profile,
+      summary: {
+        totalSessions,
+        totalLoginTime,
+        coursesAccessedCount: coursesAccessed.length,
+        avgQuizScore,
+        totalPageVisits: pageVisits.length,
+        totalCourseActivities: courseActivities.length,
+        totalQuizzes: quizPerformance.length,
+        totalDownloads: downloads.length,
+        firstActivity: sessions.length > 0 ? sessions[sessions.length - 1].login_time : null,
+        lastActivity: sessions.length > 0 ? sessions[0].login_time : null
+      },
       activityTimeline: activityTimeline.slice(0, 50), // Last 50 activities
       courseProgress,
-      deviceUsage: {
-        note: 'Device tracking not yet implemented for existing users'
-      },
-      locationHistory: {
-        note: 'Location tracking not yet implemented for existing users'
-      },
+      deviceUsage: Object.entries(deviceUsage).map(([device, count]) => ({ device, count })),
+      locationHistory,
       sessionInfo: {
-        note: 'Session tracking not yet implemented for existing users'
+        totalSessions,
+        avgSessionDuration: totalLoginTime > 0 ? Math.round(totalLoginTime / totalSessions) : 0,
+        lastLogin: sessions.length > 0 ? sessions[0].login_time : null,
+        deviceBreakdown: deviceUsage
       }
     };
 

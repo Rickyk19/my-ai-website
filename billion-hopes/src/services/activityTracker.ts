@@ -1,394 +1,340 @@
-// =============================================
-// REAL-TIME ACTIVITY TRACKING SERVICE
-// Captures every action paid students take on the website
-// =============================================
+import { supabase } from '../utils/supabase';
 
-const SUPABASE_URL = 'https://ahvxqultshujqtmbkjpy.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ';
+// Utility functions for device detection
+const generateSessionId = (): string => {
+  return `session_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+};
 
-interface ActivityData {
-  studentEmail: string;
-  studentName: string;
-  activityType: string;
-  activityDetails: string;
-  pageUrl: string;
-  pageTitle: string;
-  courseName?: string;
-  sessionId: string;
-  userAgent: string;
-  ipAddress: string;
-  timeSpent?: number;
-  metadata?: any;
-}
+const detectDeviceType = (): string => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  if (/tablet|ipad|playbook|silk/.test(userAgent)) return 'Tablet';
+  if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/.test(userAgent)) return 'Mobile';
+  return 'Desktop';
+};
 
-interface SessionData {
-  studentEmail: string;
-  studentName: string;
-  sessionId: string;
-  loginTime: string;
-  logoutTime?: string;
-  sessionDuration?: number;
-  deviceType: string;
-  browser: string;
-  operatingSystem: string;
-  ipAddress: string;
-  locationCity?: string;
-  locationCountry?: string;
-  isActive: boolean;
-}
+const detectBrowser = (): string => {
+  const userAgent = navigator.userAgent;
+  if (userAgent.includes('Chrome')) return 'Chrome';
+  if (userAgent.includes('Firefox')) return 'Firefox';
+  if (userAgent.includes('Safari')) return 'Safari';
+  if (userAgent.includes('Edge')) return 'Edge';
+  if (userAgent.includes('Opera')) return 'Opera';
+  return 'Unknown';
+};
+
+const detectOS = (): string => {
+  const userAgent = navigator.userAgent;
+  if (userAgent.includes('Windows')) return 'Windows';
+  if (userAgent.includes('Mac')) return 'macOS';
+  if (userAgent.includes('Linux')) return 'Linux';
+  if (userAgent.includes('Android')) return 'Android';
+  if (userAgent.includes('iOS')) return 'iOS';
+  return 'Unknown';
+};
 
 class ActivityTracker {
-  private sessionId: string;
-  private studentEmail: string | null = null;
-  private studentName: string | null = null;
+  private currentSessionId: string | null = null;
   private sessionStartTime: Date | null = null;
-  private lastActivityTime: Date = new Date();
-  private pageStartTime: Date = new Date();
-  private activityBuffer: ActivityData[] = [];
-  private flushInterval: NodeJS.Timeout | null = null;
+  private currentStudentEmail: string | null = null;
+  private pageStartTime: Date | null = null;
+  private currentPagePath: string | null = null;
 
-  constructor() {
-    this.sessionId = this.generateSessionId();
-    this.initializeTracking();
-  }
-
-  private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  private getDeviceInfo() {
-    const userAgent = navigator.userAgent;
-    let deviceType = 'desktop';
-    let browser = 'Unknown';
-    let operatingSystem = 'Unknown';
-
-    // Detect device type
-    if (/Mobile|Android|iPhone|iPad/.test(userAgent)) {
-      deviceType = /iPad/.test(userAgent) ? 'tablet' : 'mobile';
-    }
-
-    // Detect browser
-    if (userAgent.includes('Chrome')) browser = 'Chrome';
-    else if (userAgent.includes('Firefox')) browser = 'Firefox';
-    else if (userAgent.includes('Safari')) browser = 'Safari';
-    else if (userAgent.includes('Edge')) browser = 'Edge';
-
-    // Detect OS
-    if (userAgent.includes('Windows')) operatingSystem = 'Windows';
-    else if (userAgent.includes('Mac')) operatingSystem = 'macOS';
-    else if (userAgent.includes('Linux')) operatingSystem = 'Linux';
-    else if (userAgent.includes('Android')) operatingSystem = 'Android';
-    else if (userAgent.includes('iOS')) operatingSystem = 'iOS';
-
-    return { deviceType, browser, operatingSystem };
-  }
-
-  private async sendToSupabase(table: string, data: any) {
+  async initializeTracking(studentEmail: string, studentName?: string): Promise<void> {
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(data)
-      });
+      this.currentStudentEmail = studentEmail;
+      this.currentSessionId = generateSessionId();
+      this.sessionStartTime = new Date();
 
-      if (!response.ok) {
-        console.error(`Failed to send data to ${table}:`, response.statusText);
+      const { error } = await supabase
+        .from('student_sessions')
+        .insert({
+          session_id: this.currentSessionId,
+          student_email: studentEmail,
+          student_name: studentName || 'Unknown',
+          login_time: this.sessionStartTime.toISOString(),
+          device_type: detectDeviceType(),
+          browser: detectBrowser(),
+          operating_system: detectOS(),
+          location_country: 'Unknown',
+          location_city: 'Unknown',
+          is_active: true
+        });
+
+      if (error) {
+        console.error('❌ Failed to initialize tracking session:', error);
+      } else {
+        console.log('✅ Tracking session initialized for:', studentEmail);
       }
     } catch (error) {
-      console.error(`Error sending data to ${table}:`, error);
+      console.error('❌ Error initializing tracking:', error);
     }
   }
 
-  private initializeTracking() {
-    // Track page visibility changes
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        this.trackActivity('Page Hidden', 'User switched tab or minimized window');
-        this.flushActivities();
+  async endSession(): Promise<void> {
+    if (!this.currentSessionId || !this.sessionStartTime) return;
+
+    try {
+      const sessionDuration = Math.floor((Date.now() - this.sessionStartTime.getTime()) / (1000 * 60));
+
+      const { error } = await supabase
+        .from('student_sessions')
+        .update({
+          logout_time: new Date().toISOString(),
+          session_duration_minutes: sessionDuration,
+          is_active: false
+        })
+        .eq('session_id', this.currentSessionId);
+
+      if (error) {
+        console.error('❌ Failed to end tracking session:', error);
       } else {
-        this.trackActivity('Page Visible', 'User returned to tab');
+        console.log('✅ Tracking session ended, duration:', sessionDuration, 'minutes');
       }
-    });
 
-    // Track page unload
-    window.addEventListener('beforeunload', () => {
-      this.endSession();
-    });
-
-    // Track mouse movements and clicks
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      this.trackActivity('Click', `Clicked on ${target.tagName}: ${target.textContent?.slice(0, 50) || 'Unknown'}`);
-    });
-
-    // Track scroll behavior
-    let scrollTimeout: NodeJS.Timeout;
-    document.addEventListener('scroll', () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
-        this.trackActivity('Scroll', `Scrolled to ${scrollPercent}% of page`);
-      }, 1000);
-    });
-
-    // Flush activities every 30 seconds
-    this.flushInterval = setInterval(() => {
-      this.flushActivities();
-    }, 30000);
-  }
-
-  // Initialize session for a paid student
-  async startSession(studentEmail: string, studentName: string) {
-    this.studentEmail = studentEmail;
-    this.studentName = studentName;
-    this.sessionStartTime = new Date();
-
-    const deviceInfo = this.getDeviceInfo();
-    
-    // Get IP and location (simplified - in production use a proper geolocation service)
-    const ipAddress = await this.getClientIP();
-    const location = await this.getLocation();
-
-    const sessionData: SessionData = {
-      studentEmail,
-      studentName,
-      sessionId: this.sessionId,
-      loginTime: this.sessionStartTime.toISOString(),
-      deviceType: deviceInfo.deviceType,
-      browser: deviceInfo.browser,
-      operatingSystem: deviceInfo.operatingSystem,
-      ipAddress,
-      locationCity: location.city,
-      locationCountry: location.country,
-      isActive: true
-    };
-
-    await this.sendToSupabase('analytics_paid_students_sessions', sessionData);
-    
-    this.trackActivity('Session Start', `Student logged in from ${deviceInfo.deviceType}`);
-    
-    console.log('📊 Activity tracking started for:', studentEmail);
-  }
-
-  // Track specific activities
-  trackActivity(activityType: string, activityDetails: string, courseName?: string, metadata?: any) {
-    if (!this.studentEmail) return;
-
-    const activity: ActivityData = {
-      studentEmail: this.studentEmail,
-      studentName: this.studentName || 'Unknown',
-      activityType,
-      activityDetails,
-      pageUrl: window.location.href,
-      pageTitle: document.title,
-      courseName,
-      sessionId: this.sessionId,
-      userAgent: navigator.userAgent,
-      ipAddress: 'auto-detect', // Will be populated by server
-      timeSpent: Date.now() - this.lastActivityTime.getTime(),
-      metadata
-    };
-
-    this.activityBuffer.push(activity);
-    this.lastActivityTime = new Date();
-
-    // Auto-flush if buffer gets too large
-    if (this.activityBuffer.length >= 10) {
-      this.flushActivities();
+      this.currentSessionId = null;
+      this.sessionStartTime = null;
+      this.currentStudentEmail = null;
+    } catch (error) {
+      console.error('❌ Error ending session:', error);
     }
   }
 
-  // Track page visits
-  trackPageVisit(pageTitle: string, pageUrl: string = window.location.href) {
-    if (!this.studentEmail) return;
+  async trackPageVisit(pagePath: string, pageTitle?: string, pageType?: string): Promise<void> {
+    if (!this.currentSessionId || !this.currentStudentEmail) return;
 
-    const timeSpent = Date.now() - this.pageStartTime.getTime();
-    
-    // Send previous page data if exists
-    if (timeSpent > 1000) { // Only if spent more than 1 second
-      this.sendToSupabase('analytics_paid_students_page_visits', {
-        session_id: this.getSessionDBId(),
-        student_email: this.studentEmail,
-        page_url: pageUrl,
-        page_title: pageTitle,
-        visit_time: new Date().toISOString(),
-        time_spent_seconds: Math.round(timeSpent / 1000),
-        referrer_url: document.referrer,
-        is_course_page: pageUrl.includes('/course/'),
-        course_name: this.extractCourseNameFromUrl(pageUrl)
-      });
-    }
-
-    this.pageStartTime = new Date();
-    this.trackActivity('Page Visit', `Visited: ${pageTitle}`);
-  }
-
-  // Track course-specific activities
-  trackCourseActivity(courseName: string, activityType: string, activityDetails: string, progressPercentage?: number) {
-    this.trackActivity(`Course: ${activityType}`, activityDetails, courseName, {
-      progress: progressPercentage
-    });
-
-    // Send to course activities table
-    this.sendToSupabase('analytics_paid_students_course_activities', {
-      student_email: this.studentEmail,
-      course_name: courseName,
-      activity_type: activityType,
-      activity_details: activityDetails,
-      activity_time: new Date().toISOString(),
-      time_spent_minutes: Math.round((Date.now() - this.lastActivityTime.getTime()) / 60000),
-      progress_percentage: progressPercentage || 0,
-      session_id: this.sessionId
-    });
-  }
-
-  // Track quiz activities
-  trackQuizActivity(courseName: string, quizName: string, score: number, totalQuestions: number, correctAnswers: number, timeTaken: number) {
-    this.trackActivity('Quiz Completed', `${quizName} - Score: ${score}%`, courseName);
-
-    this.sendToSupabase('analytics_paid_students_quiz_performance', {
-      student_email: this.studentEmail,
-      course_name: courseName,
-      quiz_name: quizName,
-      start_time: new Date(Date.now() - (timeTaken * 1000)).toISOString(),
-      end_time: new Date().toISOString(),
-      score_percentage: score,
-      questions_total: totalQuestions,
-      correct_answers: correctAnswers,
-      time_taken_minutes: Math.round(timeTaken / 60),
-      session_id: this.sessionId
-    });
-  }
-
-  // Track downloads
-  trackDownload(fileName: string, fileType: string, fileSize: number, courseName?: string) {
-    this.trackActivity('File Download', `Downloaded: ${fileName}`, courseName);
-
-    this.sendToSupabase('analytics_paid_students_downloads', {
-      student_email: this.studentEmail,
-      file_name: fileName,
-      file_type: fileType,
-      file_size_mb: Math.round(fileSize / (1024 * 1024) * 100) / 100,
-      course_name: courseName,
-      download_time: new Date().toISOString(),
-      download_status: 'completed',
-      session_id: this.sessionId
-    });
-  }
-
-  // Helper functions
-  private async getClientIP(): Promise<string> {
     try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      return data.ip;
-    } catch {
-      return 'unknown';
+      if (this.currentPagePath && this.pageStartTime) {
+        await this.endPageVisit();
+      }
+
+      this.currentPagePath = pagePath;
+      this.pageStartTime = new Date();
+
+      const { error } = await supabase
+        .from('student_page_visits')
+        .insert({
+          student_email: this.currentStudentEmail,
+          session_id: this.currentSessionId,
+          page_path: pagePath,
+          page_title: pageTitle || 'Unknown',
+          visit_time: this.pageStartTime.toISOString(),
+          page_type: pageType || 'general'
+        });
+
+      if (error) {
+        console.error('❌ Failed to track page visit:', error);
+      } else {
+        console.log('✅ Page visit tracked:', pagePath);
+      }
+    } catch (error) {
+      console.error('❌ Error tracking page visit:', error);
     }
   }
 
-  private async getLocation(): Promise<{city: string, country: string}> {
+  private async endPageVisit(): Promise<void> {
+    if (!this.currentPagePath || !this.pageStartTime || !this.currentSessionId) return;
+
     try {
-      const response = await fetch('https://ipapi.co/json/');
-      const data = await response.json();
-      return {
-        city: data.city || 'Unknown',
-        country: data.country_name || 'Unknown'
-      };
-    } catch {
-      return { city: 'Unknown', country: 'Unknown' };
+      const timeSpentSeconds = Math.floor((Date.now() - this.pageStartTime.getTime()) / 1000);
+
+      const { error } = await supabase
+        .from('student_page_visits')
+        .update({
+          exit_time: new Date().toISOString(),
+          time_spent_seconds: timeSpentSeconds
+        })
+        .eq('session_id', this.currentSessionId)
+        .eq('page_path', this.currentPagePath)
+        .is('exit_time', null);
+
+      if (error) {
+        console.error('❌ Failed to end page visit:', error);
+      }
+    } catch (error) {
+      console.error('❌ Error ending page visit:', error);
     }
   }
 
-  private extractCourseNameFromUrl(url: string): string | null {
-    const match = url.match(/\/course\/([^\/]+)/);
-    return match ? decodeURIComponent(match[1]) : null;
-  }
+  async trackCourseActivity(
+    courseName: string,
+    activityType: string,
+    activityDetails?: string,
+    courseId?: number,
+    classId?: number,
+    className?: string,
+    timeSpentMinutes?: number,
+    progressPercentage?: number,
+    videoPositionSeconds?: number
+  ): Promise<void> {
+    if (!this.currentSessionId || !this.currentStudentEmail) return;
 
-  private getSessionDBId(): number {
-    // In a real implementation, you'd store the database ID when creating the session
-    return parseInt(this.sessionId.split('_')[1]) % 1000000;
-  }
+    try {
+      const { error } = await supabase
+        .from('student_course_activities')
+        .insert({
+          student_email: this.currentStudentEmail,
+          session_id: this.currentSessionId,
+          course_id: courseId,
+          course_name: courseName,
+          class_id: classId,
+          class_name: className,
+          activity_type: activityType,
+          activity_details: activityDetails || `${activityType} in ${courseName}`,
+          activity_time: new Date().toISOString(),
+          time_spent_minutes: timeSpentMinutes || 0,
+          progress_percentage: progressPercentage || 0,
+          video_position_seconds: videoPositionSeconds,
+          completion_status: progressPercentage === 100 ? 'Completed' : 'In Progress'
+        });
 
-  private async flushActivities() {
-    if (this.activityBuffer.length === 0) return;
-
-    // Send all buffered activities
-    for (const activity of this.activityBuffer) {
-      await this.sendToSupabase('analytics_paid_students_page_visits', {
-        session_id: this.getSessionDBId(),
-        student_email: activity.studentEmail,
-        page_url: activity.pageUrl,
-        page_title: activity.pageTitle,
-        visit_time: new Date().toISOString(),
-        time_spent_seconds: Math.round((activity.timeSpent || 0) / 1000),
-        referrer_url: document.referrer,
-        is_course_page: activity.pageUrl.includes('/course/'),
-        course_name: activity.courseName
-      });
+      if (error) {
+        console.error('❌ Failed to track course activity:', error);
+      } else {
+        console.log('✅ Course activity tracked:', activityType, 'in', courseName);
+      }
+    } catch (error) {
+      console.error('❌ Error tracking course activity:', error);
     }
-
-    this.activityBuffer = [];
-    console.log('📊 Activities flushed to database');
   }
 
-  // End session
-  async endSession() {
-    if (!this.sessionStartTime || !this.studentEmail) return;
+  async trackQuizPerformance(
+    courseName: string,
+    quizName: string,
+    questionsTotal: number,
+    correctAnswers: number,
+    timeSpentMinutes: number,
+    answers?: any,
+    courseId?: number,
+    quizId?: number
+  ): Promise<void> {
+    if (!this.currentSessionId || !this.currentStudentEmail) return;
 
-    const sessionDuration = Math.round((Date.now() - this.sessionStartTime.getTime()) / 60000); // in minutes
+    try {
+      const questionsAttempted = correctAnswers + (questionsTotal - correctAnswers);
+      const wrongAnswers = questionsTotal - correctAnswers;
+      const scorePercentage = (correctAnswers / questionsTotal) * 100;
+      const passStatus = scorePercentage >= 60;
 
-    // Update session with logout time
-    await this.sendToSupabase('analytics_paid_students_sessions', {
-      student_email: this.studentEmail,
-      session_id: this.sessionId,
-      logout_time: new Date().toISOString(),
-      session_duration_minutes: sessionDuration,
-      is_active: false
-    });
+      const { error } = await supabase
+        .from('student_quiz_performance')
+        .insert({
+          student_email: this.currentStudentEmail,
+          session_id: this.currentSessionId,
+          course_id: courseId,
+          course_name: courseName,
+          quiz_id: quizId,
+          quiz_name: quizName,
+          start_time: new Date(Date.now() - timeSpentMinutes * 60 * 1000).toISOString(),
+          end_time: new Date().toISOString(),
+          time_taken_minutes: timeSpentMinutes,
+          questions_total: questionsTotal,
+          questions_attempted: questionsAttempted,
+          correct_answers: correctAnswers,
+          wrong_answers: wrongAnswers,
+          score_percentage: scorePercentage,
+          pass_status: passStatus,
+          answers_json: answers ? JSON.stringify(answers) : null
+        });
 
-    // Calculate daily engagement
-    await this.updateDailyEngagement(sessionDuration);
-
-    this.flushActivities();
-    
-    if (this.flushInterval) {
-      clearInterval(this.flushInterval);
+      if (error) {
+        console.error('❌ Failed to track quiz performance:', error);
+      } else {
+        console.log('✅ Quiz performance tracked:', quizName, `${scorePercentage}%`);
+      }
+    } catch (error) {
+      console.error('❌ Error tracking quiz performance:', error);
     }
-
-    console.log('📊 Session ended. Duration:', sessionDuration, 'minutes');
   }
 
-  private async updateDailyEngagement(sessionDuration: number) {
-    const today = new Date().toISOString().split('T')[0];
-    
-    // This would update or insert daily engagement metrics
-    await this.sendToSupabase('analytics_paid_students_engagement', {
-      student_email: this.studentEmail,
-      date: today,
-      total_login_time_minutes: sessionDuration,
-      pages_visited: this.activityBuffer.filter(a => a.activityType === 'Page Visit').length,
-      courses_accessed: new Set(this.activityBuffer.map(a => a.courseName).filter(Boolean)).size,
-      quizzes_taken: this.activityBuffer.filter(a => a.activityType === 'Quiz Completed').length,
-      downloads_count: this.activityBuffer.filter(a => a.activityType === 'File Download').length,
-      engagement_score: Math.min(100, Math.round(sessionDuration / 10 + this.activityBuffer.length))
-    });
+  async trackDownload(
+    fileName: string,
+    fileType: string,
+    courseName?: string,
+    className?: string,
+    downloadSource?: string,
+    courseId?: number,
+    classId?: number
+  ): Promise<void> {
+    if (!this.currentSessionId || !this.currentStudentEmail) return;
+
+    try {
+      const { error } = await supabase
+        .from('student_downloads')
+        .insert({
+          student_email: this.currentStudentEmail,
+          session_id: this.currentSessionId,
+          course_id: courseId,
+          course_name: courseName,
+          class_id: classId,
+          file_name: fileName,
+          file_type: fileType.toUpperCase(),
+          download_time: new Date().toISOString(),
+          download_status: 'Completed',
+          download_source: downloadSource || 'Class Material'
+        });
+
+      if (error) {
+        console.error('❌ Failed to track download:', error);
+      } else {
+        console.log('✅ Download tracked:', fileName);
+      }
+    } catch (error) {
+      console.error('❌ Error tracking download:', error);
+    }
+  }
+
+  async trackInteraction(
+    interactionType: string,
+    elementType?: string,
+    elementText?: string,
+    elementId?: string,
+    additionalData?: any
+  ): Promise<void> {
+    if (!this.currentSessionId || !this.currentStudentEmail || !this.currentPagePath) return;
+
+    try {
+      const { error } = await supabase
+        .from('student_interactions')
+        .insert({
+          student_email: this.currentStudentEmail,
+          session_id: this.currentSessionId,
+          page_path: this.currentPagePath,
+          interaction_type: interactionType,
+          element_type: elementType,
+          element_text: elementText?.substring(0, 255),
+          element_id: elementId,
+          interaction_time: new Date().toISOString(),
+          additional_data: additionalData ? JSON.stringify(additionalData) : null
+        });
+
+      if (error && !error.message.includes('rate limit')) {
+        console.error('❌ Failed to track interaction:', error);
+      }
+    } catch (error) {
+      console.error('❌ Error tracking interaction:', error);
+    }
+  }
+
+  getCurrentSession(): { sessionId: string | null; studentEmail: string | null } {
+    return {
+      sessionId: this.currentSessionId,
+      studentEmail: this.currentStudentEmail
+    };
+  }
+
+  isTrackingActive(): boolean {
+    return this.currentSessionId !== null && this.currentStudentEmail !== null;
   }
 }
 
-// Global tracker instance
 export const activityTracker = new ActivityTracker();
 
-// Export functions for easy use
-export const startSession = activityTracker.startSession.bind(activityTracker);
-export const trackActivity = activityTracker.trackActivity.bind(activityTracker);
+export const initializeTracking = activityTracker.initializeTracking.bind(activityTracker);
+export const endSession = activityTracker.endSession.bind(activityTracker);
 export const trackPageVisit = activityTracker.trackPageVisit.bind(activityTracker);
 export const trackCourseActivity = activityTracker.trackCourseActivity.bind(activityTracker);
-export const trackQuizActivity = activityTracker.trackQuizActivity.bind(activityTracker);
+export const trackQuizPerformance = activityTracker.trackQuizPerformance.bind(activityTracker);
 export const trackDownload = activityTracker.trackDownload.bind(activityTracker);
-export const endSession = activityTracker.endSession.bind(activityTracker); 
+export const trackInteraction = activityTracker.trackInteraction.bind(activityTracker);
+export const getCurrentSession = activityTracker.getCurrentSession.bind(activityTracker);
+export const isTrackingActive = activityTracker.isTrackingActive.bind(activityTracker);

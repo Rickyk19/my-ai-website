@@ -10,7 +10,7 @@ import {
   BookOpenIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
-import { trackQuizActivity, trackCourseActivity } from '../services/activityTracker';
+import { trackQuizPerformance, trackCourseActivity } from '../services/activityTracker';
 
 interface Question {
   id: number;
@@ -232,7 +232,7 @@ const ClassQuiz: React.FC = () => {
     }
   };
 
-  const handleSubmitQuiz = () => {
+  const handleSubmitQuiz = async () => {
     setShowResults(true);
     setQuizStarted(false);
     
@@ -242,21 +242,40 @@ const ClassQuiz: React.FC = () => {
     const percentage = Math.round((score / total) * 100);
     const timeTaken = Math.round((Date.now() - startTime) / 1000); // in seconds
     
-    // Track quiz completion
-    trackQuizActivity(
-      `Course ${courseId}`,
-      `Class ${classNumber} Quiz`,
-      percentage,
-      total,
-      score,
-      timeTaken
-    );
-    
-    console.log('📊 Quiz completed and tracked:', {
-      score: `${score}/${total}`,
-      percentage: `${percentage}%`,
-      timeTaken: `${timeTaken}s`
-    });
+    try {
+      // Get current user from context/localStorage
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const userEmail = currentUser.email || 'unknown@example.com';
+      
+      console.log('🚀 REAL-TIME TRACKING: Quiz completed by', userEmail);
+      console.log('📊 Quiz details:', {
+        course: `Course ${courseId}`,
+        quiz: `${quizData?.title}`,
+        score: `${score}/${total} (${percentage}%)`,
+        timeTaken: `${Math.round(timeTaken / 60)} minutes`,
+        userEmail: userEmail
+      });
+      
+      // Track quiz completion with real user data
+      if (quizData) {
+        await trackQuizPerformance(
+          `Course ${courseId} - ${quizData.title}`,
+          quizData.title,
+          total,
+          score,
+          Math.round(timeTaken / 60), // Convert seconds to minutes
+          selectedAnswers, // Pass the actual answers
+          parseInt(courseId as string),
+          parseInt(classNumber as string)
+        );
+      }
+      
+      console.log('✅ REAL-TIME QUIZ TRACKING COMPLETED!');
+      console.log('🔔 This should now appear in Analytics Dashboard immediately!');
+      
+    } catch (error) {
+      console.error('❌ Failed to track quiz:', error);
+    }
   };
 
   const calculateScore = () => {

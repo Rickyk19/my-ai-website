@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getWorkingAnalyticsDashboardData } from '../services/workingAnalyticsService';
 import { getPaidStudentsAnalyticsData, searchPaidStudentHistory, searchRealPaidStudentHistory } from '../services/paidStudentsService';
+import { getComprehensiveStudentAnalytics, searchSpecificStudentHistory } from '../services/realTimeStudentAnalytics';
 import { 
   ChartBarIcon, 
   UserGroupIcon, 
@@ -86,9 +87,10 @@ const AnalyticsDashboard: React.FC = () => {
   const [alerts, setAlerts] = useState<any[]>([]);
 
   const [paidStudentsData, setPaidStudentsData] = useState<any>({});
-  const [searchEmail, setSearchEmail] = useState<string>('');
+  const [searchEmail, setSearchEmail] = useState<string>('student@example.com');
   const [studentSearchResult, setStudentSearchResult] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [realTimeAnalytics, setRealTimeAnalytics] = useState<any>(null);
 
   useEffect(() => {
     loadAnalyticsData();
@@ -102,33 +104,135 @@ const AnalyticsDashboard: React.FC = () => {
   const loadAnalyticsData = async () => {
     setIsLoading(true);
     try {
-      console.log('🔄 Loading analytics data with WORKING service...');
+      console.log('🔄 Loading DIRECT REAL-TIME data (no samples)...');
       
-      // Load main analytics data
-      const data = await getWorkingAnalyticsDashboardData();
-      console.log('✅ WORKING analytics service loaded:', data);
+      // Import and use the direct real-time service (NO FALLBACK TO SAMPLES)
+      const { directRealTimeService } = await import('../services/directRealTimeService');
+      const realData = await directRealTimeService.getAllRealTimeData();
       
-      // Load paid students data
-      const paidData = await getPaidStudentsAnalyticsData();
-      console.log('✅ PAID STUDENTS analytics loaded:', paidData);
+      console.log('✅ DIRECT real-time data loaded:', realData);
+      console.log('📊 TODAY\'S ACTUAL DATA:', {
+        sessions: realData.sessions.length,
+        quizzes: realData.quizzes.length,
+        activities: realData.activities.length,
+        students: realData.summary.totalStudents
+      });
+
+      // If we have ANY real data, use it entirely
+      if (realData.sessions.length > 0 || realData.quizzes.length > 0 || realData.activities.length > 0) {
+        console.log('🎯 Using REAL data instead of samples');
+        
+        // Create real activity timeline
+        const realTimeline = [
+          ...realData.sessions.map((session: any) => ({
+            id: `session_${session.id}`,
+            type: 'session',
+            studentEmail: session.student_email,
+            studentName: session.student_name,
+            action: session.is_active ? 'Started session' : 'Ended session',
+            timestamp: session.login_time,
+            details: `${session.device_type} • ${session.browser} • ${session.location_city}, ${session.location_country}`,
+            duration: session.session_duration_minutes ? `${session.session_duration_minutes} min` : 'Active',
+            icon: '🔗'
+          })),
+          ...realData.quizzes.map((quiz: any) => ({
+            id: `quiz_${quiz.id}`,
+            type: 'quiz',
+            studentEmail: quiz.student_email,
+            action: `Completed ${quiz.quiz_name}`,
+            timestamp: quiz.start_time,
+            details: `${quiz.course_name} • Score: ${quiz.score_percentage}% (${quiz.correct_answers}/${quiz.questions_total})`,
+            duration: `${quiz.time_taken_minutes} min`,
+            status: quiz.pass_status ? 'Passed' : 'Failed',
+            icon: quiz.pass_status ? '✅' : '❌'
+          })),
+          ...realData.activities.map((activity: any) => ({
+            id: `activity_${activity.id}`,
+            type: 'course',
+            studentEmail: activity.student_email,
+            action: `${activity.activity_type} - ${activity.course_name}`,
+            timestamp: activity.activity_time,
+            details: `${activity.class_name} • ${activity.activity_details}`,
+            duration: `${activity.time_spent_minutes} min`,
+            icon: '📚'
+          }))
+        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        // Update state with REAL data
+        setRecentActivity(realTimeline);
+        setRealTimeVisitors(realData.summary.activeSessions);
+        
+        // Set real analytics without sample fallback
+        setStats({
+          visitors: { total: realData.summary.totalStudents, daily: realData.summary.activeSessions, weekly: 0, monthly: 0, change: 0 },
+          traffic: { organic: 0, direct: 0, social: 0, paid: 0, referrals: 0 },
+          users: { new: realData.summary.activeSessions, returning: 0, paidUsers: realData.summary.totalStudents, freeUsers: 0 },
+          engagement: { avgSessionTime: '0m 0s', bounceRate: 0, pagesPerSession: 0 },
+          revenue: { total: 0, arpu: 0, ltv: 0, conversionRate: 0 }
+        });
+
+        setAlerts([
+          {
+            id: 'realtime-success',
+            type: 'success',
+            message: `🎯 REAL-TIME DATA ACTIVE: ${realData.sessions.length} sessions, ${realData.quizzes.length} quiz completions TODAY`,
+            timestamp: new Date().toISOString()
+          }
+        ]);
+
+        // Set real quiz data for course progress
+        setCourseAnalytics(realData.quizzes.map((quiz: any) => ({
+          courseName: quiz.course_name,
+          quizName: quiz.quiz_name,
+          score: `${quiz.score_percentage}%`,
+          studentEmail: quiz.student_email,
+          completionDate: new Date(quiz.start_time).toLocaleDateString(),
+          timeTaken: `${quiz.time_taken_minutes} min`,
+          status: quiz.pass_status ? 'Passed' : 'Failed'
+        })));
+
+      } else {
+        console.log('⚠️ No real data found for today - user hasn\'t taken any activities yet');
+        
+        // Show empty state (not sample data)
+        setRecentActivity([]);
+        setRealTimeVisitors(0);
+        setStats({
+          visitors: { total: 0, daily: 0, weekly: 0, monthly: 0, change: 0 },
+          traffic: { organic: 0, direct: 0, social: 0, paid: 0, referrals: 0 },
+          users: { new: 0, returning: 0, paidUsers: 0, freeUsers: 0 },
+          engagement: { avgSessionTime: '0m 0s', bounceRate: 0, pagesPerSession: 0 },
+          revenue: { total: 0, arpu: 0, ltv: 0, conversionRate: 0 }
+        });
+        setCourseAnalytics([]);
+
+        setAlerts([
+          {
+            id: 'no-data',
+            type: 'info',
+            message: '📊 No activity data for today. Login as a student and take a quiz to see real-time tracking!',
+            timestamp: new Date().toISOString()
+          }
+        ]);
+      }
+
+      // Load minimal additional data for display
+      const additionalData = await getWorkingAnalyticsDashboardData();
+      setGeographicData(additionalData.geographicData);
+      setDeviceData(additionalData.deviceData);
       
-      // Update all state with real data
-      console.log('📊 Setting stats:', data.stats);
-      console.log('📊 Setting real-time visitors:', data.realTimeVisitors);
+      console.log('🎉 DIRECT real-time analytics loaded successfully!');
       
-      setStats(data.stats);
-      setCourseAnalytics(data.courseAnalytics);
-      setGeographicData(data.geographicData);
-      setDeviceData(data.deviceData);
-      setRealTimeVisitors(data.realTimeVisitors);
-      setRecentActivity(data.recentActivity);
-      setAlerts(data.activeAlerts);
-      setPaidStudentsData(paidData);
-      
-      console.log('🎉 Analytics data loaded and state updated - NO MORE ZEROS!');
     } catch (error) {
-      console.error('❌ Working analytics service failed:', error);
-      // Keep existing sample data if API fails
+      console.error('❌ Direct real-time service failed:', error);
+      setAlerts([
+        {
+          id: 'error',
+          type: 'error',
+          message: '❌ Real-time service failed. Check console for details.',
+          timestamp: new Date().toISOString()
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -170,35 +274,69 @@ const AnalyticsDashboard: React.FC = () => {
   );
 
   const handleStudentSearch = async () => {
-    if (!searchEmail.trim()) {
-      alert('Please enter a student email address');
-      return;
-    }
+    if (!searchEmail.trim()) return;
     
     setIsSearching(true);
+    
     try {
-      console.log('🔍 Searching for student:', searchEmail);
+      console.log('🔍 Searching for REAL student data:', searchEmail.trim());
       
-      // First try the real student search (from existing users/orders tables)
-      const realResult = await searchRealPaidStudentHistory(searchEmail.trim());
+      // Use direct real-time service for student search
+      const { directRealTimeService } = await import('../services/directRealTimeService');
+      const studentData = await directRealTimeService.getStudentRealTimeData(searchEmail.trim());
       
-      if (realResult && realResult.found) {
-        console.log('✅ Found REAL student data:', realResult);
-        setStudentSearchResult(realResult);
-        return;
+      // Check if studentData exists and has any data
+      if (studentData && (
+        (studentData.sessions && studentData.sessions.length > 0) || 
+        (studentData.quizzes && studentData.quizzes.length > 0) || 
+        (studentData.activities && studentData.activities.length > 0)
+      )) {
+        console.log('✅ Found REAL student data:', studentData);
+        
+        setStudentSearchResult({
+          found: true,
+          student: {
+            email: searchEmail.trim(),
+            name: studentData.sessions?.[0]?.student_name || 'Unknown',
+            totalSessions: studentData.summary?.totalSessions || 0,
+            quizzesCompleted: studentData.summary?.totalQuizzes || 0,
+            averageScore: studentData.summary?.avgQuizScore || 0,
+            totalTimeSpent: studentData.summary?.totalTimeSpent || 0,
+            coursesAccessed: studentData.summary?.totalActivities || 0,
+            isActive: (studentData.summary?.activeSessions || 0) > 0
+          },
+          sessions: (studentData.sessions || []).map((session: any) => ({
+            loginTime: new Date(session.login_time).toLocaleString(),
+            logoutTime: session.logout_time ? new Date(session.logout_time).toLocaleString() : 'Still Active',
+            duration: session.session_duration_minutes ? `${session.session_duration_minutes} min` : 'Active',
+            device: session.device_type,
+            location: `${session.location_city}, ${session.location_country}`
+          })),
+          quizzes: (studentData.quizzes || []).map((quiz: any) => ({
+            courseName: quiz.course_name,
+            quizName: quiz.quiz_name,
+            score: `${quiz.score_percentage}%`,
+            status: quiz.pass_status ? 'Passed' : 'Failed',
+            timeTaken: `${quiz.time_taken_minutes} min`,
+            completionTime: new Date(quiz.start_time).toLocaleString()
+          })),
+          courseProgress: studentData.courseProgress || [],
+          activityTimeline: studentData.timeline || []
+        });
+        
+      } else {
+        console.log('⚠️ No real data found for student:', searchEmail);
+        setStudentSearchResult({
+          found: false,
+          message: `No activity data found for ${searchEmail} today. Student hasn't logged in or taken any quizzes yet.`
+        });
       }
       
-      // If not found in real data, try analytics tables
-      console.log('⚠️ Not found in real data, trying analytics tables...');
-      const analyticsResult = await searchPaidStudentHistory(searchEmail.trim());
-      setStudentSearchResult(analyticsResult);
-      console.log('✅ Search result:', analyticsResult);
-      
     } catch (error) {
-      console.error('❌ Search failed:', error);
+      console.error('❌ Student search failed:', error);
       setStudentSearchResult({
         found: false,
-        message: 'Search failed. Please try again.'
+        message: 'Search failed. Please check the email and try again.'
       });
     } finally {
       setIsSearching(false);
@@ -828,45 +966,53 @@ const AnalyticsDashboard: React.FC = () => {
             {/* Search Results */}
             {studentSearchResult && (
               <div className="space-y-6">
-                {studentSearchResult.found ? (
-                  <>
-                    {/* Student Profile Summary */}
-                    <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
-                      <h3 className="text-xl font-bold mb-2">👤 {studentSearchResult.studentName || studentSearchResult.profile?.name}</h3>
-                      <p className="text-lg mb-4">📧 {studentSearchResult.studentEmail || studentSearchResult.profile?.email}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">
-                            {studentSearchResult.summary?.totalSessions || studentSearchResult.profile?.totalSessions || 'N/A'}
-                          </div>
-                          <div className="text-sm opacity-90">Total Sessions</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">
-                            {studentSearchResult.summary?.totalLoginTime ? 
-                              `${Math.round(studentSearchResult.summary.totalLoginTime / 60)}h` : 
-                              studentSearchResult.profile?.totalTimeSpent || 'N/A'
-                            }
-                          </div>
-                          <div className="text-sm opacity-90">Total Time</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">
-                            {studentSearchResult.summary?.coursesAccessedCount || studentSearchResult.profile?.coursesEnrolled || 0}
-                          </div>
-                          <div className="text-sm opacity-90">Courses Enrolled</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">
-                            {studentSearchResult.summary?.avgQuizScore ? 
-                              `${studentSearchResult.summary.avgQuizScore}%` : 
-                              studentSearchResult.profile?.averageQuizScore || 'N/A'
-                            }
-                          </div>
-                          <div className="text-sm opacity-90">Avg Quiz Score</div>
-                        </div>
-                      </div>
-                    </div>
+                                  {studentSearchResult.found ? (
+                    <>
+                     {/* Student Profile Summary */}
+                     <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
+                       <h3 className="text-xl font-bold mb-2">👤 {studentSearchResult.studentName || studentSearchResult.profile?.name}</h3>
+                       <p className="text-lg mb-2">📧 {studentSearchResult.studentEmail || studentSearchResult.profile?.email}</p>
+                       <p className="text-xs text-blue-200 mb-4">
+                         📊 Real-time tracking data {studentSearchResult.summary?.totalSessions > 0 ? '(Active)' : '(Available)'}
+                       </p>
+                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                         <div className="text-center">
+                           <div className="text-2xl font-bold">
+                             {studentSearchResult.summary?.totalSessions || studentSearchResult.profile?.totalSessions || 'N/A'}
+                           </div>
+                           <div className="text-sm opacity-90">Total Sessions</div>
+                         </div>
+                         <div className="text-center">
+                           <div className="text-2xl font-bold">
+                             {studentSearchResult.summary?.totalLoginTime ? 
+                               `${Math.round(studentSearchResult.summary.totalLoginTime / 60)}h` : 
+                               studentSearchResult.profile?.totalTimeSpent || 'N/A'
+                             }
+                           </div>
+                           <div className="text-sm opacity-90">Total Time</div>
+                         </div>
+                         <div className="text-center">
+                           <div className="text-2xl font-bold">
+                             {studentSearchResult.profile?.coursesEnrolled || 0}
+                           </div>
+                           <div className="text-sm opacity-90">
+                             Courses Enrolled
+                             {studentSearchResult.profile?.coursesAccessed !== undefined && (
+                               <div className="text-xs mt-1">({studentSearchResult.profile.coursesAccessed} accessed)</div>
+                             )}
+                           </div>
+                         </div>
+                         <div className="text-center">
+                           <div className="text-2xl font-bold">
+                             {studentSearchResult.summary?.avgQuizScore ? 
+                               `${studentSearchResult.summary.avgQuizScore}%` : 
+                               studentSearchResult.profile?.averageQuizScore || 'N/A'
+                             }
+                           </div>
+                           <div className="text-sm opacity-90">Avg Quiz Score</div>
+                         </div>
+                       </div>
+                     </div>
 
                     {/* Activity Timeline */}
                     <div className="bg-white rounded-lg shadow-md p-6">

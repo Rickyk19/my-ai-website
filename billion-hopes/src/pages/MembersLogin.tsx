@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   AcademicCapIcon, 
@@ -12,7 +12,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { authenticateMember } from '../utils/supabase';
 import { useAuth } from '../context/AuthContext';
-import { startSession } from '../services/activityTracker';
+import { trackPageVisit, initializeTracking } from '../services/activityTracker';
+import { supabase } from '../utils/supabase';
 
 interface LoginFormData {
   email: string;
@@ -29,6 +30,11 @@ const MembersLogin: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  useEffect(() => {
+    // Initialize tracking when component mounts (login page visit)
+    trackPageVisit('/members-login', 'Members Login', 'auth');
+  }, []);
 
   const handleInputChange = (field: keyof LoginFormData, value: string) => {
     setFormData(prev => ({
@@ -101,8 +107,9 @@ const MembersLogin: React.FC = () => {
       });
 
       // 🔥 START ACTIVITY TRACKING FOR PAID STUDENT
-      console.log('📊 Starting activity tracking for:', authResult.user.email);
-      await startSession(authResult.user.email, authResult.user.name);
+              // 🔥 INITIALIZE COMPREHENSIVE TRACKING
+        console.log('📊 Starting activity tracking for:', authResult.user.email);
+        await initializeTracking(authResult.user.email, authResult.user.name);
 
       setMessage({type: 'success', text: 'Login successful! Activity tracking enabled. Redirecting to your course library...'});
       

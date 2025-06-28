@@ -167,7 +167,13 @@ const MembersDashboard: React.FC = () => {
 
   const downloadPDF = (pdfUrl: string, courseName: string) => {
     // Track download activity
-    trackDownload(`${courseName}-guide.pdf`, 'pdf', 2.5, courseName);
+    trackDownload(
+      `${courseName}-guide.pdf`, 
+      'pdf', 
+      courseName,
+      'Course Guide',
+      'Dashboard'
+    );
     
     const link = document.createElement('a');
     link.href = pdfUrl;
@@ -180,7 +186,13 @@ const MembersDashboard: React.FC = () => {
 
   const downloadCertificate = (courseName: string) => {
     // Track certificate download
-    trackDownload(`${courseName}-certificate.pdf`, 'certificate', 1.2, courseName);
+    trackDownload(
+      `${courseName}-certificate.pdf`, 
+      'certificate', 
+      courseName,
+      'Certificate',
+      'Dashboard'
+    );
     
     alert(`Downloading certificate for ${courseName}...`);
   };

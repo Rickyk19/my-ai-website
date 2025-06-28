@@ -451,10 +451,16 @@ const ClassContent: React.FC = () => {
     }));
   };
 
-  const downloadPDF = (filename: string) => {
+    const downloadPDF = (filename: string) => {
     // Track PDF download
-    trackDownload(filename, 'pdf', 2.5, classData?.title || 'Unknown Course');
-    
+    trackDownload(
+      filename, 
+      'pdf', 
+      classData?.title || 'Unknown Course',
+      `Class ${classData?.class_number}` || 'Unknown Class',
+      'Class Material'
+    );
+
     // In production, this would download the actual PDF
     const link = document.createElement('a');
     link.href = `/pdfs/${filename}`;
