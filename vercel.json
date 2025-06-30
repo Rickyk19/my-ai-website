@@ -5,7 +5,7 @@
       "src": "billion-hopes/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "billion-hopes/build"
+        "distDir": "build"
       }
     }
   ],
