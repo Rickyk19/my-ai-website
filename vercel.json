@@ -1,23 +1,17 @@
 {
   "version": 2,
+  "name": "my-ai-website",
   "builds": [
     {
       "src": "billion-hopes/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "buildCommand": "cd billion-hopes && npm run build",
+        "distDir": "billion-hopes/build"
       }
     }
   ],
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))",
-      "dest": "/$1"
-    },
     {
       "src": "/(.*)",
       "dest": "/index.html"
