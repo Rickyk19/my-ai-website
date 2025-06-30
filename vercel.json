@@ -5,8 +5,9 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "buildCommand": "npm run build",
-        "distDir": "build"
+        "buildCommand": "npm install && npm run build",
+        "distDir": "build",
+        "installCommand": "npm install"
       }
     }
   ],
@@ -15,5 +16,10 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "app/**/*": {
+      "runtime": "nodejs18.x"
+    }
+  }
 } 
