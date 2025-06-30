@@ -1,13 +1,12 @@
 {
   "version": 2,
-  "name": "my-ai-website",
   "builds": [
     {
-      "src": "billion-hopes/package.json",
+      "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "buildCommand": "cd billion-hopes && npm run build",
-        "distDir": "billion-hopes/build"
+        "buildCommand": "npm run build",
+        "distDir": "build"
       }
     }
   ],

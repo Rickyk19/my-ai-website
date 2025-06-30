@@ -1,30 +1,29 @@
 import React, { useState } from 'react';
-import { supabase } from '../utils/supabase';
+import supabase from '../utils/supabase';
 
 interface FeedbackForm {
-  Name: string;
-  Email: string;
-  Message: string;
+  fullName: string;
+  email: string;
+  occupation: string;
+  message: string;
 }
 
-const initialFormState: FeedbackForm = {
-  Name: '',
-  Email: '',
-  Message: ''
-};
-
 const Feedback: React.FC = () => {
-  const [formData, setFormData] = useState<FeedbackForm>(initialFormState);
+  const [formData, setFormData] = useState<FeedbackForm>({
+    fullName: '',
+    email: '',
+    occupation: 'Student',
+    message: ''
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{
-    type: 'success' | 'error' | null;
+    type: 'success' | 'error' | '';
     message: string;
-  }>({ type: null, message: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-
+  }>({ type: '', message: '' });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -33,158 +32,150 @@ const Feedback: React.FC = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    setStatus({ type: null, message: '' });
+    setIsLoading(true);
+    setStatus({ type: '', message: '' });
 
     try {
-      console.log('Attempting to submit feedback via direct fetch:', formData);
-
-      // Use direct fetch instead of Supabase client
-      const response = await fetch('https://ahvxqultshujqtmbkjpy.supabase.co/rest/v1/feedback', {
-        method: 'POST',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnhxdWx0c2h1anF0bWJranB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzg0MzAsImV4cCI6MjA2NTgxNDQzMH0.jmt8gXVzqeNw0vtdSNAJDTOJAnda2HG4GA1oJyWr5dQ',
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
-          Name: formData.Name,
-          Email: formData.Email,
-          Message: formData.Message,
+      const { error } = await supabase
+        .from('feedback')
+        .insert([{
+          full_name: formData.fullName,
+          email: formData.email,
+          occupation: formData.occupation,
+          message: formData.message,
           created_at: new Date().toISOString()
-        })
-      });
+        }]);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
+      if (error) throw error;
 
-      const data = await response.json();
-      console.log('Feedback submitted successfully via direct fetch:', data);
-      
       setStatus({
         type: 'success',
-        message: 'Thank you for your feedback!'
+        message: 'Thank you for your feedback! We appreciate your input.'
       });
-      setFormData(initialFormState);
-    } catch (error: any) {
-      console.error('Error submitting feedback via direct fetch:', error);
       
+      // Clear form
+      setFormData({
+        fullName: '',
+        email: '',
+        occupation: 'Student',
+        message: ''
+      });
+    } catch (error) {
       setStatus({
         type: 'error',
-        message: `Failed to submit: ${error.message}`
+        message: 'Failed to submit feedback. Please try again.'
       });
+      console.error('Error submitting feedback:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px' }}>
-      <h1 style={{ marginBottom: '20px' }}>Share Your Feedback</h1>
+    <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Share Your Feedback</h1>
+        <p className="mt-2 text-lg text-gray-600">
+          We value your thoughts and suggestions to improve our services
+        </p>
+      </div>
 
-
-
-      {status.type && (
-        <div
-          style={{
-            padding: '10px',
-            marginBottom: '20px',
-            backgroundColor: status.type === 'success' ? '#e6ffe6' : '#ffe6e6',
-            border: `1px solid ${status.type === 'success' ? '#00cc00' : '#ff0000'}`,
-            borderRadius: '4px'
-          }}
-        >
-          {status.message}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
         <div>
-          <label htmlFor="Name" style={{ display: 'block', marginBottom: '5px' }}>
-            Name *
+          <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+            Full Name *
           </label>
           <input
             type="text"
-            id="Name"
-            name="Name"
-            value={formData.Name}
-            onChange={handleChange}
+            id="fullName"
+            name="fullName"
             required
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px'
-            }}
+            value={formData.fullName}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Enter your full name"
           />
         </div>
 
         <div>
-          <label htmlFor="Email" style={{ display: 'block', marginBottom: '5px' }}>
-            Email *
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            Email Address *
           </label>
           <input
             type="email"
-            id="Email"
-            name="Email"
-            value={formData.Email}
-            onChange={handleChange}
+            id="email"
+            name="email"
             required
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px'
-            }}
+            value={formData.email}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="you@example.com"
           />
         </div>
 
         <div>
-          <label htmlFor="Message" style={{ display: 'block', marginBottom: '5px' }}>
-            Message *
+          <label htmlFor="occupation" className="block text-sm font-medium text-gray-700">
+            Occupation
+          </label>
+          <select
+            id="occupation"
+            name="occupation"
+            value={formData.occupation}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          >
+            <option value="Student">Student</option>
+            <option value="Researcher">Researcher</option>
+            <option value="Educator">Educator</option>
+            <option value="Developer">Developer</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+            Message or Feedback
           </label>
           <textarea
-            id="Message"
-            name="Message"
-            value={formData.Message}
+            id="message"
+            name="message"
+            rows={4}
+            value={formData.message}
             onChange={handleChange}
-            required
-            rows={5}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              resize: 'vertical'
-            }}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Share your thoughts, suggestions, or feedback..."
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            opacity: isSubmitting ? 0.7 : 1
-          }}
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-        </button>
+        {status.message && (
+          <div
+            className={`rounded-md p-4 ${
+              status.type === 'success'
+                ? 'bg-green-50 text-green-800'
+                : 'bg-red-50 text-red-800'
+            }`}
+          >
+            <p className="text-sm">{status.message}</p>
+          </div>
+        )}
+
+        <div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+              isLoading ? 'opacity-75 cursor-not-allowed' : ''
+            }`}
+          >
+            {isLoading ? 'Submitting...' : 'Submit Feedback'}
+          </button>
+        </div>
       </form>
     </div>
   );
 };
 
 export default Feedback; 
+

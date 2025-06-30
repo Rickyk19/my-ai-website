@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import supabase from '../supabase';
+import supabase from '../utils/supabase';
 
 interface FeedbackForm {
   fullName: string;
@@ -94,7 +94,7 @@ const Feedback: React.FC = () => {
             required
             value={formData.fullName}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             placeholder="Enter your full name"
           />
         </div>
@@ -110,7 +110,7 @@ const Feedback: React.FC = () => {
             required
             value={formData.email}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             placeholder="you@example.com"
           />
         </div>
@@ -124,7 +124,7 @@ const Feedback: React.FC = () => {
             name="occupation"
             value={formData.occupation}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             <option value="Student">Student</option>
             <option value="Researcher">Researcher</option>
@@ -144,7 +144,7 @@ const Feedback: React.FC = () => {
             rows={4}
             value={formData.message}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             placeholder="Share your thoughts, suggestions, or feedback..."
           />
         </div>
@@ -165,7 +165,7 @@ const Feedback: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
               isLoading ? 'opacity-75 cursor-not-allowed' : ''
             }`}
           >
@@ -178,3 +178,4 @@ const Feedback: React.FC = () => {
 };
 
 export default Feedback; 
+
