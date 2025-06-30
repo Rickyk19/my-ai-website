@@ -189,7 +189,7 @@ const ManageCourses: React.FC = () => {
           class_number: 1, 
           title: `Class 1: Introduction to ${editingCourse?.name}`, 
           description: 'Foundation concepts and setup',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 45,
           pdf_materials: ['Class1_Introduction.pdf', 'Setup_Guide.pdf'],
           learning_objectives: ['Understand basics', 'Setup environment'],
@@ -205,7 +205,7 @@ const ManageCourses: React.FC = () => {
           class_number: 2, 
           title: `Class 2: Core Concepts`, 
           description: 'Deep dive into fundamental concepts',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 60,
           pdf_materials: ['Class2_CoreConcepts.pdf', 'Examples.pdf'],
           learning_objectives: ['Master core concepts', 'Apply knowledge'],
@@ -221,7 +221,7 @@ const ManageCourses: React.FC = () => {
           class_number: 3, 
           title: `Class 3: Practical Applications`, 
           description: 'Hands-on practice and real-world examples',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 75,
           pdf_materials: ['Class3_Practice.pdf', 'RealWorld_Examples.pdf'],
           learning_objectives: ['Apply concepts practically', 'Build projects'],
@@ -237,7 +237,7 @@ const ManageCourses: React.FC = () => {
           class_number: 4, 
           title: `Class 4: Advanced Topics`, 
           description: 'Advanced techniques and optimization',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 90,
           pdf_materials: ['Class4_Advanced.pdf', 'Optimization_Guide.pdf'],
           learning_objectives: ['Master advanced concepts', 'Optimize solutions'],
@@ -253,7 +253,7 @@ const ManageCourses: React.FC = () => {
           class_number: 5, 
           title: `Class 5: Final Project`, 
           description: 'Capstone project and course completion',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 120,
           pdf_materials: ['Class5_Project.pdf', 'Submission_Guidelines.pdf'],
           learning_objectives: ['Complete final project', 'Demonstrate mastery'],
@@ -1412,3 +1412,4 @@ const ManageCourses: React.FC = () => {
 };
 
 export default ManageCourses;
+

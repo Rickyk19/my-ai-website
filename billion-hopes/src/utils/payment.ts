@@ -78,7 +78,7 @@ export const initializePayment = async ({ courseId, amount, courseName }: Paymen
     key: 'rzp_test_YOUR_KEY_HERE', // Replace with your Razorpay key
     amount: amount * 100, // Amount in paise
     currency: 'INR',
-    name: 'Billion Hopes',
+    name: 'ABCD CORPORATION',
     description: `Purchase ${courseName}`,
     handler: async function (response: any) {
       // Handle successful payment

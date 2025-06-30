@@ -185,7 +185,7 @@ const Dashboard: React.FC = () => {
   };
   
   const [pages, setPages] = useState([
-    { id: 1, title: 'Home', path: '/', status: 'published', lastModified: '2024-01-15', content: 'Welcome to Billion Hopes homepage', image: null as string | null, section: 'Main' },
+    { id: 1, title: 'Home', path: '/', status: 'published', lastModified: '2024-01-15', content: 'Welcome to ABCD CORPORATION homepage', image: null as string | null, section: 'Main' },
     { id: 2, title: 'Courses', path: '/courses', status: 'published', lastModified: '2024-01-14', content: 'AI and ML courses for everyone', image: null as string | null, section: 'Main' },
     { id: 3, title: 'Types of AI', path: '/ai-explained/types', status: 'published', lastModified: '2024-01-13', content: 'Learn about different types of AI', image: null as string | null, section: 'AI Explained' },
     { id: 4, title: 'Feedback', path: '/feedback', status: 'published', lastModified: '2024-01-12', content: 'Share your feedback with us', image: null as string | null, section: 'Main' },
@@ -1017,7 +1017,7 @@ const Dashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Manage your Billion Hopes website</p>
+          <p className="text-gray-600">Manage your ABCD CORPORATION website</p>
         </div>
         <div className="flex gap-2">
           {/* Quick Add Dropdown */}
@@ -1474,7 +1474,7 @@ const Dashboard: React.FC = () => {
                 <h3 className="font-semibold">General Settings</h3>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">Site Title</label>
-                  <input type="text" className="w-full border rounded px-3 py-2" defaultValue="Billion Hopes" />
+                  <input type="text" className="w-full border rounded px-3 py-2" defaultValue="ABCD CORPORATION" />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">Site Description</label>

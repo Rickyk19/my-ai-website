@@ -136,10 +136,10 @@ INSERT INTO analytics_course_performance (date, course_name, page_views, unique_
 
 -- Insert video engagement data
 INSERT INTO analytics_video_engagement (session_id, course_id, class_number, video_url, play_count, watch_time_seconds, completion_percentage, drop_off_points, replay_count, playback_speed) VALUES
-('SESSION_001', 1, 1, 'https://www.youtube.com/watch?v=H7wd6JmTd18', 1, 1800, 85.5, ARRAY['00:05:30', '00:12:45'], 0, 1.0),
-('SESSION_002', 1, 2, 'https://www.youtube.com/watch?v=H7wd6JmTd18', 1, 2100, 92.3, ARRAY['00:08:15'], 1, 1.25),
-('SESSION_003', 2, 1, 'https://www.youtube.com/watch?v=H7wd6JmTd18', 1, 1650, 78.2, ARRAY['00:07:20', '00:15:30'], 0, 1.0),
-('SESSION_004', 3, 1, 'https://www.youtube.com/watch?v=H7wd6JmTd18', 1, 1950, 88.7, ARRAY['00:04:45'], 2, 1.5);
+('SESSION_001', 1, 1, 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 1, 1800, 85.5, ARRAY['00:05:30', '00:12:45'], 0, 1.0),
+('SESSION_002', 1, 2, 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 1, 2100, 92.3, ARRAY['00:08:15'], 1, 1.25),
+('SESSION_003', 2, 1, 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 1, 1650, 78.2, ARRAY['00:07:20', '00:15:30'], 0, 1.0),
+('SESSION_004', 3, 1, 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 1, 1950, 88.7, ARRAY['00:04:45'], 2, 1.5);
 
 -- Insert enquiry tracking data
 INSERT INTO analytics_enquiry_tracking (enquiry_id, course_name, visitor_ip, source_page, traffic_source, form_completion_time_seconds, converted_to_purchase, conversion_date, revenue_generated) VALUES
@@ -295,3 +295,4 @@ BEGIN
     RAISE NOTICE '🚀 Analytics Dashboard ready for testing!';
     RAISE NOTICE '💡 Access: /analytics-dashboard (Admin only)';
 END $$; 
+

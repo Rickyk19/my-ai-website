@@ -12,7 +12,7 @@ const ShowcasePage: React.FC = () => {
               🚀 Platform Navigation
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Explore all the amazing features and sections of Billion Hopes AI platform. 
+              Explore all the amazing features and sections of ABCD CORPORATION AI platform. 
               Click on any section to expand and discover what's available!
             </p>
             <div className="mt-6 flex justify-center space-x-4">

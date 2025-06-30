@@ -237,70 +237,70 @@ INSERT INTO courses (name, description, price, instructor, duration, level, cert
 -- Insert course classes for each course (varying number of classes per course)
 -- Course 1: Python Programming (12 classes)
 INSERT INTO course_classes (course_id, class_number, title, description, video_url, duration_minutes) VALUES
-(1, 1, 'Python Basics & Setup', 'Introduction to Python programming and development environment setup', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(1, 2, 'Variables & Data Types', 'Understanding Python variables, strings, numbers, and boolean types', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 40),
-(1, 3, 'Control Structures', 'If statements, loops, and conditional logic in Python', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(1, 4, 'Functions & Modules', 'Creating reusable code with functions and importing modules', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(1, 5, 'Object-Oriented Programming', 'Classes, objects, inheritance, and encapsulation', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 60),
-(1, 6, 'File Handling & I/O', 'Reading and writing files, handling exceptions', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 35),
-(1, 7, 'Web Scraping with BeautifulSoup', 'Extract data from websites using Python libraries', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(1, 8, 'API Development with Flask', 'Building REST APIs and web services', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 65),
-(1, 9, 'Database Integration', 'Working with SQLite and PostgreSQL databases', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(1, 10, 'Data Analysis with Pandas', 'Manipulating and analyzing data with Python', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(1, 11, 'GUI Development with Tkinter', 'Creating desktop applications with graphical interfaces', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(1, 12, 'Final Project & Deployment', 'Building and deploying a complete Python application', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 70);
+(1, 1, 'Python Basics & Setup', 'Introduction to Python programming and development environment setup', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(1, 2, 'Variables & Data Types', 'Understanding Python variables, strings, numbers, and boolean types', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 40),
+(1, 3, 'Control Structures', 'If statements, loops, and conditional logic in Python', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(1, 4, 'Functions & Modules', 'Creating reusable code with functions and importing modules', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(1, 5, 'Object-Oriented Programming', 'Classes, objects, inheritance, and encapsulation', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 60),
+(1, 6, 'File Handling & I/O', 'Reading and writing files, handling exceptions', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 35),
+(1, 7, 'Web Scraping with BeautifulSoup', 'Extract data from websites using Python libraries', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(1, 8, 'API Development with Flask', 'Building REST APIs and web services', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 65),
+(1, 9, 'Database Integration', 'Working with SQLite and PostgreSQL databases', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(1, 10, 'Data Analysis with Pandas', 'Manipulating and analyzing data with Python', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(1, 11, 'GUI Development with Tkinter', 'Creating desktop applications with graphical interfaces', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(1, 12, 'Final Project & Deployment', 'Building and deploying a complete Python application', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 70);
 
 -- Course 2: Machine Learning (10 classes)
 INSERT INTO course_classes (course_id, class_number, title, description, video_url, duration_minutes) VALUES
-(2, 1, 'Introduction to Machine Learning', 'Understanding ML concepts, types, and applications', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(2, 2, 'Data Preprocessing', 'Cleaning, transforming, and preparing data for ML models', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(2, 3, 'Linear & Logistic Regression', 'Building your first prediction models', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 60),
-(2, 4, 'Decision Trees & Random Forest', 'Tree-based algorithms for classification and regression', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(2, 5, 'Support Vector Machines', 'SVM algorithms for complex pattern recognition', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(2, 6, 'Clustering Algorithms', 'K-means, hierarchical clustering, and unsupervised learning', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 40),
-(2, 7, 'Neural Networks Basics', 'Introduction to artificial neural networks', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 65),
-(2, 8, 'Deep Learning with TensorFlow', 'Building deep neural networks for complex problems', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 70),
-(2, 9, 'Model Evaluation & Optimization', 'Testing, validating, and improving ML models', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(2, 10, 'Real-world ML Project', 'Complete machine learning project from data to deployment', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 80);
+(2, 1, 'Introduction to Machine Learning', 'Understanding ML concepts, types, and applications', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(2, 2, 'Data Preprocessing', 'Cleaning, transforming, and preparing data for ML models', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(2, 3, 'Linear & Logistic Regression', 'Building your first prediction models', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 60),
+(2, 4, 'Decision Trees & Random Forest', 'Tree-based algorithms for classification and regression', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(2, 5, 'Support Vector Machines', 'SVM algorithms for complex pattern recognition', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(2, 6, 'Clustering Algorithms', 'K-means, hierarchical clustering, and unsupervised learning', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 40),
+(2, 7, 'Neural Networks Basics', 'Introduction to artificial neural networks', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 65),
+(2, 8, 'Deep Learning with TensorFlow', 'Building deep neural networks for complex problems', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 70),
+(2, 9, 'Model Evaluation & Optimization', 'Testing, validating, and improving ML models', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(2, 10, 'Real-world ML Project', 'Complete machine learning project from data to deployment', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 80);
 
 -- Course 3: Full Stack Development (15 classes)
 INSERT INTO course_classes (course_id, class_number, title, description, video_url, duration_minutes) VALUES
-(3, 1, 'Web Development Fundamentals', 'HTML, CSS, and JavaScript essentials', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(3, 2, 'Modern JavaScript ES6+', 'Advanced JavaScript features and best practices', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(3, 3, 'React.js Fundamentals', 'Building interactive user interfaces with React', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 60),
-(3, 4, 'React Hooks & State Management', 'Managing application state with hooks and Context API', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(3, 5, 'Node.js & Express Setup', 'Building backend servers with Node.js', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(3, 6, 'RESTful API Development', 'Creating robust APIs for web applications', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(3, 7, 'Database Design & MongoDB', 'NoSQL database integration and design patterns', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(3, 8, 'Authentication & Security', 'User authentication, JWT tokens, and security best practices', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 60),
-(3, 9, 'Frontend-Backend Integration', 'Connecting React frontend with Node.js backend', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 65),
-(3, 10, 'Testing & Debugging', 'Unit testing, integration testing, and debugging techniques', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 40),
-(3, 11, 'Progressive Web Apps', 'Building PWAs with offline functionality', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(3, 12, 'Performance Optimization', 'Optimizing application speed and user experience', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(3, 13, 'Docker & Containerization', 'Containerizing applications for consistent deployment', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(3, 14, 'Cloud Deployment', 'Deploying applications to AWS, Heroku, and Vercel', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 60),
-(3, 15, 'Final Capstone Project', 'Building and deploying a complete full-stack application', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 90);
+(3, 1, 'Web Development Fundamentals', 'HTML, CSS, and JavaScript essentials', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(3, 2, 'Modern JavaScript ES6+', 'Advanced JavaScript features and best practices', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(3, 3, 'React.js Fundamentals', 'Building interactive user interfaces with React', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 60),
+(3, 4, 'React Hooks & State Management', 'Managing application state with hooks and Context API', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(3, 5, 'Node.js & Express Setup', 'Building backend servers with Node.js', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(3, 6, 'RESTful API Development', 'Creating robust APIs for web applications', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(3, 7, 'Database Design & MongoDB', 'NoSQL database integration and design patterns', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(3, 8, 'Authentication & Security', 'User authentication, JWT tokens, and security best practices', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 60),
+(3, 9, 'Frontend-Backend Integration', 'Connecting React frontend with Node.js backend', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 65),
+(3, 10, 'Testing & Debugging', 'Unit testing, integration testing, and debugging techniques', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 40),
+(3, 11, 'Progressive Web Apps', 'Building PWAs with offline functionality', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(3, 12, 'Performance Optimization', 'Optimizing application speed and user experience', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(3, 13, 'Docker & Containerization', 'Containerizing applications for consistent deployment', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(3, 14, 'Cloud Deployment', 'Deploying applications to AWS, Heroku, and Vercel', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 60),
+(3, 15, 'Final Capstone Project', 'Building and deploying a complete full-stack application', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 90);
 
 -- Add classes for remaining courses (sample for courses 4-20, 6-8 classes each)
 INSERT INTO course_classes (course_id, class_number, title, description, video_url, duration_minutes) VALUES
 -- Course 4: Data Science (8 classes)
-(4, 1, 'Data Science Introduction', 'Overview of data science lifecycle and tools', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(4, 2, 'R Programming Basics', 'Getting started with R for data analysis', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(4, 3, 'Data Visualization', 'Creating compelling charts and graphs', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(4, 4, 'Statistical Analysis', 'Descriptive and inferential statistics', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 60),
-(4, 5, 'Data Cleaning & Wrangling', 'Preparing messy data for analysis', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(4, 6, 'Predictive Modeling', 'Building models to predict future outcomes', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 65),
-(4, 7, 'Big Data Analytics', 'Working with large datasets and distributed computing', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(4, 8, 'Data Science Capstone', 'Complete real-world data science project', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 75);
+(4, 1, 'Data Science Introduction', 'Overview of data science lifecycle and tools', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(4, 2, 'R Programming Basics', 'Getting started with R for data analysis', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(4, 3, 'Data Visualization', 'Creating compelling charts and graphs', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(4, 4, 'Statistical Analysis', 'Descriptive and inferential statistics', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 60),
+(4, 5, 'Data Cleaning & Wrangling', 'Preparing messy data for analysis', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(4, 6, 'Predictive Modeling', 'Building models to predict future outcomes', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 65),
+(4, 7, 'Big Data Analytics', 'Working with large datasets and distributed computing', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(4, 8, 'Data Science Capstone', 'Complete real-world data science project', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 75);
 
 -- Course 5: Digital Marketing (6 classes)
 INSERT INTO course_classes (course_id, class_number, title, description, video_url, duration_minutes) VALUES
-(5, 1, 'Digital Marketing Fundamentals', 'Introduction to online marketing strategies', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 40),
-(5, 2, 'SEO & Content Marketing', 'Search engine optimization and content strategy', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 55),
-(5, 3, 'Social Media Marketing', 'Facebook, Instagram, LinkedIn, and Twitter marketing', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50),
-(5, 4, 'Google Ads & PPC', 'Pay-per-click advertising and campaign optimization', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 60),
-(5, 5, 'Email Marketing & Automation', 'Building email campaigns and marketing funnels', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 45),
-(5, 6, 'Analytics & ROI Measurement', 'Tracking marketing performance and conversion rates', 'https://www.youtube.com/watch?v=H7wd6JmTd18', 50);
+(5, 1, 'Digital Marketing Fundamentals', 'Introduction to online marketing strategies', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 40),
+(5, 2, 'SEO & Content Marketing', 'Search engine optimization and content strategy', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 55),
+(5, 3, 'Social Media Marketing', 'Facebook, Instagram, LinkedIn, and Twitter marketing', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50),
+(5, 4, 'Google Ads & PPC', 'Pay-per-click advertising and campaign optimization', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 60),
+(5, 5, 'Email Marketing & Automation', 'Building email campaigns and marketing funnels', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 45),
+(5, 6, 'Analytics & ROI Measurement', 'Tracking marketing performance and conversion rates', 'https://www.youtube.com/watch?v=_zgZ0g8EbF4', 50);
 
 -- Add sample orders for multiple courses to student@example.com
 INSERT INTO orders (course_name, course_id, amount, customer_name, customer_email, status, transaction_id) VALUES
@@ -347,3 +347,5 @@ UNION ALL
 SELECT 'Orders', count(*) FROM orders
 UNION ALL
 SELECT 'Comments', count(*) FROM course_comments; 
+
+

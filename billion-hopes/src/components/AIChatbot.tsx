@@ -63,7 +63,7 @@ const AIChatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "🚀 **Welcome to Billion Hopes AI Assistant!** 🎓\n\nI'm your personal course advisor with access to our complete database of **20+ professional courses**! I can help you with:\n\n🎯 **Course Discovery** - Find perfect courses for your goals\n💰 **Pricing & Offers** - Get detailed pricing information\n👨‍🏫 **Instructor Profiles** - Meet our expert instructors\n⭐ **Student Reviews** - Real feedback from 5000+ students\n🏆 **Learning Paths** - Personalized recommendations\n🔐 **Members Area** - Access & technical support\n\nWhat would you like to explore today?",
+      text: "🚀 **Welcome to ABCD CORPORATION AI Assistant!** 🎓\n\nI'm your personal course advisor with access to our complete database of **20+ professional courses**! I can help you with:\n\n🎯 **Course Discovery** - Find perfect courses for your goals\n💰 **Pricing & Offers** - Get detailed pricing information\n👨‍🏫 **Instructor Profiles** - Meet our expert instructors\n⭐ **Student Reviews** - Real feedback from 5000+ students\n🏆 **Learning Paths** - Personalized recommendations\n🔐 **Members Area** - Access & technical support\n\nWhat would you like to explore today?",
       isBot: true,
       timestamp: new Date(),
       suggestions: [
@@ -531,7 +531,7 @@ const AIChatbot: React.FC = () => {
     // Getting Started
     if (message.includes('start') || message.includes('begin') || message.includes('how') || message.includes('new')) {
       return {
-        text: "🚀 **Getting Started with Billion Hopes:**\n\n**Step 1: Explore** 🔍\n• Browse our courses page\n• Check course details & pricing\n• Read student reviews\n\n**Step 2: Try Free Features** 🆓\n• AI Playground (no login required)\n• Sample quizzes\n• Course previews\n\n**Step 3: Purchase & Learn** 💳\n• Choose your course\n• Complete secure payment\n• Get instant access to Members Area\n\n**Step 4: Start Learning** 🎓\n• Watch video lectures\n• Download PDF materials\n• Take quizzes after each class\n• Track your progress\n\n🎯 **Pro Tip:** Start with our AI Playground to get a feel for our interactive learning approach!",
+        text: "🚀 **Getting Started with ABCD CORPORATION:**\n\n**Step 1: Explore** 🔍\n• Browse our courses page\n• Check course details & pricing\n• Read student reviews\n\n**Step 2: Try Free Features** 🆓\n• AI Playground (no login required)\n• Sample quizzes\n• Course previews\n\n**Step 3: Purchase & Learn** 💳\n• Choose your course\n• Complete secure payment\n• Get instant access to Members Area\n\n**Step 4: Start Learning** 🎓\n• Watch video lectures\n• Download PDF materials\n• Take quizzes after each class\n• Track your progress\n\n🎯 **Pro Tip:** Start with our AI Playground to get a feel for our interactive learning approach!",
         suggestions: [
           "Show me course catalog",
           "What's the easiest course to start?",
@@ -543,7 +543,7 @@ const AIChatbot: React.FC = () => {
 
     // Default response for general queries
     return {
-      text: "🤖 I'm here to help you with everything about Billion Hopes!\n\nI can provide information about:\n\n🎓 **Courses & Pricing**\n⭐ **Student Reviews**\n🚀 **Website Features**\n🔐 **Members Area Access**\n🛠️ **Technical Support**\n💡 **Learning Guidance**\n\n💡 **Pro Tip:** Type 'reset' anytime to change your registration details!\n\nWhat specific information would you like to know? Just ask me anything!",
+      text: "🤖 I'm here to help you with everything about ABCD CORPORATION!\n\nI can provide information about:\n\n🎓 **Courses & Pricing**\n⭐ **Student Reviews**\n🚀 **Website Features**\n🔐 **Members Area Access**\n🛠️ **Technical Support**\n💡 **Learning Guidance**\n\n💡 **Pro Tip:** Type 'reset' anytime to change your registration details!\n\nWhat specific information would you like to know? Just ask me anything!",
       suggestions: [
         "Tell me about courses",
         "What are the prices?",
@@ -765,7 +765,7 @@ const AIChatbot: React.FC = () => {
                       >
                         <AcademicCapIcon className="h-10 w-10 text-white" />
                       </motion.div>
-                      <h2 className="text-xl font-bold text-gray-900 mb-2">Join Billion Hopes! 🎓</h2>
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">Join ABCD CORPORATION! 🎓</h2>
                       <p className="text-sm text-gray-600 mb-6">
                         Enter your details to access our AI Course Assistant and get personalized course recommendations!
                       </p>
@@ -997,7 +997,7 @@ const AIChatbot: React.FC = () => {
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder="Ask me anything about Billion Hopes..."
+                      placeholder="Ask me anything about ABCD CORPORATION..."
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     />
                     <button

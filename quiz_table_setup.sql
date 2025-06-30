@@ -235,3 +235,4 @@ CREATE TRIGGER update_class_quizzes_updated_at
 -- Grant permissions (adjust based on your setup)
 -- GRANT ALL PRIVILEGES ON class_quizzes TO your_admin_user;
 -- GRANT SELECT, INSERT, UPDATE ON class_quizzes TO your_app_user;
+

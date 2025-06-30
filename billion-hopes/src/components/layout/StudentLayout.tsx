@@ -54,7 +54,7 @@ const StudentLayout: React.FC<StudentLayoutProps> = ({ children, showNavigation 
                   <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
                     <AcademicCapIcon className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-xl font-bold text-gray-900">Billion Hopes</span>
+                  <span className="text-xl font-bold text-gray-900">ABCD CORPORATION</span>
                 </Link>
               </div>
 

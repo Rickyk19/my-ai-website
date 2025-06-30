@@ -11,15 +11,15 @@ const Header: React.FC = () => {
           {/* Logo and Tagline */}
           <div className="flex items-center space-x-3">
             <Link to="/" className="flex items-center space-x-3">
-              <img src={logo} alt="Billion Hopes Logo" className="h-10 w-auto object-contain" />
+              <img src={logo} alt="ABCD CORPORATION Logo" className="h-10 w-auto object-contain" />
               <span className="flex flex-col">
                 <motion.h1 
                   className="text-2xl font-bold text-blue-600"
                   whileHover={{ scale: 1.05 }}
                 >
-                  Billion Hopes
+                  ABCD CORPORATION
                 </motion.h1>
-                <span className="text-sm text-gray-600">AI for Real Impact</span>
+                
               </span>
             </Link>
           </div>

@@ -32,7 +32,7 @@ const FeatureCards: React.FC = () => {
         {
           id: "home",
           title: "Home",
-          description: "Welcome to Billion Hopes - Your AI learning journey starts here",
+          description: "Welcome to ABCD CORPORATION - Your AI learning journey starts here",
           image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
           path: "/",
           category: "core",

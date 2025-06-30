@@ -125,7 +125,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               <li>
                 <a 
-                  href="https://github.com/billionhopes" 
+                  href="https://github.com/abcdcorporation" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
@@ -135,7 +135,7 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a 
-                  href="https://twitter.com/billionhopes" 
+                  href="https://twitter.com/abcdcorporation" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
@@ -145,7 +145,7 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a 
-                  href="https://linkedin.com/company/billionhopes" 
+                  href="https://linkedin.com/company/abcdcorporation" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
@@ -155,7 +155,7 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a 
-                  href="https://discord.gg/billionhopes" 
+                  href="https://discord.gg/abcdcorporation" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
@@ -165,7 +165,7 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a 
-                  href="https://youtube.com/@billionhopes" 
+                  href="https://youtube.com/@abcdcorporation" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
@@ -175,7 +175,7 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a 
-                  href="https://instagram.com/billionhopes" 
+                  href="https://instagram.com/abcdcorporation" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
@@ -192,7 +192,7 @@ const Footer: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="mb-4 md:mb-0">
               <p className="text-sm">
-                © 2024 Billion Hopes. All rights reserved.
+                © 2024 ABCD CORPORATION. All rights reserved.
               </p>
             </div>
             

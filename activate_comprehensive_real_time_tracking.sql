@@ -159,3 +159,4 @@ SELECT
     'All tables created and ready for REAL student data' as message,
     'Tracking enabled for ALL courses, quizzes, pages, videos' as scope,
     'Tables are EMPTY - will populate automatically as students use the system' as note;
+

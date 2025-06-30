@@ -81,7 +81,7 @@ const ClassContent: React.FC = () => {
     }
     
     // Fallback to a default educational video
-    return 'https://www.youtube.com/embed/H7wd6JmTd18'; // User's specified video URL
+    return 'https://www.youtube.com/embed/_zgZ0g8EbF4'; // User's specified video URL
   };
 
   useEffect(() => {
@@ -108,7 +108,7 @@ const ClassContent: React.FC = () => {
           class_number: 1,
           title: 'Python Basics & Setup',
           description: 'Introduction to Python programming and development environment setup. Learn how to install Python, set up your IDE, and write your first Python program.',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 45,
           pdf_materials: [
             'Python Installation Guide.pdf',
@@ -134,7 +134,7 @@ const ClassContent: React.FC = () => {
           class_number: 2,
           title: 'Variables & Data Types',
           description: 'Deep dive into Python variables, strings, numbers, booleans, and understanding how data types work in Python.',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 50,
           pdf_materials: [
             'Data Types Guide.pdf',
@@ -160,7 +160,7 @@ const ClassContent: React.FC = () => {
           class_number: 3,
           title: 'Control Structures',
           description: 'Learn conditional statements, loops, and control flow in Python programming.',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 55,
           pdf_materials: [
             'Control Flow Guide.pdf',
@@ -189,7 +189,7 @@ const ClassContent: React.FC = () => {
           class_number: 1,
           title: 'Introduction to Machine Learning',
           description: 'Overview of machine learning concepts, types of ML, and setting up your ML environment.',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 60,
           pdf_materials: [
             'ML Introduction.pdf',
@@ -215,7 +215,7 @@ const ClassContent: React.FC = () => {
           class_number: 2,
           title: 'Data Preprocessing',
           description: 'Learn how to clean, prepare, and transform data for machine learning models.',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 65,
           pdf_materials: [
             'Data Preprocessing Guide.pdf',
@@ -244,7 +244,7 @@ const ClassContent: React.FC = () => {
           class_number: 1,
           title: 'HTML & CSS Fundamentals',
           description: 'Master the building blocks of web development with HTML structure and CSS styling.',
-          video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+          video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
           duration_minutes: 50,
           pdf_materials: [
             'HTML Reference Guide.pdf',
@@ -274,7 +274,7 @@ const ClassContent: React.FC = () => {
       class_number: classNum,
       title: 'Course Content',
       description: 'Learn advanced concepts and practical applications in this comprehensive class.',
-      video_url: 'https://www.youtube.com/embed/H7wd6JmTd18',
+      video_url: 'https://www.youtube.com/embed/_zgZ0g8EbF4',
       duration_minutes: 45,
       pdf_materials: [
         'Class Materials.pdf',
@@ -853,3 +853,4 @@ const ClassContent: React.FC = () => {
 };
 
 export default ClassContent; 
+

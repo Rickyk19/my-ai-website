@@ -274,7 +274,7 @@ const Home: React.FC = () => {
                 
                 <motion.img
                   src={logo}
-                  alt="Billion Hopes Logo"
+                  alt="ABCD CORPORATION Logo"
                   className="relative w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 object-contain drop-shadow-2xl"
                   animate={{ 
                     rotate: [0, 5, -5, 0],
@@ -336,7 +336,7 @@ const Home: React.FC = () => {
                 </motion.div>
                 
                 <h1 className="text-5xl md:text-7xl lg:text-8xl font-black bg-gradient-to-r from-yellow-200 via-orange-200 to-pink-200 bg-clip-text text-transparent drop-shadow-2xl">
-                  BILLION HOPES
+                  ABCD CORPORATION
                 </h1>
                 
                 <motion.div
@@ -355,7 +355,7 @@ const Home: React.FC = () => {
               >
                 <div className="bg-white/10 backdrop-blur-sm px-8 py-3 rounded-full border border-white/20">
                   <p className="text-xl md:text-2xl lg:text-3xl font-bold text-white">
-                    🤖 AI FOR REAL IMPACT 🚀
+                    
                   </p>
                 </div>
               </motion.div>
