@@ -7,11 +7,6 @@
     "DISABLE_ESLINT_PLUGIN": "true",
     "SKIP_PREFLIGHT_CHECK": "true"
   },
-  "functions": {
-    "app/**": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
