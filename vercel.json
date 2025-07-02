@@ -1,7 +1,4 @@
 {
-  "buildCommand": "cd billion-hopes && npm ci && npm run build",
-  "outputDirectory": "billion-hopes/build",
-  "installCommand": "cd billion-hopes && npm ci",
   "rewrites": [
     {
       "source": "/(.*)",
