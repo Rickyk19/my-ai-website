@@ -1,10 +1,16 @@
 {
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "installCommand": "npm ci --legacy-peer-deps || npm install --legacy-peer-deps",
+  "buildCommand": "npm run build",
   "env": {
     "CI": "false",
     "GENERATE_SOURCEMAP": "false",
     "DISABLE_ESLINT_PLUGIN": "true",
-    "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+    "SKIP_PREFLIGHT_CHECK": "true"
+  },
+  "functions": {
+    "app/**": {
+      "runtime": "nodejs18.x"
+    }
   },
   "rewrites": [
     {
