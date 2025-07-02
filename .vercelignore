@@ -1,24 +1,21 @@
-# Ignore root-level React app (duplicate)
-/src
-/public
-/package.json
-/package-lock.json
-/build
-/node_modules
-/tsconfig.json
-/tailwind.config.js
-
-# Ignore other React projects
+# Ignore subdirectories that are no longer needed
+/billion-hopes
 /billion-hopes-site
+/server
 
-# Keep only billion-hopes for deployment
-!/billion-hopes
-
-.git
+# Ignore SQL files and other development files
 *.sql
 README.md
-server
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local 
+.env.production.local
+
+# Ignore git and other version control
+.git
+
+# Ignore development files
+*.md
+.cursorignore
+
+# Keep the main project files in root for deployment 
