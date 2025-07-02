@@ -1,9 +1,4 @@
 {
-  "version": 2,
-  "env": {
-    "CI": "false",
-    "DISABLE_ESLINT_PLUGIN": "true"
-  },
   "builds": [
     {
       "src": "billion-hopes/package.json",
@@ -14,7 +9,9 @@
     }
   ],
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
