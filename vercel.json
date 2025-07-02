@@ -1,23 +1,11 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "billion-hopes/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
+  "buildCommand": "cd billion-hopes && npm ci && npm run build",
+  "outputDirectory": "billion-hopes/build",
+  "installCommand": "cd billion-hopes && npm ci",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "env": {
-    "CI": "false",
-    "DISABLE_ESLINT_PLUGIN": "true",
-    "VERCEL_FORCE_NO_BUILD_CACHE": "1"
-  }
+  ]
 }
