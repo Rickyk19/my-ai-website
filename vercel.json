@@ -5,10 +5,10 @@
   },
   "builds": [
     {
-      "src": "package.json",
+      "src": "billion-hopes/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "distDir": "billion-hopes/build"
       }
     }
   ],
