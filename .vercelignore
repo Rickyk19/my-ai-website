@@ -1,8 +1,22 @@
-node_modules
+# Ignore root-level React app (duplicate)
+/src
+/public
+/package.json
+/package-lock.json
+/build
+/node_modules
+/tsconfig.json
+/tailwind.config.js
+
+# Ignore other React projects
+/billion-hopes-site
+
+# Keep only billion-hopes for deployment
+!/billion-hopes
+
 .git
 *.sql
 README.md
-billion-hopes
 server
 .env.local
 .env.development.local

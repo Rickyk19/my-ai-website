@@ -1,18 +1,10 @@
 {
   "version": 2,
-  "env": {
-    "CI": "false"
-  },
-  "builds": [
-    {
-      "src": "billion-hopes/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build",
-        "framework": null
-      }
-    }
-  ],
+  "buildCommand": "cd billion-hopes && npm install && npm run build",
+  "outputDirectory": "billion-hopes/build",
+  "installCommand": "cd billion-hopes && npm install",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./billion-hopes/",
+  "framework": null,
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
