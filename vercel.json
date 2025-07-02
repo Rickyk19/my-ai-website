@@ -1,9 +1,14 @@
 {
   "version": 2,
-  "buildCommand": "cd billion-hopes && npm install && npm run build",
-  "outputDirectory": "billion-hopes/build",
-  "installCommand": "cd billion-hopes && npm install",
-  "framework": null,
+  "builds": [
+    {
+      "src": "billion-hopes/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
