@@ -164,8 +164,6 @@ const App: React.FC = () => {
               </MemberProtectedRoute>
             } />
             <Route path="quiz-demo" element={<QuizDemoPage />} />
-            {/* Catch-all route - redirect unknown paths to home */}
-            <Route path="*" element={<Home />} />
           </Route>
           </Routes>
         </Router>

@@ -2,10 +2,7 @@
   "name": "billion-hopes",
   "version": "0.1.0",
   "private": true,
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
-  },
+  "homepage": ".",
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.50.0",
@@ -30,7 +27,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "vercel-build": "npm run build"
+    "vercel-build": "react-scripts build"
   },
   "eslintConfig": {
     "extends": [
