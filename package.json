@@ -17,6 +17,7 @@
     "@tinymce/tinymce-react": "^6.2.1",
     "@types/jest": "^27.5.2",
     "@uiw/react-md-editor": "^4.0.7",
+    "fork-ts-checker-webpack-plugin": "^6.5.3",
     "framer-motion": "^12.18.1",
     "is-number": "^7.0.0",
     "react": "^18.2.0",
