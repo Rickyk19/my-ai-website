@@ -3,7 +3,6 @@
   "buildCommand": "cd billion-hopes && npm install && npm run build",
   "outputDirectory": "billion-hopes/build",
   "installCommand": "cd billion-hopes && npm install",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./billion-hopes/",
   "framework": null,
   "routes": [
     { "handle": "filesystem" },
